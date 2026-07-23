@@ -1,10 +1,10 @@
 import { useState } from "react";
-import { GraduationCap, Menu, X, ChevronDown } from "lucide-react";
+import { GraduationCap, Menu, X, LayoutDashboard, LogOut } from "lucide-react";
 import { C } from "../../constants/tokens";
 import { TextButton } from "../ui/TextButton";
 import { PrimaryButton } from "../ui/PrimaryButton";
 
-export function Header({ page, go, openAuth }) {
+export function Header({ page, go, openAuth, isAuthenticated, userRole, handleLogout }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const links = [
     { key: "home", label: "Home" },
@@ -12,6 +12,13 @@ export function Header({ page, go, openAuth }) {
     { key: "subjects", label: "Subjects" },
     { key: "how", label: "How it works" },
   ];
+
+  const getDashboardPage = () => {
+    if (userRole === "tutor") return "tutor-dashboard";
+    if (userRole === "admin") return "admin-dashboard";
+    return "parent-dashboard";
+  };
+
   return (
     <header className="sticky top-0 z-30 border-b bg-white" style={{ borderColor: C.border }}>
       <div className="mx-auto flex max-w-[1200px] items-center justify-between px-4 py-3 sm:px-6">
@@ -27,7 +34,7 @@ export function Header({ page, go, openAuth }) {
             <button
               key={l.key}
               onClick={() => go(l.key === "subjects" || l.key === "how" ? "tutors" : l.key)}
-              className="text-sm font-semibold"
+              className="text-sm font-semibold transition-colors duration-150 hover:text-blue-600"
               style={{ color: page === l.key ? C.primary : C.textSecondary }}
             >
               {l.label}
@@ -35,9 +42,23 @@ export function Header({ page, go, openAuth }) {
           ))}
         </nav>
 
-        <div className="hidden items-center gap-2 md:flex">
-          <TextButton onClick={() => openAuth("login")}>Log in</TextButton>
-          <PrimaryButton size="sm" onClick={() => openAuth("signup")}>Sign up</PrimaryButton>
+        <div className="hidden items-center gap-3 md:flex">
+          {isAuthenticated ? (
+            <>
+              <PrimaryButton size="sm" onClick={() => go(getDashboardPage())}>
+                <LayoutDashboard size={16} className="mr-1.5 inline" />
+                Dashboard
+              </PrimaryButton>
+              <TextButton onClick={handleLogout}>
+                <LogOut size={16} className="inline" />
+              </TextButton>
+            </>
+          ) : (
+            <>
+              <TextButton onClick={() => openAuth("login")}>Log in</TextButton>
+              <PrimaryButton size="sm" onClick={() => openAuth("signup")}>Sign up</PrimaryButton>
+            </>
+          )}
         </div>
 
         <button className="md:hidden" onClick={() => setMobileOpen((v) => !v)}>
@@ -59,8 +80,21 @@ export function Header({ page, go, openAuth }) {
               </button>
             ))}
             <div className="my-1 h-px" style={{ background: C.border }} />
-            <TextButton onClick={() => { openAuth("login"); setMobileOpen(false); }}>Log in</TextButton>
-            <PrimaryButton onClick={() => { openAuth("signup"); setMobileOpen(false); }}>Sign up</PrimaryButton>
+            {isAuthenticated ? (
+              <>
+                <PrimaryButton onClick={() => { go(getDashboardPage()); setMobileOpen(false); }}>
+                  Dashboard ({userRole})
+                </PrimaryButton>
+                <TextButton onClick={() => { handleLogout(); setMobileOpen(false); }}>
+                  Log out
+                </TextButton>
+              </>
+            ) : (
+              <>
+                <TextButton onClick={() => { openAuth("login"); setMobileOpen(false); }}>Log in</TextButton>
+                <PrimaryButton onClick={() => { openAuth("signup"); setMobileOpen(false); }}>Sign up</PrimaryButton>
+              </>
+            )}
           </div>
         </div>
       )}

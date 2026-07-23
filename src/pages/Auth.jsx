@@ -1,28 +1,39 @@
 import { Input } from "../components/ui/Input";
 import { PrimaryButton } from "../components/ui/PrimaryButton";
-import { TextButton } from "../components/ui/TextButton";
+import { SecondaryButton } from "../components/ui/SecondaryButton";
 import { C } from "../constants/tokens";
 import { useState } from "react";
+import { UserCheck, Shield, GraduationCap } from "lucide-react";
 
 export function Auth({ tab, setTab, onLogin }) {
-  const [selectedRole, setSelectedRole] = useState(null);
+  const [selectedRole, setSelectedRole] = useState("Parent / Student");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
   const handleSubmit = (e) => {
     e.preventDefault();
     if (tab === "login") {
-      // For demo, default to parent role on login
-      onLogin("parent");
-    } else if (tab === "signup" && selectedRole) {
+      const lowerEmail = email.toLowerCase();
+      if (lowerEmail.includes("admin")) {
+        onLogin("admin");
+      } else if (lowerEmail.includes("tutor")) {
+        onLogin("tutor");
+      } else {
+        onLogin("parent");
+      }
+    } else if (tab === "signup") {
       onLogin(selectedRole === "Parent / Student" ? "parent" : "tutor");
     }
   };
+
   return (
-    <div className="mx-auto flex max-w-[1200px] justify-center px-4 py-16 sm:px-6">
-      <div className="w-full max-w-sm">
+    <div className="mx-auto flex max-w-[1200px] justify-center px-4 py-12 sm:px-6">
+      <div className="w-full max-w-md">
         <div className="mb-6 flex rounded-lg border p-1" style={{ borderColor: C.border, background: C.surface }}>
           {["login", "signup"].map((k) => (
             <button
               key={k}
+              type="button"
               onClick={() => setTab(k)}
               className="flex-1 rounded-md py-2 text-sm font-semibold transition-colors duration-150"
               style={{
@@ -44,9 +55,24 @@ export function Auth({ tab, setTab, onLogin }) {
         </p>
 
         <form className="mt-6 space-y-4" onSubmit={handleSubmit}>
-          {tab === "signup" && <Input label="Full name" placeholder="Your name" />}
-          <Input label="Email" type="email" placeholder="you@example.com" />
-          <Input label="Password" type="password" placeholder="••••••••" helper={tab === "signup" ? "At least 8 characters." : undefined} />
+          {tab === "signup" && <Input label="Full name" placeholder="Your name" required />}
+          <Input 
+            label="Email" 
+            type="email" 
+            placeholder="you@example.com" 
+            value={email} 
+            onChange={(e) => setEmail(e.target.value)} 
+            required 
+          />
+          <Input 
+            label="Password" 
+            type="password" 
+            placeholder="••••••••" 
+            value={password} 
+            onChange={(e) => setPassword(e.target.value)} 
+            helper={tab === "signup" ? "At least 8 characters." : undefined} 
+            required 
+          />
           {tab === "signup" && (
             <label className="block">
               <span className="mb-1.5 block text-sm font-semibold" style={{ color: C.text }}>I am a</span>
@@ -72,6 +98,42 @@ export function Auth({ tab, setTab, onLogin }) {
           )}
           <PrimaryButton full>{tab === "login" ? "Log in" : "Create account"}</PrimaryButton>
         </form>
+
+        {/* Quick Demo Access Buttons */}
+        <div className="mt-8 border-t pt-6" style={{ borderColor: C.border }}>
+          <p className="mb-3 text-center text-xs font-semibold uppercase tracking-wider" style={{ color: C.textSecondary }}>
+            Quick Demo Login
+          </p>
+          <div className="grid grid-cols-3 gap-2">
+            <button
+              type="button"
+              onClick={() => onLogin("parent")}
+              className="flex flex-col items-center justify-center rounded-lg border p-2 text-xs font-semibold transition-colors hover:bg-gray-50"
+              style={{ borderColor: C.border, color: C.text }}
+            >
+              <UserCheck size={16} className="mb-1 text-blue-600" />
+              Parent
+            </button>
+            <button
+              type="button"
+              onClick={() => onLogin("tutor")}
+              className="flex flex-col items-center justify-center rounded-lg border p-2 text-xs font-semibold transition-colors hover:bg-gray-50"
+              style={{ borderColor: C.border, color: C.text }}
+            >
+              <GraduationCap size={16} className="mb-1 text-emerald-600" />
+              Tutor
+            </button>
+            <button
+              type="button"
+              onClick={() => onLogin("admin")}
+              className="flex flex-col items-center justify-center rounded-lg border p-2 text-xs font-semibold transition-colors hover:bg-gray-50"
+              style={{ borderColor: C.border, color: C.text }}
+            >
+              <Shield size={16} className="mb-1 text-purple-600" />
+              Admin
+            </button>
+          </div>
+        </div>
 
         <p className="mt-5 text-center text-sm" style={{ color: C.textSecondary }}>
           {tab === "login" ? "New to TutorHub?" : "Already have an account?"}{" "}

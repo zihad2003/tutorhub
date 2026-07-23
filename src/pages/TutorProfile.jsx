@@ -90,8 +90,8 @@ export function TutorProfile({ tutor, go }) {
           <div className="sticky top-20 rounded-lg border p-5" style={{ borderColor: C.border }}>
             <p className="text-2xl font-semibold" style={{ color: C.text }}>৳{t.fee}<span className="text-sm font-normal" style={{ color: C.textSecondary }}> /hour</span></p>
             <div className="mt-4 flex flex-col gap-2">
-              <PrimaryButton full>Hire tutor</PrimaryButton>
-              <SecondaryButton full><MessageCircle size={14} className="mr-1.5 inline" />Message tutor</SecondaryButton>
+              <PrimaryButton full onClick={() => go("post-request")}>Hire tutor</PrimaryButton>
+              <SecondaryButton full onClick={() => go("chat")}><MessageCircle size={14} className="mr-1.5 inline" />Message tutor</SecondaryButton>
             </div>
             <div className="mt-5 space-y-2 text-xs" style={{ color: C.textSecondary }}>
               <p className="flex items-center gap-2"><Calendar size={13} /> {t.availability}</p>
