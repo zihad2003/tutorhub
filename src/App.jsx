@@ -122,7 +122,7 @@ export default function App() {
         {page === "admin-settings" && <AdminDashboard onNavigate={go} />}
       </main>
 
-      {!isDashboardPage && <Footer />}
+      {!isDashboardPage && <Footer go={go} openAuth={openAuth} userRole={userRole} />}
     </div>
   );
 }

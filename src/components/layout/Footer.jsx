@@ -1,24 +1,85 @@
 import { Mail, Phone } from "lucide-react";
 import { C } from "../../constants/tokens";
 
-export function Footer() {
-  const col = (title, items) => (
-    <div>
-      <h4 className="mb-3 text-sm font-semibold" style={{ color: C.text }}>{title}</h4>
-      <ul className="space-y-2">
-        {items.map((i) => (
-          <li key={i} className="text-sm" style={{ color: C.textSecondary }}>{i}</li>
-        ))}
-      </ul>
-    </div>
-  );
+export function Footer({ go, openAuth, userRole }) {
+  const handleNav = (target) => {
+    if (typeof go === "function") {
+      go(target);
+    }
+  };
+
   return (
     <footer className="border-t" style={{ borderColor: C.border, background: C.surface }}>
       <div className="mx-auto max-w-[1200px] px-4 py-12 sm:px-6">
         <div className="grid grid-cols-2 gap-8 md:grid-cols-4">
-          {col("Platform", ["Find tutors", "Post a request", "How it works", "Pricing"])}
-          {col("Company", ["About", "FAQ", "Contact", "Careers"])}
-          {col("Roles", ["For parents", "For tutors", "For admins"])}
+          <div>
+            <h4 className="mb-3 text-sm font-semibold" style={{ color: C.text }}>Platform</h4>
+            <ul className="space-y-2 text-sm">
+              <li>
+                <button onClick={() => handleNav("tutors")} className="transition-colors hover:text-blue-600" style={{ color: C.textSecondary }}>
+                  Find tutors
+                </button>
+              </li>
+              <li>
+                <button onClick={() => handleNav("post-request")} className="transition-colors hover:text-blue-600" style={{ color: C.textSecondary }}>
+                  Post a request
+                </button>
+              </li>
+              <li>
+                <button onClick={() => handleNav("home")} className="transition-colors hover:text-blue-600" style={{ color: C.textSecondary }}>
+                  How it works
+                </button>
+              </li>
+              <li>
+                <button onClick={() => handleNav("tutors")} className="transition-colors hover:text-blue-600" style={{ color: C.textSecondary }}>
+                  Pricing & Tutors
+                </button>
+              </li>
+            </ul>
+          </div>
+
+          <div>
+            <h4 className="mb-3 text-sm font-semibold" style={{ color: C.text }}>Company</h4>
+            <ul className="space-y-2 text-sm">
+              <li>
+                <button onClick={() => handleNav("home")} className="transition-colors hover:text-blue-600" style={{ color: C.textSecondary }}>
+                  About TutorHub
+                </button>
+              </li>
+              <li>
+                <button onClick={() => handleNav("home")} className="transition-colors hover:text-blue-600" style={{ color: C.textSecondary }}>
+                  FAQ
+                </button>
+              </li>
+              <li>
+                <button onClick={() => handleNav("chat")} className="transition-colors hover:text-blue-600" style={{ color: C.textSecondary }}>
+                  Contact Support
+                </button>
+              </li>
+            </ul>
+          </div>
+
+          <div>
+            <h4 className="mb-3 text-sm font-semibold" style={{ color: C.text }}>Roles & Portals</h4>
+            <ul className="space-y-2 text-sm">
+              <li>
+                <button onClick={() => handleNav(userRole === "parent" ? "parent-dashboard" : "auth")} className="transition-colors hover:text-blue-600" style={{ color: C.textSecondary }}>
+                  For Parents / Students
+                </button>
+              </li>
+              <li>
+                <button onClick={() => handleNav(userRole === "tutor" ? "tutor-dashboard" : "auth")} className="transition-colors hover:text-blue-600" style={{ color: C.textSecondary }}>
+                  For Tutors
+                </button>
+              </li>
+              <li>
+                <button onClick={() => handleNav(userRole === "admin" ? "admin-dashboard" : "auth")} className="transition-colors hover:text-blue-600" style={{ color: C.textSecondary }}>
+                  For Admins
+                </button>
+              </li>
+            </ul>
+          </div>
+
           <div>
             <h4 className="mb-3 text-sm font-semibold" style={{ color: C.text }}>Contact</h4>
             <p className="flex items-center gap-2 text-sm" style={{ color: C.textSecondary }}><Mail size={14} /> support@tutorhub.bd</p>
