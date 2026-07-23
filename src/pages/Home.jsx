@@ -64,8 +64,6 @@ export function Home({ go, openTutor }) {
       {/* Hero */}
       <section className="relative bg-[#f8fafc] px-4 pt-16 pb-12 sm:px-6 lg:pt-24 lg:pb-20 overflow-hidden border-b" style={{ borderColor: C.border }}>
         
-        
-
         <div className="mx-auto max-w-[1200px] relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           
           {/* Left: Typography & Search */}
@@ -128,7 +126,7 @@ export function Home({ go, openTutor }) {
             {/* Fun decorative circle behind image */}
             <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[250px] h-[250px] lg:w-[380px] lg:h-[380px] rounded-full blur-3xl opacity-30 pointer-events-none" style={{ background: C.primary }}></div>
             
-            <img src="/hero-tutor.png" alt="3D Tutor Illustration" className="relative z-10 w-full max-w-lg lg:max-w-xl h-auto object-contain drop-shadow-2xl hover:-translate-y-4 transition-transform duration-700 mix-blend-multiply" />
+            <img src="/hero-tutor.png" alt="3D Tutor Illustration" className="relative z-10 w-full max-w-md lg:max-w-lg h-auto object-contain drop-shadow-2xl hover:-translate-y-4 transition-transform duration-700 mix-blend-multiply" />
             
             <div className="absolute bottom-10 left-4 lg:-left-10 z-20 rounded-2xl bg-white/90 backdrop-blur-md p-4 shadow-xl border" style={{ borderColor: C.border }}>
               <div className="flex items-center gap-3">
