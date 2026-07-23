@@ -64,9 +64,8 @@ export function Home({ go, openTutor }) {
       {/* Hero */}
       <section className="relative bg-[#f8fafc] px-4 pt-16 pb-12 sm:px-6 lg:pt-24 lg:pb-20 overflow-hidden border-b" style={{ borderColor: C.border }}>
         
-        {/* Subtle Grid Background */}
-        <div className="absolute inset-0 z-0 opacity-[0.4]" style={{ backgroundImage: 'linear-gradient(#e2e8f0 1px, transparent 1px), linear-gradient(90deg, #e2e8f0 1px, transparent 1px)', backgroundSize: '40px 40px' }}></div>
         
+
         <div className="mx-auto max-w-[1200px] relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
           
           {/* Left: Typography & Search */}
@@ -79,7 +78,7 @@ export function Home({ go, openTutor }) {
             </div>
 
             {/* Typography */}
-            <h1 className="text-[3.5rem] font-bold leading-[1.05] tracking-tighter sm:text-[5rem] lg:text-[5.5rem] uppercase" style={{ color: '#0f172a' }}>
+            <h1 className="text-[3rem] font-bold leading-[1.05] tracking-tighter sm:text-[4rem] lg:text-[4.5rem] uppercase" style={{ color: '#0f172a' }}>
               Find The <br />
               Right Tutor <br />
               <span style={{ color: C.primary }} className="lowercase italic">{currentText}</span>
@@ -125,8 +124,9 @@ export function Home({ go, openTutor }) {
           </div>
 
           {/* Right: 3D Graphic */}
-          <div className="relative w-full h-[350px] lg:h-[600px] flex items-center justify-center">
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] lg:w-[450px] lg:h-[450px] rounded-full blur-3xl opacity-30 pointer-events-none" style={{ background: C.primary }}></div>
+          <div className="relative w-full h-[300px] lg:h-[500px] flex items-center justify-center">
+            {/* Fun decorative circle behind image */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[250px] h-[250px] lg:w-[380px] lg:h-[380px] rounded-full blur-3xl opacity-30 pointer-events-none" style={{ background: C.primary }}></div>
             
             <img src="/hero-tutor.png" alt="3D Tutor Illustration" className="relative z-10 w-full max-w-lg lg:max-w-xl h-auto object-contain drop-shadow-2xl hover:-translate-y-4 transition-transform duration-700 mix-blend-multiply" />
             
