@@ -19,6 +19,11 @@ import { TutorDashboard } from "./pages/TutorDashboard";
 import { AdminDashboard } from "./pages/AdminDashboard";
 import { ApprovalQueues } from "./pages/ApprovalQueues";
 
+import { About } from "./pages/About";
+import { FAQ } from "./pages/FAQ";
+import { Contact } from "./pages/Contact";
+import { Careers } from "./pages/Careers";
+
 export default function App() {
   const [page, setPage] = useState("home");
   const [selectedTutor, setSelectedTutor] = useState(null);
@@ -65,6 +70,12 @@ export default function App() {
       {page === "profile" && <TutorProfile tutor={selectedTutor} go={go} />}
       {page === "auth" && <Auth tab={authTab} setTab={setAuthTab} onLogin={handleLogin} />}
       
+      {/* Company Pages */}
+      {page === "about" && <About />}
+      {page === "faq" && <FAQ />}
+      {page === "contact" && <Contact />}
+      {page === "careers" && <Careers />}
+      
       {/* Parent Pages */}
       {page === "parent-dashboard" && <ParentDashboard onNavigate={go} />}
       {page === "post-request" && <PostRequest onNavigate={go} />}
@@ -83,7 +94,7 @@ export default function App() {
       {page === "tutor-approvals" && <ApprovalQueues onNavigate={go} />}
       {page === "parent-approvals" && <ApprovalQueues onNavigate={go} />}
 
-      {!isDashboardPage && <Footer />}
+      {!isDashboardPage && <Footer go={go} />}
     </div>
   );
 }
