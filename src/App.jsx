@@ -20,6 +20,11 @@ import { AdminDashboard } from "./pages/AdminDashboard";
 import { ApprovalQueues } from "./pages/ApprovalQueues";
 import { TUTORS } from "./data/tutors";
 
+import { About } from "./pages/About";
+import { FAQ } from "./pages/FAQ";
+import { Contact } from "./pages/Contact";
+import { Careers } from "./pages/Careers";
+
 export default function App() {
   const [page, setPage] = useState("home");
   const [activeNav, setActiveNav] = useState("home");
@@ -100,11 +105,18 @@ export default function App() {
 
       {/* Main Content Area */}
       <main className="w-full">
+        {/* Public Pages */}
         {page === "home" && <Home go={go} openTutor={openTutor} />}
         {page === "tutors" && <TutorList openTutor={openTutor} />}
         {page === "profile" && <TutorProfile tutor={selectedTutor || TUTORS[0]} go={go} />}
         {page === "auth" && <Auth tab={authTab} setTab={setAuthTab} onLogin={handleLogin} />}
         
+        {/* Company Pages */}
+        {page === "about" && <About />}
+        {page === "faq" && <FAQ />}
+        {page === "contact" && <Contact />}
+        {page === "careers" && <Careers />}
+
         {/* Parent & General Dashboard Pages */}
         {page === "parent-dashboard" && <ParentDashboard onNavigate={go} />}
         {page === "post-request" && <PostRequest onNavigate={go} />}
