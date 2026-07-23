@@ -5,8 +5,39 @@ import { PrimaryButton } from "../components/ui/PrimaryButton";
 import { TextButton } from "../components/ui/TextButton";
 import { TutorCard } from "../components/ui/TutorCard";
 import { TUTORS } from "../data/tutors";
+import { useState, useEffect } from "react";
+
+const TYPING_WORDS = ["your child", "Math", "Physics", "English", "Science"];
 
 export function Home({ go, openTutor }) {
+  const [currentWordIndex, setCurrentWordIndex] = useState(0);
+  const [currentText, setCurrentText] = useState("");
+  const [isDeleting, setIsDeleting] = useState(false);
+
+  useEffect(() => {
+    const word = TYPING_WORDS[currentWordIndex];
+    let timer;
+
+    if (isDeleting) {
+      timer = setTimeout(() => {
+        setCurrentText(word.substring(0, currentText.length - 1));
+        if (currentText.length <= 1) {
+          setIsDeleting(false);
+          setCurrentWordIndex((prev) => (prev + 1) % TYPING_WORDS.length);
+        }
+      }, 50);
+    } else {
+      timer = setTimeout(() => {
+        setCurrentText(word.substring(0, currentText.length + 1));
+        if (currentText.length === word.length) {
+          timer = setTimeout(() => setIsDeleting(true), 2000);
+        }
+      }, 100);
+    }
+
+    return () => clearTimeout(timer);
+  }, [currentText, isDeleting, currentWordIndex]);
+
   const steps = [
     { icon: Search, title: "Find", text: "Search tutors by subject, class, and budget." },
     { icon: Users, title: "Hire", text: "Compare profiles and hire the right tutor." },
@@ -16,36 +47,79 @@ export function Home({ go, openTutor }) {
   return (
     <div>
       {/* Hero */}
-      <section className="border-b" style={{ borderColor: C.border }}>
-        <div className="mx-auto max-w-[1200px] px-4 py-16 sm:px-6 sm:py-24">
-          <div className="max-w-2xl">
-            <Badge tone="accent">Verified home tutors in Dhaka</Badge>
-            <h1 className="mt-4 text-3xl font-semibold leading-tight sm:text-4xl" style={{ color: C.text }}>
-              Find the right tutor for your child
-            </h1>
-            <p className="mt-4 text-base leading-relaxed" style={{ color: C.textSecondary }}>
-              Browse verified tutors, hire with confidence, and track every lesson and payment in one place.
-            </p>
-
-            {/* Search bar */}
-            <div className="mt-8 flex flex-col gap-2 rounded-lg border bg-white p-2 sm:flex-row" style={{ borderColor: C.border }}>
-              <div className="flex flex-1 items-center gap-2 px-2">
-                <Search size={18} color={C.textSecondary} />
-                <input
-                  placeholder="Search by subject, e.g. Physics"
-                  className="w-full py-2 text-sm outline-none"
-                  style={{ color: C.text }}
-                />
-              </div>
-              <PrimaryButton onClick={() => go("tutors")}>Find tutors</PrimaryButton>
+      <section className="relative bg-[#f8fafc] px-4 pt-16 pb-12 sm:px-6 lg:pt-24 lg:pb-20 overflow-hidden border-b" style={{ borderColor: C.border }}>
+        
+        {/* Subtle Grid Background */}
+        <div className="absolute inset-0 z-0 opacity-[0.4]" style={{ backgroundImage: 'linear-gradient(#e2e8f0 1px, transparent 1px), linear-gradient(90deg, #e2e8f0 1px, transparent 1px)', backgroundSize: '40px 40px' }}></div>
+        
+        <div className="mx-auto max-w-[1200px] relative z-10 grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+          
+          {/* Left: Typography & Badges */}
+          <div className="flex flex-col items-start pt-8">
+            
+            {/* Pill Badge matching the vibe */}
+            <div className="mb-8 inline-flex items-center gap-2 rounded-full border px-4 py-1.5 shadow-sm bg-white" style={{ borderColor: C.border }}>
+              <span className="flex h-2 w-2 rounded-full" style={{ background: C.primary }}></span>
+              <span className="text-sm font-semibold tracking-wide" style={{ color: C.text }}>1,200+ Verified Tutors</span>
             </div>
 
-            <div className="mt-6 flex flex-wrap gap-x-6 gap-y-2 text-sm" style={{ color: C.textSecondary }}>
-              <span><strong style={{ color: C.text }}>1,200+</strong> verified tutors</span>
-              <span><strong style={{ color: C.text }}>8,500+</strong> lessons tracked</span>
-              <span><strong style={{ color: C.text }}>4.8</strong> average rating</span>
+            {/* Heavy Typography */}
+            <h1 className="text-[3.5rem] font-bold leading-[1.05] tracking-tighter sm:text-[5rem] lg:text-[5.5rem] uppercase" style={{ color: '#0f172a' }}>
+              Find The <br />
+              Right Tutor <br />
+              <span style={{ color: C.primary }} className="lowercase italic">{currentText}</span>
+              <span className="animate-pulse" style={{ color: C.primary }}>|</span>
+            </h1>
+            
+            {/* Subtext and scribbles */}
+            <div className="mt-8 relative">
+              <p className="max-w-md text-lg font-medium leading-relaxed" style={{ color: C.textSecondary }}>
+                Browse verified tutors, hire with confidence, and track every lesson and payment in one place.
+              </p>
+              
+              {/* Fun floating pill */}
+              <div className="absolute -right-8 -top-8 rotate-12 inline-flex items-center rounded-full border-2 border-white px-3 py-1 shadow-md text-xs font-bold" style={{ background: C.primary, color: 'white' }}>
+                4.8/5 Rating ⭐
+              </div>
+            </div>
+
+            {/* CTA */}
+            <div className="mt-10 flex items-center gap-6">
+              <button onClick={() => go("tutors")} className="rounded-full px-8 py-4 text-lg font-bold text-white shadow-lg transition-transform hover:scale-105 active:scale-95" style={{ background: '#0f172a' }}>
+                Start Searching
+              </button>
+              
+              <div className="flex -space-x-2">
+                {/* Fake avatar pile */}
+                {[1,2,3].map(i => (
+                  <div key={i} className="h-10 w-10 rounded-full border-2 border-white bg-gray-200" style={{ backgroundImage: `url(https://i.pravatar.cc/100?img=${i+10})`, backgroundSize: 'cover' }}></div>
+                ))}
+              </div>
+            </div>
+
+          </div>
+
+          {/* Right: 3D Graphic */}
+          <div className="relative w-full h-[350px] lg:h-[600px] flex items-center justify-center">
+            {/* Fun decorative circle behind image */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[300px] h-[300px] lg:w-[450px] lg:h-[450px] rounded-full blur-3xl opacity-30 pointer-events-none" style={{ background: C.primary }}></div>
+            
+            <img src="/hero-tutor.png" alt="3D Tutor Illustration" className="relative z-10 w-full max-w-lg lg:max-w-xl h-auto object-contain drop-shadow-2xl hover:-translate-y-4 transition-transform duration-700 mix-blend-multiply" />
+            
+            {/* Floating badge next to image */}
+            <div className="absolute bottom-10 left-4 lg:-left-10 z-20 rounded-2xl bg-white/90 backdrop-blur-md p-4 shadow-xl border" style={{ borderColor: C.border }}>
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-50">
+                  <BookOpen size={20} color={C.primary} />
+                </div>
+                <div>
+                  <p className="text-xs font-semibold uppercase text-gray-500">Tracked</p>
+                  <p className="text-sm font-bold text-gray-900">8,500+ Lessons</p>
+                </div>
+              </div>
             </div>
           </div>
+
         </div>
       </section>
 
