@@ -4,7 +4,7 @@ import { C } from "../constants/tokens";
 import { TutorCard } from "../components/ui/TutorCard";
 import { TUTORS } from "../data/tutors";
 
-export function TutorList({ openTutor }) {
+export function TutorList({ openTutor, hiredOnly = false }) {
   const [subject, setSubject] = useState("All subjects");
   const [budgets, setBudgets] = useState([]);
   const [sort, setSort] = useState("Rating");
@@ -20,7 +20,8 @@ export function TutorList({ openTutor }) {
     return true;
   };
 
-  let list = TUTORS.filter((t) => subject === "All subjects" || t.subjects.includes(subject));
+  let list = hiredOnly ? TUTORS.slice(0, 2) : TUTORS;
+  list = list.filter((t) => subject === "All subjects" || t.subjects.includes(subject));
   if (budgets.length) list = list.filter((t) => budgets.some((b) => inBudget(t.fee, b)));
   if (sort === "Rating") list = [...list].sort((a, b) => b.rating - a.rating);
   if (sort === "Fee: Low to High") list = [...list].sort((a, b) => a.fee - b.fee);
@@ -30,9 +31,13 @@ export function TutorList({ openTutor }) {
   const budgetChips = ["Under ৳600", "৳600 - ৳1000", "৳1000 - ৳1800", "৳1800+"];
 
   return (
-    <div className="mx-auto max-w-[1200px] px-4 py-10 sm:px-6">
-      <h1 className="text-2xl font-semibold" style={{ color: C.text }}>Find a tutor</h1>
-      <p className="mt-1 text-sm" style={{ color: C.textSecondary }}>{list.length} tutors available in Dhaka</p>
+    <div className={`mx-auto max-w-[1200px] px-4 py-10 sm:px-6 ${hiredOnly ? "lg:ml-64" : ""}`}>
+      <h1 className="text-2xl font-semibold" style={{ color: C.text }}>
+        {hiredOnly ? "Hired Tutors" : "Find a tutor"}
+      </h1>
+      <p className="mt-1 text-sm" style={{ color: C.textSecondary }}>
+        {hiredOnly ? `${list.length} active tutors hired for your lessons` : `${list.length} tutors available in Dhaka`}
+      </p>
 
       {/* Filter bar */}
       <div className="mt-6 flex flex-col gap-4 rounded-lg border p-4 sm:flex-row sm:items-center sm:justify-between" style={{ borderColor: C.border }}>
