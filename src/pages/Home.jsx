@@ -78,7 +78,7 @@ export function Home({ go, openTutor }) {
             </div>
 
             {/* Typography */}
-            <h1 className="text-[3rem] font-bold leading-[1.05] tracking-tighter sm:text-[4rem] lg:text-[4.5rem] uppercase" style={{ color: '#0f172a' }}>
+            <h1 className="text-[2.5rem] font-bold leading-[1.05] tracking-tighter sm:text-[3rem] lg:text-[3.5rem] uppercase" style={{ color: '#0f172a' }}>
               Find The <br />
               Right Tutor <br />
               <span style={{ color: C.primary }} className="lowercase italic">{currentText}</span>
@@ -124,11 +124,11 @@ export function Home({ go, openTutor }) {
           </div>
 
           {/* Right: 3D Graphic */}
-          <div className="relative w-full h-[300px] lg:h-[500px] flex items-center justify-center">
+          <div className="relative w-full h-[250px] lg:h-[400px] flex items-center justify-center">
             {/* Fun decorative circle behind image */}
-            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[250px] h-[250px] lg:w-[380px] lg:h-[380px] rounded-full blur-3xl opacity-30 pointer-events-none" style={{ background: C.primary }}></div>
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[200px] h-[200px] lg:w-[300px] lg:h-[300px] rounded-full blur-3xl opacity-30 pointer-events-none" style={{ background: C.primary }}></div>
             
-            <img src="/hero-tutor.png" alt="3D Tutor Illustration" className="relative z-10 w-full max-w-lg lg:max-w-xl h-auto object-contain drop-shadow-2xl hover:-translate-y-4 transition-transform duration-700 mix-blend-multiply" />
+            <img src="/hero-tutor.png" alt="3D Tutor Illustration" className="relative z-10 w-full max-w-md lg:max-w-lg h-auto object-contain drop-shadow-2xl hover:-translate-y-4 transition-transform duration-700 mix-blend-multiply" />
             
             <div className="absolute bottom-10 left-4 lg:-left-10 z-20 rounded-2xl bg-white/90 backdrop-blur-md p-4 shadow-xl border" style={{ borderColor: C.border }}>
               <div className="flex items-center gap-3">
