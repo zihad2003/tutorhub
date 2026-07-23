@@ -4,7 +4,7 @@ import { C } from "../../constants/tokens";
 import { TextButton } from "../ui/TextButton";
 import { PrimaryButton } from "../ui/PrimaryButton";
 
-export function Header({ page, go, openAuth, isAuthenticated, userRole, handleLogout }) {
+export function Header({ page, activeNav, go, openAuth, isAuthenticated, userRole, handleLogout }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const links = [
     { key: "home", label: "Home" },
@@ -26,29 +26,14 @@ export function Header({ page, go, openAuth, isAuthenticated, userRole, handleLo
     } else if (key === "tutors") {
       go("tutors");
     } else if (key === "subjects") {
-      if (page === "home") {
-        const el = document.getElementById("subjects");
-        if (el) el.scrollIntoView({ behavior: "smooth" });
-        else go("tutors");
-      } else {
-        go("tutors");
-      }
+      go("home", "subjects");
     } else if (key === "how") {
-      if (page === "home") {
-        const el = document.getElementById("how");
-        if (el) el.scrollIntoView({ behavior: "smooth" });
-        else go("home");
-      } else {
-        go("home");
-        setTimeout(() => {
-          const el = document.getElementById("how");
-          if (el) el.scrollIntoView({ behavior: "smooth" });
-        }, 100);
-      }
+      go("home", "how");
     }
   };
 
   const isLinkActive = (key) => {
+    if (activeNav) return activeNav === key;
     if (key === "home") return page === "home";
     if (key === "tutors") return page === "tutors" || page === "profile";
     return page === key;

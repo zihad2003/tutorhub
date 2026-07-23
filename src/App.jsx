@@ -22,12 +22,30 @@ import { TUTORS } from "./data/tutors";
 
 export default function App() {
   const [page, setPage] = useState("home");
+  const [activeNav, setActiveNav] = useState("home");
   const [selectedTutor, setSelectedTutor] = useState(null);
   const [authTab, setAuthTab] = useState("login");
   const [userRole, setUserRole] = useState(null); // null, 'parent', 'tutor', 'admin'
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  const go = (p) => { setPage(p); window.scrollTo({ top: 0, behavior: "instant" }); };
+  const go = (p, section) => {
+    setPage(p);
+    if (section) {
+      setActiveNav(section);
+      setTimeout(() => {
+        const el = document.getElementById(section);
+        if (el) {
+          el.scrollIntoView({ behavior: "smooth" });
+        } else {
+          window.scrollTo({ top: 0, behavior: "instant" });
+        }
+      }, 120);
+    } else {
+      setActiveNav(p);
+      window.scrollTo({ top: 0, behavior: "instant" });
+    }
+  };
+
   const openTutor = (t) => { setSelectedTutor(t); go("profile"); };
   const openAuth = (tab) => { setAuthTab(tab); go("auth"); };
   const handleLogin = (role) => {
@@ -62,6 +80,7 @@ export default function App() {
       {!isDashboardPage && (
         <Header 
           page={page} 
+          activeNav={activeNav}
           go={go} 
           openAuth={openAuth} 
           isAuthenticated={isAuthenticated} 
