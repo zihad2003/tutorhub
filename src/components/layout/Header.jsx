@@ -40,31 +40,32 @@ export function Header({ page, activeNav, go, openAuth, isAuthenticated, userRol
   };
 
   return (
-    <header className="sticky top-0 z-30 border-b bg-white/95 backdrop-blur-sm" style={{ borderColor: C.border }}>
+    <header className="sticky top-0 z-30 border-b bg-white/95 backdrop-blur-md shadow-sm" style={{ borderColor: C.border }}>
       <div className="mx-auto flex max-w-[1200px] items-center justify-between px-4 py-3 sm:px-6">
-        <button onClick={() => handleNavClick("home")} className="flex items-center gap-2 text-left">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg shadow-sm" style={{ background: C.primary }}>
+        <button onClick={() => handleNavClick("home")} className="group flex items-center gap-2 text-left">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg shadow-sm transition-transform duration-200 group-hover:scale-105" style={{ background: C.primary }}>
             <GraduationCap size={18} color="#fff" />
           </div>
-          <span className="text-base font-semibold tracking-tight" style={{ color: C.text }}>TutorHub</span>
+          <span className="text-base font-semibold tracking-tight transition-colors duration-150 group-hover:text-blue-600" style={{ color: C.text }}>TutorHub</span>
         </button>
 
-        <nav className="hidden items-center gap-7 md:flex">
+        <nav className="hidden items-center gap-2 md:flex">
           {links.map((l) => {
             const active = isLinkActive(l.key);
             return (
               <button
                 key={l.key}
                 onClick={() => handleNavClick(l.key)}
-                className={`text-sm font-semibold transition-colors duration-150 relative py-1 ${
-                  active ? "text-blue-600 font-bold" : "text-gray-600 hover:text-blue-600"
+                className={`relative px-4 py-2 text-sm font-semibold rounded-lg transition-all duration-150 ${
+                  active 
+                    ? "bg-blue-50 text-blue-600 font-semibold" 
+                    : "text-gray-600 hover:bg-blue-50/70 hover:text-blue-600"
                 }`}
-                style={{ color: active ? C.primary : C.textSecondary }}
               >
                 {l.label}
                 {active && (
                   <span 
-                    className="absolute bottom-0 left-0 right-0 h-0.5 rounded-full" 
+                    className="absolute bottom-0 left-3 right-3 h-0.5 rounded-full" 
                     style={{ background: C.primary }} 
                   />
                 )}
@@ -93,7 +94,7 @@ export function Header({ page, activeNav, go, openAuth, isAuthenticated, userRol
         </div>
 
         <button 
-          className="rounded-lg p-1.5 text-gray-600 hover:bg-gray-100 md:hidden" 
+          className="rounded-lg p-2 text-gray-600 hover:bg-gray-100 hover:text-blue-600 transition-colors md:hidden" 
           onClick={() => setMobileOpen((v) => !v)}
           aria-label="Toggle navigation menu"
         >
@@ -103,18 +104,22 @@ export function Header({ page, activeNav, go, openAuth, isAuthenticated, userRol
 
       {mobileOpen && (
         <div className="border-t bg-white px-4 py-3 shadow-lg md:hidden" style={{ borderColor: C.border }}>
-          <div className="flex flex-col gap-3">
-            {links.map((l) => (
-              <button
-                key={l.key}
-                onClick={() => handleNavClick(l.key)}
-                className="text-left text-sm font-semibold py-1.5 transition-colors hover:text-blue-600"
-                style={{ color: isLinkActive(l.key) ? C.primary : C.text }}
-              >
-                {l.label}
-              </button>
-            ))}
-            <div className="my-1 h-px" style={{ background: C.border }} />
+          <div className="flex flex-col gap-1.5">
+            {links.map((l) => {
+              const active = isLinkActive(l.key);
+              return (
+                <button
+                  key={l.key}
+                  onClick={() => handleNavClick(l.key)}
+                  className={`text-left text-sm font-semibold px-3 py-2.5 rounded-lg transition-colors ${
+                    active ? "bg-blue-50 text-blue-600" : "text-gray-700 hover:bg-gray-100 hover:text-blue-600"
+                  }`}
+                >
+                  {l.label}
+                </button>
+              );
+            })}
+            <div className="my-1.5 h-px" style={{ background: C.border }} />
             {isAuthenticated ? (
               <>
                 <PrimaryButton onClick={() => { go(getDashboardPage()); setMobileOpen(false); }}>

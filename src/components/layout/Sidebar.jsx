@@ -62,7 +62,7 @@ export function Sidebar({ role, activePage, onNavigate, onLogout }) {
           </div>
           <span className="text-sm font-semibold" style={{ color: C.text }}>TutorHub</span>
         </button>
-        <button onClick={() => setMobileOpen(!mobileOpen)} className="p-2 text-gray-600">
+        <button onClick={() => setMobileOpen(!mobileOpen)} className="p-2 text-gray-600 hover:text-blue-600">
           {mobileOpen ? <X size={20} /> : <Menu size={20} />}
         </button>
       </div>
@@ -84,11 +84,11 @@ export function Sidebar({ role, activePage, onNavigate, onLogout }) {
       >
         <div>
           <div className="flex h-16 items-center gap-2 border-b px-6" style={{ borderColor: C.border }}>
-            <button onClick={() => handleNav("home")} className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg" style={{ background: C.primary }}>
+            <button onClick={() => handleNav("home")} className="group flex items-center gap-2">
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg shadow-sm transition-transform duration-200 group-hover:scale-105" style={{ background: C.primary }}>
                 <GraduationCap size={18} color="#fff" />
               </div>
-              <span className="text-base font-semibold" style={{ color: C.text }}>TutorHub</span>
+              <span className="text-base font-semibold transition-colors duration-150 group-hover:text-blue-600" style={{ color: C.text }}>TutorHub</span>
             </button>
           </div>
 
@@ -101,13 +101,11 @@ export function Sidebar({ role, activePage, onNavigate, onLogout }) {
                   <li key={link.key}>
                     <button
                       onClick={() => handleNav(link.key)}
-                      className={`flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-semibold transition-colors duration-150 ${
-                        isActive ? "bg-blue-50" : "hover:bg-gray-50"
+                      className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold transition-all duration-150 ${
+                        isActive 
+                          ? "bg-blue-50 text-blue-600 border-l-4 border-blue-600" 
+                          : "text-gray-600 hover:bg-blue-50/60 hover:text-blue-600 border-l-4 border-transparent"
                       }`}
-                      style={{
-                        color: isActive ? C.primary : C.textSecondary,
-                        borderLeft: isActive ? `3px solid ${C.primary}` : "3px solid transparent",
-                      }}
                     >
                       <Icon size={18} />
                       {link.label}
