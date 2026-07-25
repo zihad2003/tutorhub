@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { C } from "./constants/tokens";
 import { Header } from "./components/layout/Header";
 import { Footer } from "./components/layout/Footer";
@@ -26,15 +26,44 @@ import { Contact } from "./pages/Contact";
 import { Careers } from "./pages/Careers";
 
 export default function App() {
-  const [page, setPage] = useState("home");
-  const [activeNav, setActiveNav] = useState("home");
+  const getInitialPage = () => {
+    const path = window.location.pathname.replace(/^\/+/, '');
+    if (!path) return "home";
+    const validPages = [
+      "home", "tutors", "profile", "auth", "about", "faq", "contact", "careers",
+      "parent-dashboard", "post-request", "applications", "hired-tutors", "lessons", "lesson-confirm", "payments", "chat", "reviews", "summary", "settings",
+      "tutor-dashboard", "tutor-profile", "certificates", "availability", "requests", "tutor-applications", "tutor-lessons", "earnings", "tutor-chat", "tutor-settings",
+      "admin-dashboard", "tutor-approvals", "parent-approvals", "categories", "reports", "admin-payments", "users", "support", "admin-settings",
+      "lesson-log"
+    ];
+    return validPages.includes(path) ? path : "home";
+  };
+
+  const [page, setPage] = useState(getInitialPage());
+  const [activeNav, setActiveNav] = useState(getInitialPage());
   const [selectedTutor, setSelectedTutor] = useState(null);
   const [authTab, setAuthTab] = useState("login");
   const [userRole, setUserRole] = useState(null); // null, 'parent', 'tutor', 'admin'
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
+  useEffect(() => {
+    const handlePopState = () => {
+      const p = getInitialPage();
+      setPage(p);
+      setActiveNav(p);
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
   const go = (p, section) => {
     setPage(p);
+    
+    const url = p === "home" ? "/" : `/${p}`;
+    if (window.location.pathname !== url) {
+      window.history.pushState(null, "", url);
+    }
+
     if (section) {
       setActiveNav(section);
       setTimeout(() => {
