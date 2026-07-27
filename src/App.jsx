@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { C } from "./constants/tokens";
 import { Header } from "./components/layout/Header";
 import { Footer } from "./components/layout/Footer";
@@ -20,16 +20,50 @@ import { AdminDashboard } from "./pages/AdminDashboard";
 import { ApprovalQueues } from "./pages/ApprovalQueues";
 import { TUTORS } from "./data/tutors";
 
+import { About } from "./pages/About";
+import { FAQ } from "./pages/FAQ";
+import { Contact } from "./pages/Contact";
+import { Careers } from "./pages/Careers";
+
 export default function App() {
-  const [page, setPage] = useState("home");
-  const [activeNav, setActiveNav] = useState("home");
+  const getInitialPage = () => {
+    const path = window.location.pathname.replace(/^\/+/, '');
+    if (!path) return "home";
+    const validPages = [
+      "home", "tutors", "profile", "auth", "about", "faq", "contact", "careers",
+      "parent-dashboard", "post-request", "applications", "hired-tutors", "lessons", "lesson-confirm", "payments", "chat", "reviews", "summary", "settings",
+      "tutor-dashboard", "tutor-profile", "certificates", "availability", "requests", "tutor-applications", "tutor-lessons", "earnings", "tutor-chat", "tutor-settings",
+      "admin-dashboard", "tutor-approvals", "parent-approvals", "categories", "reports", "admin-payments", "users", "support", "admin-settings",
+      "lesson-log"
+    ];
+    return validPages.includes(path) ? path : "home";
+  };
+
+  const [page, setPage] = useState(getInitialPage());
+  const [activeNav, setActiveNav] = useState(getInitialPage());
   const [selectedTutor, setSelectedTutor] = useState(null);
   const [authTab, setAuthTab] = useState("login");
   const [userRole, setUserRole] = useState(null); // null, 'parent', 'tutor', 'admin'
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
+  useEffect(() => {
+    const handlePopState = () => {
+      const p = getInitialPage();
+      setPage(p);
+      setActiveNav(p);
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
+
   const go = (p, section) => {
     setPage(p);
+    
+    const url = p === "home" ? "/" : `/${p}`;
+    if (window.location.pathname !== url) {
+      window.history.pushState(null, "", url);
+    }
+
     if (section) {
       setActiveNav(section);
       setTimeout(() => {
@@ -100,11 +134,18 @@ export default function App() {
 
       {/* Main Content Area */}
       <main className="w-full">
+        {/* Public Pages */}
         {page === "home" && <Home go={go} openTutor={openTutor} />}
         {page === "tutors" && <TutorList openTutor={openTutor} />}
         {page === "profile" && <TutorProfile tutor={selectedTutor || TUTORS[0]} go={go} />}
         {page === "auth" && <Auth tab={authTab} setTab={setAuthTab} onLogin={handleLogin} />}
         
+        {/* Company Pages */}
+        {page === "about" && <About />}
+        {page === "faq" && <FAQ />}
+        {page === "contact" && <Contact />}
+        {page === "careers" && <Careers />}
+
         {/* Parent & General Dashboard Pages */}
         {page === "parent-dashboard" && <ParentDashboard onNavigate={go} />}
         {page === "post-request" && <PostRequest onNavigate={go} />}
