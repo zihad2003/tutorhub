@@ -6,13 +6,35 @@ import { useState } from "react";
 
 export function ApprovalQueues({ onNavigate }) {
   const [activeTab, setActiveTab] = useState("tutors");
+  const [tutorsList, setTutorsList] = useState(ADMIN_APPROVALS.tutors);
+  const [parentsList, setParentsList] = useState(ADMIN_APPROVALS.parents);
 
-  const pendingTutors = ADMIN_APPROVALS.tutors.filter(t => t.status === "pending");
-  const pendingParents = ADMIN_APPROVALS.parents.filter(p => p.status === "pending");
+  const handleApproveTutor = (id) => {
+    setTutorsList(prev => prev.filter(t => t.id !== id));
+    ADMIN_APPROVALS.tutors = ADMIN_APPROVALS.tutors.filter(t => t.id !== id);
+  };
+
+  const handleRejectTutor = (id) => {
+    setTutorsList(prev => prev.filter(t => t.id !== id));
+    ADMIN_APPROVALS.tutors = ADMIN_APPROVALS.tutors.filter(t => t.id !== id);
+  };
+
+  const handleApproveParent = (id) => {
+    setParentsList(prev => prev.filter(p => p.id !== id));
+    ADMIN_APPROVALS.parents = ADMIN_APPROVALS.parents.filter(p => p.id !== id);
+  };
+
+  const handleRejectParent = (id) => {
+    setParentsList(prev => prev.filter(p => p.id !== id));
+    ADMIN_APPROVALS.parents = ADMIN_APPROVALS.parents.filter(p => p.id !== id);
+  };
+
+  const pendingTutors = tutorsList.filter(t => t.status === "pending");
+  const pendingParents = parentsList.filter(p => p.status === "pending");
 
   return (
-    <div className="flex min-h-screen bg-white lg:block">
-      <div className="flex-1 p-6 lg:ml-64">
+    <div className="flex min-h-screen bg-white">
+      <div className="flex-1 p-4 sm:p-6 lg:ml-64">
         <div className="mx-auto max-w-[1200px]">
           <button
             onClick={() => onNavigate("admin-dashboard")}
@@ -90,11 +112,11 @@ export function ApprovalQueues({ onNavigate }) {
                           </div>
                         </div>
                         <div className="flex gap-2">
-                          <SecondaryButton>
+                          <SecondaryButton onClick={() => handleRejectTutor(tutor.id)}>
                             <XCircle size={16} className="mr-1.5 inline" />
                             Reject
                           </SecondaryButton>
-                          <PrimaryButton>
+                          <PrimaryButton onClick={() => handleApproveTutor(tutor.id)}>
                             <CheckCircle2 size={16} className="mr-1.5 inline" />
                             Approve
                           </PrimaryButton>
@@ -169,11 +191,11 @@ export function ApprovalQueues({ onNavigate }) {
                           </div>
                         </div>
                         <div className="flex gap-2">
-                          <SecondaryButton>
+                          <SecondaryButton onClick={() => handleRejectParent(parent.id)}>
                             <XCircle size={16} className="mr-1.5 inline" />
                             Reject
                           </SecondaryButton>
-                          <PrimaryButton>
+                          <PrimaryButton onClick={() => handleApproveParent(parent.id)}>
                             <CheckCircle2 size={16} className="mr-1.5 inline" />
                             Approve
                           </PrimaryButton>

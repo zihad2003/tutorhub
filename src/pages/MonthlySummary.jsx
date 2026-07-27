@@ -6,10 +6,12 @@ import { Download, FileText, Calendar, Clock, DollarSign } from "lucide-react";
 export function MonthlySummary({ onNavigate }) {
   const currentPayment = PAYMENTS.find(p => p.month === "July 2026");
   const monthLessons = LESSONS.filter(l => l.date.startsWith("2026-07"));
+  const monthTotal = monthLessons.reduce((acc, l) => acc + l.fee, 0);
+  const totalHours = monthLessons.reduce((acc, l) => acc + parseFloat(l.duration), 0).toFixed(1);
 
   return (
-    <div className="flex min-h-screen bg-white lg:block">
-      <div className="flex-1 p-6 lg:ml-64">
+    <div className="flex min-h-screen bg-white">
+      <div className="flex-1 p-4 sm:p-6 lg:ml-64">
         <div className="mx-auto max-w-3xl">
           <button
             onClick={() => onNavigate("payments")}
@@ -19,7 +21,7 @@ export function MonthlySummary({ onNavigate }) {
             &larr; Back to payments
           </button>
 
-          <div className="mb-6 flex items-center justify-between">
+          <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h1 className="text-2xl font-semibold" style={{ color: C.text }}>Monthly Summary</h1>
               <p className="mt-1 text-sm" style={{ color: C.textSecondary }}>
@@ -32,7 +34,7 @@ export function MonthlySummary({ onNavigate }) {
             </PrimaryButton>
           </div>
 
-          <div className="rounded-lg border p-8" style={{ borderColor: C.border }}>
+          <div className="rounded-lg border p-4 sm:p-8" style={{ borderColor: C.border }}>
             <div className="mb-8 border-b pb-6" style={{ borderColor: C.border }}>
               <h2 className="text-xl font-semibold" style={{ color: C.text }}>TutorHub</h2>
               <p className="mt-1 text-sm" style={{ color: C.textSecondary }}>
@@ -43,23 +45,23 @@ export function MonthlySummary({ onNavigate }) {
               </p>
             </div>
 
-            <div className="mb-8 grid grid-cols-3 gap-4 rounded-lg p-4" style={{ background: C.surface }}>
+            <div className="mb-8 grid grid-cols-3 gap-2 rounded-lg p-4 sm:gap-4" style={{ background: C.surface }}>
               <div className="text-center">
                 <p className="text-xs uppercase" style={{ color: C.textSecondary }}>Total Lessons</p>
-                <p className="mt-2 text-2xl font-semibold" style={{ color: C.text }}>
+                <p className="mt-2 text-xl font-semibold sm:text-2xl" style={{ color: C.text }}>
                   {monthLessons.length}
                 </p>
               </div>
               <div className="text-center">
                 <p className="text-xs uppercase" style={{ color: C.textSecondary }}>Total Hours</p>
-                <p className="mt-2 text-2xl font-semibold" style={{ color: C.text }}>
-                  {monthLessons.reduce((acc, l) => acc + parseFloat(l.duration), 0).toFixed(1)}
+                <p className="mt-2 text-xl font-semibold sm:text-2xl" style={{ color: C.text }}>
+                  {totalHours}
                 </p>
               </div>
               <div className="text-center">
                 <p className="text-xs uppercase" style={{ color: C.textSecondary }}>Total Amount</p>
-                <p className="mt-2 text-2xl font-semibold" style={{ color: C.text }}>
-                  ৳{currentPayment?.totalAmount || 0}
+                <p className="mt-2 text-xl font-semibold sm:text-2xl" style={{ color: C.text }}>
+                  ৳{monthTotal}
                 </p>
               </div>
             </div>
@@ -112,7 +114,7 @@ export function MonthlySummary({ onNavigate }) {
                         Total
                       </td>
                       <td className="px-3 py-3 text-right text-lg font-semibold" style={{ color: C.text }}>
-                        ৳{currentPayment?.totalAmount || 0}
+                        ৳{monthTotal}
                       </td>
                     </tr>
                   </tfoot>

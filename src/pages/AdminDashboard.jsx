@@ -3,34 +3,37 @@ import { StatCard } from "../components/ui/StatCard";
 import { Table } from "../components/ui/Table";
 import { PrimaryButton, Badge } from "../components/ui";
 import { Users, DollarSign, FileText, AlertCircle, ChevronRight } from "lucide-react";
-import { ADMIN_APPROVALS, PAYMENTS } from "../data/mockData";
+import { ADMIN_APPROVALS, PAYMENTS, HIRED_TUTORS } from "../data/mockData";
+import { TUTORS } from "../data/tutors";
 
 export function AdminDashboard({ onNavigate }) {
+  const totalTutors = TUTORS.length + ADMIN_APPROVALS.tutors.length;
+  const totalParents = HIRED_TUTORS.length + ADMIN_APPROVALS.parents.length + 10;
   const pendingTutors = ADMIN_APPROVALS.tutors.filter(t => t.status === "pending").length;
   const pendingParents = ADMIN_APPROVALS.parents.filter(p => p.status === "pending").length;
   const totalPayments = PAYMENTS.filter(p => p.status === "paid").reduce((acc, p) => acc + p.totalAmount, 0);
 
   return (
-    <div className="flex min-h-screen bg-white lg:block">
-      <div className="flex-1 p-6 lg:ml-64">
+    <div className="flex min-h-screen bg-white">
+      <div className="flex-1 p-4 sm:p-6 lg:ml-64">
         <div className="mx-auto max-w-[1200px]">
-          <div className="mb-8 flex items-center justify-between">
+          <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h1 className="text-2xl font-semibold" style={{ color: C.text }}>Admin Dashboard</h1>
               <p className="mt-1 text-sm" style={{ color: C.textSecondary }}>Platform overview and management.</p>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-4">
             <StatCard
               label="Total Tutors"
-              value="156"
+              value={totalTutors.toString()}
               icon={Users}
               trend={{ value: "+12", positive: true }}
             />
             <StatCard
               label="Total Parents"
-              value="342"
+              value={totalParents.toString()}
               icon={Users}
               trend={{ value: "+28", positive: true }}
             />

@@ -3,20 +3,21 @@ import { StatCard } from "../components/ui/StatCard";
 import { Table } from "../components/ui/Table";
 import { PrimaryButton, Badge } from "../components/ui";
 import { Users, Calendar, DollarSign, FileText, ChevronRight } from "lucide-react";
-import { LESSONS, PAYMENTS, APPLICATIONS } from "../data/mockData";
+import { LESSONS, PAYMENTS, APPLICATIONS, HIRED_TUTORS } from "../data/mockData";
 
 export function ParentDashboard({ onNavigate }) {
+  const activeTutorsCount = HIRED_TUTORS.filter(t => t.status === "active").length;
+  const monthLessonsCount = LESSONS.filter(l => l.date && l.date.startsWith("2026-07")).length;
   const pendingLessons = LESSONS.filter(l => l.status === "pending").length;
   const pendingPayments = PAYMENTS.filter(p => p.status === "pending").length;
-  const pendingApplications = APPLICATIONS.filter(a => a.status === "pending").length;
 
   const recentLessons = LESSONS.slice(0, 5);
 
   return (
-    <div className="flex min-h-screen bg-white lg:block">
-      <div className="flex-1 p-6 lg:ml-64">
+    <div className="flex min-h-screen bg-white">
+      <div className="flex-1 p-4 sm:p-6 lg:ml-64">
         <div className="mx-auto max-w-[1200px]">
-          <div className="mb-8 flex items-center justify-between">
+          <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h1 className="text-2xl font-semibold" style={{ color: C.text }}>Dashboard</h1>
               <p className="mt-1 text-sm" style={{ color: C.textSecondary }}>Welcome back! Here's your overview.</p>
@@ -24,16 +25,16 @@ export function ParentDashboard({ onNavigate }) {
             <PrimaryButton onClick={() => onNavigate("post-request")}>Post Request</PrimaryButton>
           </div>
 
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-4">
             <StatCard
               label="Active Tutors"
-              value="2"
+              value={activeTutorsCount.toString()}
               icon={Users}
-              trend={{ value: "0", positive: true }}
+              trend={{ value: "+1", positive: true }}
             />
             <StatCard
               label="Lessons This Month"
-              value={LESSONS.length.toString()}
+              value={monthLessonsCount.toString()}
               icon={Calendar}
               trend={{ value: "+2", positive: true }}
             />

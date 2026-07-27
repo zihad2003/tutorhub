@@ -6,10 +6,10 @@ import { PrimaryButton } from "../components/ui/PrimaryButton";
 import { SecondaryButton } from "../components/ui/SecondaryButton";
 import { TUTORS } from "../data/tutors";
 
-export function TutorProfile({ tutor, go }) {
+export function TutorProfile({ tutor, go, isDashboard = false }) {
   const t = tutor || TUTORS[0];
   return (
-    <div className="mx-auto max-w-[1200px] px-4 py-10 sm:px-6">
+    <div className={`mx-auto max-w-[1200px] px-4 py-6 sm:px-6 sm:py-10 ${isDashboard ? "lg:ml-64" : ""}`}>
       <button onClick={() => go("tutors")} className="mb-6 text-sm font-semibold" style={{ color: C.primary }}>
         &larr; Back to tutors
       </button>

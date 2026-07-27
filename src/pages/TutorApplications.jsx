@@ -7,8 +7,8 @@ export function TutorApplications({ onNavigate }) {
   const pendingApps = APPLICATIONS.filter(a => a.status === "pending");
 
   return (
-    <div className="flex min-h-screen bg-white lg:block">
-      <div className="flex-1 p-6 lg:ml-64">
+    <div className="flex min-h-screen bg-white">
+      <div className="flex-1 p-4 sm:p-6 lg:ml-64">
         <div className="mx-auto max-w-[1200px]">
           <button
             onClick={() => onNavigate("parent-dashboard")}

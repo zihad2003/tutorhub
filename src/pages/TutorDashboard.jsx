@@ -2,21 +2,23 @@ import { C } from "../constants/tokens";
 import { StatCard } from "../components/ui/StatCard";
 import { Table } from "../components/ui/Table";
 import { PrimaryButton, Badge } from "../components/ui";
-import { Users, Calendar, DollarSign, FileText, ChevronRight } from "lucide-react";
-import { LESSONS, TUTOR_EARNINGS, APPLICATIONS } from "../data/mockData";
+import { Users, Calendar, DollarSign, FileText, ChevronRight, MapPin } from "lucide-react";
+import { LESSONS, TUTOR_EARNINGS, APPLICATIONS, REQUESTS, HIRED_TUTORS } from "../data/mockData";
 
 export function TutorDashboard({ onNavigate }) {
-  const pendingLessons = LESSONS.filter(l => l.status === "pending").length;
-  const pendingEarnings = TUTOR_EARNINGS.filter(e => e.status === "pending").length;
+  const activeStudents = HIRED_TUTORS.filter(t => t.status === "active").length;
+  const monthLessonsCount = LESSONS.filter(l => l.date && l.date.startsWith("2026-07")).length;
+  const pendingEarnings = LESSONS.filter(l => l.status === "pending").reduce((acc, l) => acc + l.fee, 0);
   const pendingApplications = APPLICATIONS.filter(a => a.status === "pending").length;
+  const openRequests = REQUESTS.filter(r => r.status === "open");
 
   const recentLessons = LESSONS.slice(0, 5);
 
   return (
-    <div className="flex min-h-screen bg-white lg:block">
-      <div className="flex-1 p-6 lg:ml-64">
+    <div className="flex min-h-screen bg-white">
+      <div className="flex-1 p-4 sm:p-6 lg:ml-64">
         <div className="mx-auto max-w-[1200px]">
-          <div className="mb-8 flex items-center justify-between">
+          <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h1 className="text-2xl font-semibold" style={{ color: C.text }}>Dashboard</h1>
               <p className="mt-1 text-sm" style={{ color: C.textSecondary }}>Welcome back! Here's your overview.</p>
@@ -24,22 +26,22 @@ export function TutorDashboard({ onNavigate }) {
             <PrimaryButton onClick={() => onNavigate("tutor-profile")}>Edit Profile</PrimaryButton>
           </div>
 
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-4">
             <StatCard
               label="Active Students"
-              value="2"
+              value={activeStudents.toString()}
               icon={Users}
               trend={{ value: "+1", positive: true }}
             />
             <StatCard
               label="Lessons This Month"
-              value={LESSONS.length.toString()}
+              value={monthLessonsCount.toString()}
               icon={Calendar}
               trend={{ value: "+3", positive: true }}
             />
             <StatCard
               label="Pending Earnings"
-              value={`৳${TUTOR_EARNINGS.find(e => e.status === "pending")?.totalEarnings || 0}`}
+              value={`৳${pendingEarnings}`}
               icon={DollarSign}
             />
             <StatCard
@@ -115,27 +117,30 @@ export function TutorDashboard({ onNavigate }) {
               </button>
             </div>
             <div className="mt-4">
-              {APPLICATIONS.filter(a => a.status === "pending").length === 0 ? (
+              {openRequests.length === 0 ? (
                 <p className="py-8 text-center text-sm" style={{ color: C.textSecondary }}>
-                  No pending requests
+                  No active requests available
                 </p>
               ) : (
                 <div className="space-y-3">
-                  {APPLICATIONS.filter(a => a.status === "pending").slice(0, 3).map((app) => (
+                  {openRequests.slice(0, 3).map((req) => (
                     <div
-                      key={app.id}
-                      className="flex items-center justify-between rounded-lg border p-3"
+                      key={req.id}
+                      className="flex flex-col gap-3 rounded-lg border p-4 sm:flex-row sm:items-center sm:justify-between"
                       style={{ borderColor: C.border }}
                     >
                       <div>
-                        <p className="text-sm font-semibold" style={{ color: C.text }}>
-                          Request #{app.requestId}
-                        </p>
-                        <p className="text-xs" style={{ color: C.textSecondary }}>
-                          {app.subjects.join(", ")} · Budget: ৳{parseInt(app.requestId) * 10}
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-semibold" style={{ color: C.text }}>
+                            {req.subject} ({req.classLevel})
+                          </p>
+                          <Badge tone="neutral">Request #{req.id}</Badge>
+                        </div>
+                        <p className="mt-1 text-xs" style={{ color: C.textSecondary }}>
+                          {req.location} · Preferred: {req.preferredDays} · Budget: <span className="font-semibold text-blue-600">৳{req.budget}/hr</span>
                         </p>
                       </div>
-                      <PrimaryButton size="sm" onClick={() => onNavigate("requests")}>View</PrimaryButton>
+                      <PrimaryButton size="sm" onClick={() => onNavigate("requests")}>View Details</PrimaryButton>
                     </div>
                   ))}
                 </div>

@@ -1,40 +1,64 @@
 import { C } from "../constants/tokens";
 import { PrimaryButton, Input } from "../components/ui";
 import { CHATS } from "../data/mockData";
-import { Send, MoreVertical } from "lucide-react";
+import { Send, MoreVertical, ArrowLeft } from "lucide-react";
 import { useState } from "react";
 
 export function Chat({ onNavigate }) {
   const [selectedChat, setSelectedChat] = useState(CHATS[0]);
   const [message, setMessage] = useState("");
+  const [showMobileChat, setShowMobileChat] = useState(false);
+
+  const handleSelectChat = (chat) => {
+    setSelectedChat(chat);
+    setShowMobileChat(true);
+  };
 
   const handleSend = (e) => {
     e.preventDefault();
     if (message.trim()) {
+      setSelectedChat(prev => ({
+        ...prev,
+        messages: [
+          ...prev.messages,
+          {
+            id: Date.now(),
+            sender: "parent",
+            text: message,
+            time: "Just now"
+          }
+        ]
+      }));
       setMessage("");
     }
   };
 
   return (
-    <div className="flex min-h-screen bg-white lg:block">
+    <div className="flex min-h-screen bg-white">
       <div className="flex-1 lg:ml-64">
         <div className="flex h-screen flex-col">
-          <div className="border-b px-6 py-4" style={{ borderColor: C.border }}>
+          <div className="border-b px-4 py-3 sm:px-6 sm:py-4" style={{ borderColor: C.border }}>
             <h1 className="text-xl font-semibold" style={{ color: C.text }}>Messages</h1>
           </div>
 
           <div className="flex flex-1 overflow-hidden">
-            <div className="hidden w-80 border-r lg:block" style={{ borderColor: C.border }}>
+            {/* Conversation List Panel */}
+            <div 
+              className={`w-full border-r lg:w-80 lg:block ${
+                showMobileChat ? "hidden" : "block"
+              }`} 
+              style={{ borderColor: C.border }}
+            >
               <div className="p-4">
                 <Input placeholder="Search conversations..." />
               </div>
-              <div className="space-y-1">
+              <div className="space-y-1 overflow-y-auto max-h-[calc(100vh-140px)]">
                 {CHATS.map((chat) => (
                   <button
                     key={chat.id}
-                    onClick={() => setSelectedChat(chat)}
-                    className={`flex w-full items-start gap-3 p-4 transition-colors duration-150 ${
-                      selectedChat.id === chat.id ? "bg-blue-50" : "hover:bg-gray-50"
+                    onClick={() => handleSelectChat(chat)}
+                    className={`flex w-full items-start gap-3 p-4 text-left transition-colors duration-150 ${
+                      selectedChat?.id === chat.id ? "bg-blue-50" : "hover:bg-gray-50"
                     }`}
                   >
                     <div className="relative">
@@ -49,7 +73,7 @@ export function Chat({ onNavigate }) {
                         </span>
                       )}
                     </div>
-                    <div className="flex-1 text-left">
+                    <div className="flex-1">
                       <div className="flex items-center justify-between">
                         <p className="text-sm font-semibold" style={{ color: C.text }}>
                           {chat.tutorName}
@@ -67,11 +91,22 @@ export function Chat({ onNavigate }) {
               </div>
             </div>
 
-            <div className="flex flex-1 flex-col">
+            {/* Active Chat Panel */}
+            <div 
+              className={`flex flex-1 flex-col ${
+                !showMobileChat ? "hidden lg:flex" : "flex"
+              }`}
+            >
               {selectedChat ? (
                 <>
-                  <div className="flex items-center justify-between border-b px-6 py-4" style={{ borderColor: C.border }}>
+                  <div className="flex items-center justify-between border-b px-4 py-3 sm:px-6 sm:py-4" style={{ borderColor: C.border }}>
                     <div className="flex items-center gap-3">
+                      <button 
+                        onClick={() => setShowMobileChat(false)}
+                        className="rounded p-1 text-gray-600 hover:bg-gray-100 lg:hidden"
+                      >
+                        <ArrowLeft size={20} />
+                      </button>
                       <img
                         src={selectedChat.tutorImg}
                         alt={selectedChat.tutorName}
@@ -89,7 +124,7 @@ export function Chat({ onNavigate }) {
                     </button>
                   </div>
 
-                  <div className="flex-1 overflow-y-auto p-6">
+                  <div className="flex-1 overflow-y-auto p-4 sm:p-6">
                     <div className="space-y-4">
                       {selectedChat.messages.map((msg) => (
                         <div
@@ -123,7 +158,7 @@ export function Chat({ onNavigate }) {
                     </div>
                   </div>
 
-                  <form onSubmit={handleSend} className="border-t px-6 py-4" style={{ borderColor: C.border }}>
+                  <form onSubmit={handleSend} className="border-t px-4 py-3 sm:px-6 sm:py-4" style={{ borderColor: C.border }}>
                     <div className="flex gap-3">
                       <input
                         type="text"

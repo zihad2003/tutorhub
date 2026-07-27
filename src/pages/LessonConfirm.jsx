@@ -1,14 +1,29 @@
+import { useState } from "react";
 import { C } from "../constants/tokens";
 import { Badge, PrimaryButton, SecondaryButton } from "../components/ui";
 import { LESSONS } from "../data/mockData";
 import { CheckCircle2, XCircle, Clock, BookOpen } from "lucide-react";
 
 export function LessonConfirm({ onNavigate }) {
-  const pendingLessons = LESSONS.filter(l => l.status === "pending");
+  const [lessonsList, setLessonsList] = useState(LESSONS);
+
+  const handleConfirm = (id) => {
+    setLessonsList(prev => prev.map(l => l.id === id ? { ...l, status: "confirmed" } : l));
+    const target = LESSONS.find(l => l.id === id);
+    if (target) target.status = "confirmed";
+  };
+
+  const handleReject = (id) => {
+    setLessonsList(prev => prev.filter(l => l.id !== id));
+    const index = LESSONS.findIndex(l => l.id === id);
+    if (index !== -1) LESSONS.splice(index, 1);
+  };
+
+  const pendingLessons = lessonsList.filter(l => l.status === "pending");
 
   return (
-    <div className="flex min-h-screen bg-white lg:block">
-      <div className="flex-1 p-6 lg:ml-64">
+    <div className="flex min-h-screen bg-white">
+      <div className="flex-1 p-4 sm:p-6 lg:ml-64">
         <div className="mx-auto max-w-[1200px]">
           <button
             onClick={() => onNavigate("lessons")}
@@ -82,11 +97,11 @@ export function LessonConfirm({ onNavigate }) {
                   )}
 
                   <div className="mt-6 flex gap-3">
-                    <SecondaryButton>
+                    <SecondaryButton onClick={() => handleReject(lesson.id)}>
                       <XCircle size={16} className="mr-1.5 inline" />
                       Reject
                     </SecondaryButton>
-                    <PrimaryButton>
+                    <PrimaryButton onClick={() => handleConfirm(lesson.id)}>
                       <CheckCircle2 size={16} className="mr-1.5 inline" />
                       Confirm
                     </PrimaryButton>

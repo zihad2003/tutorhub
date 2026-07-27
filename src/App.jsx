@@ -115,11 +115,11 @@ export default function App() {
         {page === "payments" && <Payment onNavigate={go} />}
         {page === "chat" && <Chat onNavigate={go} />}
         {(page === "reviews" || page === "summary") && <MonthlySummary onNavigate={go} />}
-        {page === "settings" && <TutorProfile tutor={selectedTutor || TUTORS[0]} go={go} />}
+        {page === "settings" && <TutorProfile tutor={selectedTutor || TUTORS[0]} go={go} isDashboard={true} />}
         
         {/* Tutor Dashboard Pages */}
         {page === "tutor-dashboard" && <TutorDashboard onNavigate={go} />}
-        {page === "tutor-profile" && <TutorProfile tutor={selectedTutor || TUTORS[0]} go={go} />}
+        {page === "tutor-profile" && <TutorProfile tutor={selectedTutor || TUTORS[0]} go={go} isDashboard={true} />}
         {page === "certificates" && <ApprovalQueues onNavigate={go} />}
         {page === "availability" && <LessonConfirm onNavigate={go} />}
         {page === "requests" && <PostRequest onNavigate={go} />}
@@ -127,7 +127,7 @@ export default function App() {
         {page === "tutor-lessons" && <LessonLog onNavigate={go} />}
         {page === "earnings" && <MonthlySummary onNavigate={go} />}
         {page === "tutor-chat" && <Chat onNavigate={go} />}
-        {page === "tutor-settings" && <TutorProfile tutor={selectedTutor || TUTORS[0]} go={go} />}
+        {page === "tutor-settings" && <TutorProfile tutor={selectedTutor || TUTORS[0]} go={go} isDashboard={true} />}
 
         {/* Admin Dashboard Pages */}
         {page === "admin-dashboard" && <AdminDashboard onNavigate={go} />}
