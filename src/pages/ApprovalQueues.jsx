@@ -4,8 +4,8 @@ import { ADMIN_APPROVALS } from "../data/mockData";
 import { CheckCircle2, XCircle, MapPin, Mail, Phone, Award, Calendar } from "lucide-react";
 import { useState } from "react";
 
-export function ApprovalQueues({ onNavigate }) {
-  const [activeTab, setActiveTab] = useState("tutors");
+export function ApprovalQueues({ onNavigate, initialTab = "tutors" }) {
+  const [activeTab, setActiveTab] = useState(initialTab);
   const [tutorsList, setTutorsList] = useState(ADMIN_APPROVALS.tutors);
   const [parentsList, setParentsList] = useState(ADMIN_APPROVALS.parents);
 

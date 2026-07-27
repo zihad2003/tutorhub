@@ -18,6 +18,9 @@ import { MonthlySummary } from "./pages/MonthlySummary";
 import { TutorDashboard } from "./pages/TutorDashboard";
 import { AdminDashboard } from "./pages/AdminDashboard";
 import { ApprovalQueues } from "./pages/ApprovalQueues";
+import { Availability } from "./pages/Availability";
+import { Certificates } from "./pages/Certificates";
+import { Settings } from "./pages/Settings";
 import { TUTORS } from "./data/tutors";
 
 import { About } from "./pages/About";
@@ -43,8 +46,8 @@ export default function App() {
   const [activeNav, setActiveNav] = useState(getInitialPage());
   const [selectedTutor, setSelectedTutor] = useState(null);
   const [authTab, setAuthTab] = useState("login");
-  const [userRole, setUserRole] = useState(null); // null, 'parent', 'tutor', 'admin'
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [userRole, setUserRole] = useState(() => localStorage.getItem("tutorhub_role") || null);
+  const [isAuthenticated, setIsAuthenticated] = useState(() => !!localStorage.getItem("tutorhub_role"));
 
   useEffect(() => {
     const handlePopState = () => {
@@ -85,11 +88,13 @@ export default function App() {
   const handleLogin = (role) => {
     setUserRole(role);
     setIsAuthenticated(true);
+    localStorage.setItem("tutorhub_role", role);
     go(role === "parent" ? "parent-dashboard" : role === "tutor" ? "tutor-dashboard" : "admin-dashboard");
   };
   const handleLogout = () => {
     setUserRole(null);
     setIsAuthenticated(false);
+    localStorage.removeItem("tutorhub_role");
     go("home");
   };
 
@@ -102,10 +107,14 @@ export default function App() {
 
   const getRoleFromPage = (p) => {
     if (p.startsWith("parent-")) return "parent";
-    if (p.startsWith("tutor-") || p === "requests" || p === "availability" || p === "certificates") return "tutor";
-    if (p.startsWith("admin-") || p === "categories" || p === "reports" || p === "users") return "admin";
-    return userRole || "parent";
+    if (p.startsWith("tutor-")) return "tutor";
+    if (p.startsWith("admin-")) return "admin";
+    if (p === "certificates" || p === "availability" || p === "requests" || p === "earnings") return "tutor";
+    if (p === "tutor-approvals" || p === "parent-approvals" || p === "categories" || p === "reports" || p === "users") return "admin";
+    return userRole || localStorage.getItem("tutorhub_role") || "parent";
   };
+
+  const activeRole = getRoleFromPage(page);
 
   return (
     <div style={{ fontFamily: "Inter, system-ui, sans-serif", background: C.bg, color: C.text }} className="min-h-screen text-base">
@@ -118,14 +127,14 @@ export default function App() {
           go={go} 
           openAuth={openAuth} 
           isAuthenticated={isAuthenticated} 
-          userRole={userRole} 
+          userRole={activeRole} 
           handleLogout={handleLogout} 
         />
       )}
 
       {isDashboardPage && (
         <Sidebar 
-          role={getRoleFromPage(page)} 
+          role={activeRole} 
           activePage={page} 
           onNavigate={go} 
           onLogout={handleLogout} 
@@ -148,7 +157,7 @@ export default function App() {
 
         {/* Parent & General Dashboard Pages */}
         {page === "parent-dashboard" && <ParentDashboard onNavigate={go} />}
-        {page === "post-request" && <PostRequest onNavigate={go} />}
+        {page === "post-request" && <PostRequest onNavigate={go} mode="create" />}
         {page === "applications" && <TutorApplications onNavigate={go} />}
         {page === "hired-tutors" && <TutorList openTutor={openTutor} hiredOnly={true} />}
         {(page === "lessons" || page === "lesson-log") && <LessonLog onNavigate={go} />}
@@ -156,33 +165,33 @@ export default function App() {
         {page === "payments" && <Payment onNavigate={go} />}
         {page === "chat" && <Chat onNavigate={go} />}
         {(page === "reviews" || page === "summary") && <MonthlySummary onNavigate={go} />}
-        {page === "settings" && <TutorProfile tutor={selectedTutor || TUTORS[0]} go={go} isDashboard={true} />}
+        {page === "settings" && <Settings role={activeRole} onNavigate={go} />}
         
         {/* Tutor Dashboard Pages */}
         {page === "tutor-dashboard" && <TutorDashboard onNavigate={go} />}
         {page === "tutor-profile" && <TutorProfile tutor={selectedTutor || TUTORS[0]} go={go} isDashboard={true} />}
-        {page === "certificates" && <ApprovalQueues onNavigate={go} />}
-        {page === "availability" && <LessonConfirm onNavigate={go} />}
-        {page === "requests" && <PostRequest onNavigate={go} />}
+        {page === "certificates" && <Certificates onNavigate={go} />}
+        {page === "availability" && <Availability onNavigate={go} />}
+        {page === "requests" && <PostRequest onNavigate={go} mode="browse" />}
         {page === "tutor-applications" && <TutorApplications onNavigate={go} />}
         {page === "tutor-lessons" && <LessonLog onNavigate={go} />}
         {page === "earnings" && <MonthlySummary onNavigate={go} />}
         {page === "tutor-chat" && <Chat onNavigate={go} />}
-        {page === "tutor-settings" && <TutorProfile tutor={selectedTutor || TUTORS[0]} go={go} isDashboard={true} />}
+        {page === "tutor-settings" && <Settings role="tutor" onNavigate={go} />}
 
         {/* Admin Dashboard Pages */}
         {page === "admin-dashboard" && <AdminDashboard onNavigate={go} />}
-        {page === "tutor-approvals" && <ApprovalQueues onNavigate={go} />}
-        {page === "parent-approvals" && <ApprovalQueues onNavigate={go} />}
+        {page === "tutor-approvals" && <ApprovalQueues onNavigate={go} initialTab="tutors" />}
+        {page === "parent-approvals" && <ApprovalQueues onNavigate={go} initialTab="parents" />}
         {page === "categories" && <AdminDashboard onNavigate={go} />}
         {page === "reports" && <MonthlySummary onNavigate={go} />}
         {page === "admin-payments" && <Payment onNavigate={go} />}
-        {page === "users" && <ApprovalQueues onNavigate={go} />}
+        {page === "users" && <ApprovalQueues onNavigate={go} initialTab="tutors" />}
         {page === "support" && <Chat onNavigate={go} />}
-        {page === "admin-settings" && <AdminDashboard onNavigate={go} />}
+        {page === "admin-settings" && <Settings role="admin" onNavigate={go} />}
       </main>
 
-      {!isDashboardPage && <Footer go={go} openAuth={openAuth} userRole={userRole} />}
+      {!isDashboardPage && <Footer go={go} openAuth={openAuth} userRole={activeRole} />}
     </div>
   );
 }
