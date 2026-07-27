@@ -3,34 +3,42 @@ import { PrimaryButton, SecondaryButton } from "../components/ui";
 import { LESSONS, PAYMENTS } from "../data/mockData";
 import { Download, FileText, Calendar, Clock, DollarSign } from "lucide-react";
 
-export function MonthlySummary({ onNavigate }) {
-  const currentPayment = PAYMENTS.find(p => p.month === "July 2026");
-  const monthLessons = LESSONS.filter(l => l.date.startsWith("2026-07"));
+export function MonthlySummary({ onNavigate, role = "parent" }) {
+  const isTutor = role === "tutor";
+  const backLink = isTutor ? "tutor-dashboard" : "parent-dashboard";
+
+  const monthLessons = isTutor ? [
+    { id: 1, date: "2026-07-02", studentName: "Abdul Rahman (Class 10)", subject: "Physics", topic: "Kinematics & Motion", duration: "1.5 hrs", fee: 1000 },
+    { id: 2, date: "2026-07-05", studentName: "Abdul Rahman (Class 10)", subject: "Physics", topic: "Newton's Laws", duration: "1.5 hrs", fee: 1000 },
+    { id: 3, date: "2026-07-10", studentName: "Tanvir R. (Class 8)", subject: "English", topic: "Grammar & Composition", duration: "1.0 hrs", fee: 500 },
+  ] : LESSONS.filter(l => l.date.startsWith("2026-07"));
+
   const monthTotal = monthLessons.reduce((acc, l) => acc + l.fee, 0);
-  const totalHours = monthLessons.reduce((acc, l) => acc + parseFloat(l.duration), 0).toFixed(1);
 
   return (
     <div className="flex min-h-screen bg-white">
       <div className="flex-1 p-4 sm:p-6 lg:ml-64">
         <div className="mx-auto max-w-3xl">
           <button
-            onClick={() => onNavigate("payments")}
+            onClick={() => onNavigate(backLink)}
             className="mb-6 text-sm font-semibold"
             style={{ color: C.primary }}
           >
-            &larr; Back to payments
+            &larr; Back to dashboard
           </button>
 
           <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h1 className="text-2xl font-semibold" style={{ color: C.text }}>Monthly Summary</h1>
+              <h1 className="text-2xl font-semibold" style={{ color: C.text }}>
+                {isTutor ? "My Earnings & Summary" : "Monthly Summary"}
+              </h1>
               <p className="mt-1 text-sm" style={{ color: C.textSecondary }}>
-                July 2026 · Lesson Report
+                July 2026 · {isTutor ? "Tutor Earnings Statement" : "Lesson Report"}
               </p>
             </div>
             <PrimaryButton>
               <Download size={16} className="mr-1.5 inline" />
-              Download PDF
+              Download PDF Statement
             </PrimaryButton>
           </div>
 
@@ -38,7 +46,7 @@ export function MonthlySummary({ onNavigate }) {
             <div className="mb-8 border-b pb-6" style={{ borderColor: C.border }}>
               <h2 className="text-xl font-semibold" style={{ color: C.text }}>TutorHub</h2>
               <p className="mt-1 text-sm" style={{ color: C.textSecondary }}>
-                Monthly Lesson Summary Report
+                {isTutor ? "Tutor Monthly Earnings Statement" : "Monthly Lesson Summary Report"}
               </p>
               <p className="mt-2 text-xs" style={{ color: C.textSecondary }}>
                 Generated on July 24, 2026
@@ -55,11 +63,11 @@ export function MonthlySummary({ onNavigate }) {
               <div className="text-center">
                 <p className="text-xs uppercase" style={{ color: C.textSecondary }}>Total Hours</p>
                 <p className="mt-2 text-xl font-semibold sm:text-2xl" style={{ color: C.text }}>
-                  {totalHours}
+                  4.0 hrs
                 </p>
               </div>
               <div className="text-center">
-                <p className="text-xs uppercase" style={{ color: C.textSecondary }}>Total Amount</p>
+                <p className="text-xs uppercase" style={{ color: C.textSecondary }}>{isTutor ? "Net Earnings" : "Total Amount"}</p>
                 <p className="mt-2 text-xl font-semibold sm:text-2xl" style={{ color: C.text }}>
                   ৳{monthTotal}
                 </p>
@@ -68,7 +76,7 @@ export function MonthlySummary({ onNavigate }) {
 
             <div className="mb-8">
               <h3 className="mb-4 text-base font-semibold" style={{ color: C.text }}>
-                Lesson Details
+                {isTutor ? "Taught Lesson Breakdown" : "Lesson Details"}
               </h3>
               <div className="overflow-x-auto">
                 <table className="w-full text-sm">
@@ -78,7 +86,7 @@ export function MonthlySummary({ onNavigate }) {
                         Date
                       </th>
                       <th className="px-3 py-2 text-left font-semibold" style={{ color: C.textSecondary }}>
-                        Tutor
+                        {isTutor ? "Student / Class" : "Tutor"}
                       </th>
                       <th className="px-3 py-2 text-left font-semibold" style={{ color: C.textSecondary }}>
                         Subject
@@ -90,7 +98,7 @@ export function MonthlySummary({ onNavigate }) {
                         Duration
                       </th>
                       <th className="px-3 py-2 text-right font-semibold" style={{ color: C.textSecondary }}>
-                        Fee
+                        {isTutor ? "Earnings" : "Fee"}
                       </th>
                     </tr>
                   </thead>
@@ -98,7 +106,7 @@ export function MonthlySummary({ onNavigate }) {
                     {monthLessons.map((lesson) => (
                       <tr key={lesson.id} className="border-b" style={{ borderColor: C.border }}>
                         <td className="px-3 py-3" style={{ color: C.text }}>{lesson.date}</td>
-                        <td className="px-3 py-3" style={{ color: C.text }}>{lesson.tutorName}</td>
+                        <td className="px-3 py-3" style={{ color: C.text }}>{isTutor ? lesson.studentName : lesson.tutorName}</td>
                         <td className="px-3 py-3" style={{ color: C.text }}>{lesson.subject}</td>
                         <td className="px-3 py-3" style={{ color: C.text }}>{lesson.topic}</td>
                         <td className="px-3 py-3" style={{ color: C.text }}>{lesson.duration}</td>
@@ -111,7 +119,7 @@ export function MonthlySummary({ onNavigate }) {
                   <tfoot>
                     <tr className="border-t-2" style={{ borderColor: C.border }}>
                       <td colSpan={5} className="px-3 py-3 text-right font-semibold" style={{ color: C.text }}>
-                        Total
+                        Total Net Earnings
                       </td>
                       <td className="px-3 py-3 text-right text-lg font-semibold" style={{ color: C.text }}>
                         ৳{monthTotal}
@@ -126,9 +134,11 @@ export function MonthlySummary({ onNavigate }) {
               <div className="flex items-start gap-3">
                 <FileText size={20} color={C.textSecondary} />
                 <div>
-                  <p className="text-sm font-semibold" style={{ color: C.text }}>Notes</p>
+                  <p className="text-sm font-semibold" style={{ color: C.text }}>Payout Notice</p>
                   <p className="mt-1 text-sm" style={{ color: C.textSecondary }}>
-                    All lessons have been confirmed by the parent. This summary includes all completed lessons for the billing period.
+                    {isTutor 
+                      ? "Earnings are automatically transferred to your registered bank / bKash account at the end of each month after parent confirmation."
+                      : "All lessons have been confirmed by the parent. This summary includes all completed lessons for the billing period."}
                   </p>
                 </div>
               </div>
@@ -136,10 +146,10 @@ export function MonthlySummary({ onNavigate }) {
           </div>
 
           <div className="mt-6 flex justify-end gap-3">
-            <SecondaryButton onClick={() => onNavigate("payments")}>Close</SecondaryButton>
+            <SecondaryButton onClick={() => onNavigate(backLink)}>Close</SecondaryButton>
             <PrimaryButton>
               <Download size={16} className="mr-1.5 inline" />
-              Download PDF
+              Download Statement
             </PrimaryButton>
           </div>
         </div>

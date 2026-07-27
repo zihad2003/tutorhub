@@ -1,9 +1,80 @@
 import { C } from "../constants/tokens";
 import { Badge, PrimaryButton, SecondaryButton } from "../components/ui";
+import { Table } from "../components/ui/Table";
 import { PAYMENTS } from "../data/mockData";
-import { CreditCard, Download, Calendar } from "lucide-react";
+import { CreditCard, Download, Calendar, DollarSign, TrendingUp, Users } from "lucide-react";
 
-export function Payment({ onNavigate }) {
+export function Payment({ onNavigate, role = "parent" }) {
+  const isAdmin = role === "admin";
+  const backLink = isAdmin ? "admin-dashboard" : "parent-dashboard";
+
+  if (isAdmin) {
+    const totalVolume = PAYMENTS.reduce((acc, p) => acc + p.totalAmount, 0) + 35000;
+    const commission = Math.round(totalVolume * 0.1);
+    const tutorPayouts = totalVolume - commission;
+
+    return (
+      <div className="flex min-h-screen bg-white">
+        <div className="flex-1 p-4 sm:p-6 lg:ml-64">
+          <div className="mx-auto max-w-[1200px]">
+            <button
+              onClick={() => onNavigate(backLink)}
+              className="mb-6 text-sm font-semibold"
+              style={{ color: C.primary }}
+            >
+              &larr; Back to dashboard
+            </button>
+
+            <h1 className="text-2xl font-semibold" style={{ color: C.text }}>Platform Financial Ledger</h1>
+            <p className="mt-2 text-sm" style={{ color: C.textSecondary }}>
+              Comprehensive audit log of parent payments, tutor payouts, and platform commission.
+            </p>
+
+            <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <div className="rounded-lg border p-5 shadow-sm" style={{ borderColor: C.border }}>
+                <p className="text-xs uppercase font-semibold" style={{ color: C.textSecondary }}>Total Volume</p>
+                <p className="mt-2 text-2xl font-semibold" style={{ color: C.text }}>৳{totalVolume}</p>
+              </div>
+              <div className="rounded-lg border p-5 shadow-sm" style={{ borderColor: C.border }}>
+                <p className="text-xs uppercase font-semibold" style={{ color: C.textSecondary }}>Tutor Payouts (90%)</p>
+                <p className="mt-2 text-2xl font-semibold text-green-600">৳{tutorPayouts}</p>
+              </div>
+              <div className="rounded-lg border p-5 shadow-sm" style={{ borderColor: C.border }}>
+                <p className="text-xs uppercase font-semibold" style={{ color: C.textSecondary }}>Platform Profit (10%)</p>
+                <p className="mt-2 text-2xl font-semibold text-blue-600">৳{commission}</p>
+              </div>
+            </div>
+
+            <div className="mt-8 rounded-lg border p-6 shadow-sm" style={{ borderColor: C.border }}>
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold" style={{ color: C.text }}>Transaction Audit History</h2>
+                <PrimaryButton size="sm">
+                  <Download size={14} className="mr-1.5 inline" /> Export CSV
+                </PrimaryButton>
+              </div>
+
+              <div className="mt-4">
+                <Table
+                  columns={[
+                    { key: "id", label: "Txn ID", render: (id) => `#TXN-${100 + id}` },
+                    { key: "month", label: "Billing Period" },
+                    { key: "totalLessons", label: "Lessons", render: (l) => `${l} Sessions` },
+                    { key: "totalAmount", label: "Gross Fee", render: (amt) => `৳${amt}` },
+                    { key: "totalAmount", label: "Platform Cut (10%)", render: (amt) => `৳${Math.round(amt * 0.1)}` },
+                    { key: "status", label: "Status", render: (status) => (
+                      <Badge tone={status === "paid" ? "success" : "warning"}>{status}</Badge>
+                    )},
+                  ]}
+                  data={PAYMENTS}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   const pendingPayment = PAYMENTS.find(p => p.status === "pending");
 
   return (
@@ -11,7 +82,7 @@ export function Payment({ onNavigate }) {
       <div className="flex-1 p-4 sm:p-6 lg:ml-64">
         <div className="mx-auto max-w-2xl">
           <button
-            onClick={() => onNavigate("parent-dashboard")}
+            onClick={() => onNavigate(backLink)}
             className="mb-6 text-sm font-semibold"
             style={{ color: C.primary }}
           >

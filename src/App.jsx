@@ -180,7 +180,7 @@ export default function App() {
         {page === "requests" && <PostRequest onNavigate={go} mode="browse" />}
         {page === "tutor-applications" && <TutorApplications onNavigate={go} role="tutor" />}
         {page === "tutor-lessons" && <LessonLog onNavigate={go} role="tutor" />}
-        {page === "earnings" && <MonthlySummary onNavigate={go} />}
+        {page === "earnings" && <MonthlySummary onNavigate={go} role="tutor" />}
         {page === "tutor-chat" && <Chat onNavigate={go} role="tutor" />}
         {page === "tutor-settings" && <Settings role="tutor" onNavigate={go} />}
 
@@ -190,7 +190,7 @@ export default function App() {
         {(page === "admin-parent-approvals" || page === "parent-approvals") && <ApprovalQueues onNavigate={go} initialTab="parents" />}
         {(page === "admin-categories" || page === "categories") && <Categories onNavigate={go} />}
         {(page === "admin-reports" || page === "reports") && <Reports onNavigate={go} />}
-        {page === "admin-payments" && <Payment onNavigate={go} />}
+        {page === "admin-payments" && <Payment onNavigate={go} role="admin" />}
         {(page === "admin-users" || page === "users") && <Users onNavigate={go} />}
         {(page === "admin-support" || page === "support") && <Chat onNavigate={go} role="admin" />}
         {page === "admin-settings" && <Settings role="admin" onNavigate={go} />}
