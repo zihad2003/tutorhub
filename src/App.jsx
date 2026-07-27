@@ -21,6 +21,9 @@ import { ApprovalQueues } from "./pages/ApprovalQueues";
 import { Availability } from "./pages/Availability";
 import { Certificates } from "./pages/Certificates";
 import { Settings } from "./pages/Settings";
+import { Categories } from "./pages/Categories";
+import { Reports } from "./pages/Reports";
+import { Users } from "./pages/Users";
 import { TUTORS } from "./data/tutors";
 
 import { About } from "./pages/About";
@@ -108,9 +111,8 @@ export default function App() {
   const getRoleFromPage = (p) => {
     if (p.startsWith("parent-")) return "parent";
     if (p.startsWith("tutor-")) return "tutor";
-    if (p.startsWith("admin-")) return "admin";
+    if (p.startsWith("admin-") || p === "tutor-approvals" || p === "parent-approvals" || p === "categories" || p === "reports" || p === "users" || p === "support") return "admin";
     if (p === "certificates" || p === "availability" || p === "requests" || p === "earnings") return "tutor";
-    if (p === "tutor-approvals" || p === "parent-approvals" || p === "categories" || p === "reports" || p === "users") return "admin";
     return userRole || localStorage.getItem("tutorhub_role") || "parent";
   };
 
@@ -183,11 +185,11 @@ export default function App() {
         {page === "admin-dashboard" && <AdminDashboard onNavigate={go} />}
         {page === "tutor-approvals" && <ApprovalQueues onNavigate={go} initialTab="tutors" />}
         {page === "parent-approvals" && <ApprovalQueues onNavigate={go} initialTab="parents" />}
-        {page === "categories" && <AdminDashboard onNavigate={go} />}
-        {page === "reports" && <MonthlySummary onNavigate={go} />}
+        {page === "categories" && <Categories onNavigate={go} />}
+        {page === "reports" && <Reports onNavigate={go} />}
         {page === "admin-payments" && <Payment onNavigate={go} />}
-        {page === "users" && <ApprovalQueues onNavigate={go} initialTab="tutors" />}
-        {page === "support" && <Chat onNavigate={go} />}
+        {page === "users" && <Users onNavigate={go} />}
+        {page === "support" && <Chat onNavigate={go} role="admin" />}
         {page === "admin-settings" && <Settings role="admin" onNavigate={go} />}
       </main>
 
