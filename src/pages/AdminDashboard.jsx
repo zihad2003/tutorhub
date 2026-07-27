@@ -25,7 +25,7 @@ export function AdminDashboard({ onNavigate }) {
           </div>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-4">
-            <div onClick={() => onNavigate("users")} className="cursor-pointer transition-transform hover:scale-[1.02]">
+            <div onClick={() => onNavigate("admin-users")} className="cursor-pointer transition-transform hover:scale-[1.02]">
               <StatCard
                 label="Total Tutors"
                 value={totalTutors.toString()}
@@ -33,7 +33,7 @@ export function AdminDashboard({ onNavigate }) {
                 trend={{ value: "+12", positive: true }}
               />
             </div>
-            <div onClick={() => onNavigate("users")} className="cursor-pointer transition-transform hover:scale-[1.02]">
+            <div onClick={() => onNavigate("admin-users")} className="cursor-pointer transition-transform hover:scale-[1.02]">
               <StatCard
                 label="Total Parents"
                 value={totalParents.toString()}
@@ -41,7 +41,7 @@ export function AdminDashboard({ onNavigate }) {
                 trend={{ value: "+28", positive: true }}
               />
             </div>
-            <div onClick={() => onNavigate("tutor-approvals")} className="cursor-pointer transition-transform hover:scale-[1.02]">
+            <div onClick={() => onNavigate("admin-tutor-approvals")} className="cursor-pointer transition-transform hover:scale-[1.02]">
               <StatCard
                 label="Pending Approvals"
                 value={(pendingTutors + pendingParents).toString()}
@@ -63,7 +63,7 @@ export function AdminDashboard({ onNavigate }) {
               <div className="flex items-center justify-between">
                 <h2 className="text-lg font-semibold" style={{ color: C.text }}>Pending Tutor Approvals</h2>
                 <button
-                  onClick={() => onNavigate("tutor-approvals")}
+                  onClick={() => onNavigate("admin-tutor-approvals")}
                   className="text-sm font-semibold"
                   style={{ color: C.primary }}
                 >
@@ -90,7 +90,7 @@ export function AdminDashboard({ onNavigate }) {
                             <p className="text-xs" style={{ color: C.textSecondary }}>{tutor.subjects.join(", ")} · {tutor.experience}</p>
                           </div>
                         </div>
-                        <PrimaryButton size="sm" onClick={() => onNavigate("tutor-approvals")}>Review</PrimaryButton>
+                        <PrimaryButton size="sm" onClick={() => onNavigate("admin-tutor-approvals")}>Review</PrimaryButton>
                       </div>
                     ))}
                   </div>
@@ -102,7 +102,7 @@ export function AdminDashboard({ onNavigate }) {
               <div className="flex items-center justify-between">
                 <h2 className="text-lg font-semibold" style={{ color: C.text }}>Pending Parent Approvals</h2>
                 <button
-                  onClick={() => onNavigate("parent-approvals")}
+                  onClick={() => onNavigate("admin-parent-approvals")}
                   className="text-sm font-semibold"
                   style={{ color: C.primary }}
                 >
@@ -126,7 +126,7 @@ export function AdminDashboard({ onNavigate }) {
                           <p className="text-sm font-semibold" style={{ color: C.text }}>{parent.name}</p>
                           <p className="text-xs" style={{ color: C.textSecondary }}>{parent.email} · {parent.location}</p>
                         </div>
-                        <PrimaryButton size="sm" onClick={() => onNavigate("parent-approvals")}>Review</PrimaryButton>
+                        <PrimaryButton size="sm" onClick={() => onNavigate("admin-parent-approvals")}>Review</PrimaryButton>
                       </div>
                     ))}
                   </div>

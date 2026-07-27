@@ -39,7 +39,8 @@ export default function App() {
       "home", "tutors", "profile", "auth", "about", "faq", "contact", "careers",
       "parent-dashboard", "post-request", "applications", "hired-tutors", "lessons", "lesson-confirm", "payments", "chat", "reviews", "summary", "settings",
       "tutor-dashboard", "tutor-profile", "certificates", "availability", "requests", "tutor-applications", "tutor-lessons", "earnings", "tutor-chat", "tutor-settings",
-      "admin-dashboard", "tutor-approvals", "parent-approvals", "categories", "reports", "admin-payments", "users", "support", "admin-settings",
+      "admin-dashboard", "admin-tutor-approvals", "admin-parent-approvals", "admin-categories", "admin-reports", "admin-payments", "admin-users", "admin-support", "admin-settings",
+      "tutor-approvals", "parent-approvals", "categories", "reports", "users", "support",
       "lesson-log"
     ];
     return validPages.includes(path) ? path : "home";
@@ -104,15 +105,17 @@ export default function App() {
   const isDashboardPage = [
     "parent-dashboard", "post-request", "applications", "hired-tutors", "lessons", "payments", "chat", "reviews", "settings",
     "tutor-dashboard", "tutor-profile", "certificates", "availability", "requests", "tutor-applications", "tutor-lessons", "earnings", "tutor-chat", "tutor-settings",
-    "admin-dashboard", "tutor-approvals", "parent-approvals", "categories", "reports", "admin-payments", "users", "support", "admin-settings",
+    "admin-dashboard", "admin-tutor-approvals", "admin-parent-approvals", "admin-categories", "admin-reports", "admin-payments", "admin-users", "admin-support", "admin-settings",
+    "tutor-approvals", "parent-approvals", "categories", "reports", "users", "support",
     "lesson-log", "lesson-confirm", "summary"
   ].includes(page);
 
   const getRoleFromPage = (p) => {
+    if (p.startsWith("admin-")) return "admin";
     if (p.startsWith("parent-")) return "parent";
     if (p.startsWith("tutor-")) return "tutor";
-    if (p.startsWith("admin-") || p === "tutor-approvals" || p === "parent-approvals" || p === "categories" || p === "reports" || p === "users" || p === "support") return "admin";
     if (p === "certificates" || p === "availability" || p === "requests" || p === "earnings") return "tutor";
+    if (p === "categories" || p === "reports" || p === "users" || p === "support") return "admin";
     return userRole || localStorage.getItem("tutorhub_role") || "parent";
   };
 
@@ -183,13 +186,13 @@ export default function App() {
 
         {/* Admin Dashboard Pages */}
         {page === "admin-dashboard" && <AdminDashboard onNavigate={go} />}
-        {page === "tutor-approvals" && <ApprovalQueues onNavigate={go} initialTab="tutors" />}
-        {page === "parent-approvals" && <ApprovalQueues onNavigate={go} initialTab="parents" />}
-        {page === "categories" && <Categories onNavigate={go} />}
-        {page === "reports" && <Reports onNavigate={go} />}
+        {(page === "admin-tutor-approvals" || page === "tutor-approvals") && <ApprovalQueues onNavigate={go} initialTab="tutors" />}
+        {(page === "admin-parent-approvals" || page === "parent-approvals") && <ApprovalQueues onNavigate={go} initialTab="parents" />}
+        {(page === "admin-categories" || page === "categories") && <Categories onNavigate={go} />}
+        {(page === "admin-reports" || page === "reports") && <Reports onNavigate={go} />}
         {page === "admin-payments" && <Payment onNavigate={go} />}
-        {page === "users" && <Users onNavigate={go} />}
-        {page === "support" && <Chat onNavigate={go} role="admin" />}
+        {(page === "admin-users" || page === "users") && <Users onNavigate={go} />}
+        {(page === "admin-support" || page === "support") && <Chat onNavigate={go} role="admin" />}
         {page === "admin-settings" && <Settings role="admin" onNavigate={go} />}
       </main>
 
