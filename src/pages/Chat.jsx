@@ -34,9 +34,50 @@ const TUTOR_SIDE_CHATS = [
   },
 ];
 
+const ADMIN_SUPPORT_CHATS = [
+  {
+    id: 201,
+    name: "Rafiq Ahmed (Tutor - Ticket #201)",
+    img: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200",
+    lastMessage: "Thank you for verifying my certificate so quickly!",
+    lastMessageTime: "1 hour ago",
+    unread: 0,
+    messages: [
+      { id: 1, sender: "user", text: "Hello Admin, I uploaded my BSc physics certificate 2 days ago. Could you please check the status?", time: "Yesterday, 4:00 PM" },
+      { id: 2, sender: "admin", text: "Hi Rafiq! We reviewed your documents. Your certificate has been approved and verified badge is active.", time: "Today, 10:00 AM" },
+      { id: 3, sender: "user", text: "Thank you for verifying my certificate so quickly!", time: "Today, 11:15 AM" },
+    ],
+  },
+  {
+    id: 202,
+    name: "Abdul Rahman (Parent - Ticket #202)",
+    img: "https://i.pravatar.cc/150?img=33",
+    lastMessage: "We have confirmed your payment receipt. Status updated!",
+    lastMessageTime: "3 hours ago",
+    unread: 1,
+    messages: [
+      { id: 1, sender: "user", text: "Hi Admin, I made a bKash payment for July lessons but the status still says pending.", time: "Yesterday, 8:00 PM" },
+      { id: 2, sender: "admin", text: "We have confirmed your payment receipt. Status updated!", time: "Today, 9:00 AM" },
+    ],
+  },
+  {
+    id: 203,
+    name: "Farhana Islam (Tutor - Ticket #203)",
+    img: "https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&q=80&w=200",
+    lastMessage: "Can I update my teaching location to Gulshan?",
+    lastMessageTime: "Yesterday",
+    unread: 0,
+    messages: [
+      { id: 1, sender: "user", text: "Can I update my teaching location to Gulshan?", time: "Yesterday, 2:00 PM" },
+      { id: 2, sender: "admin", text: "Yes, you can edit your location in your account settings.", time: "Yesterday, 3:00 PM" },
+    ],
+  },
+];
+
 export function Chat({ onNavigate, role = "parent" }) {
+  const isAdmin = role === "admin";
   const isTutor = role === "tutor";
-  const activeChats = isTutor ? TUTOR_SIDE_CHATS : CHATS;
+  const activeChats = isAdmin ? ADMIN_SUPPORT_CHATS : isTutor ? TUTOR_SIDE_CHATS : CHATS;
   const [selectedChat, setSelectedChat] = useState(activeChats[0]);
   const [message, setMessage] = useState("");
   const [showMobileChat, setShowMobileChat] = useState(false);
@@ -55,7 +96,7 @@ export function Chat({ onNavigate, role = "parent" }) {
           ...prev.messages,
           {
             id: Date.now(),
-            sender: isTutor ? "tutor" : "parent",
+            sender: isAdmin ? "admin" : isTutor ? "tutor" : "parent",
             text: message,
             time: "Just now"
           }
@@ -70,7 +111,9 @@ export function Chat({ onNavigate, role = "parent" }) {
       <div className="flex-1 lg:ml-64">
         <div className="flex h-screen flex-col">
           <div className="border-b px-4 py-3 sm:px-6 sm:py-4" style={{ borderColor: C.border }}>
-            <h1 className="text-xl font-semibold" style={{ color: C.text }}>Messages</h1>
+            <h1 className="text-xl font-semibold" style={{ color: C.text }}>
+              {isAdmin ? "Admin Support Desk & Inquiry Tickets" : "Messages"}
+            </h1>
           </div>
 
           <div className="flex flex-1 overflow-hidden">
@@ -82,7 +125,7 @@ export function Chat({ onNavigate, role = "parent" }) {
               style={{ borderColor: C.border }}
             >
               <div className="p-4">
-                <Input placeholder="Search conversations..." />
+                <Input placeholder={isAdmin ? "Search support tickets..." : "Search conversations..."} />
               </div>
               <div className="space-y-1 overflow-y-auto max-h-[calc(100vh-140px)]">
                 {activeChats.map((chat) => (
@@ -148,7 +191,9 @@ export function Chat({ onNavigate, role = "parent" }) {
                         <p className="text-sm font-semibold" style={{ color: C.text }}>
                           {selectedChat.tutorName || selectedChat.name}
                         </p>
-                        <p className="text-xs" style={{ color: C.textSecondary }}>Online</p>
+                        <p className="text-xs" style={{ color: C.textSecondary }}>
+                          {isAdmin ? "User Ticket Active" : "Online"}
+                        </p>
                       </div>
                     </div>
                     <button className="rounded p-2 transition-colors duration-150 hover:bg-gray-100">
@@ -159,7 +204,7 @@ export function Chat({ onNavigate, role = "parent" }) {
                   <div className="flex-1 overflow-y-auto p-4 sm:p-6">
                     <div className="space-y-4">
                       {selectedChat.messages.map((msg) => {
-                        const isSelf = isTutor ? msg.sender === "tutor" : msg.sender === "parent";
+                        const isSelf = isAdmin ? msg.sender === "admin" : isTutor ? msg.sender === "tutor" : msg.sender === "parent";
                         return (
                           <div
                             key={msg.id}
@@ -197,7 +242,7 @@ export function Chat({ onNavigate, role = "parent" }) {
                     <div className="flex gap-3">
                       <input
                         type="text"
-                        placeholder="Type a message..."
+                        placeholder={isAdmin ? "Reply to support ticket..." : "Type a message..."}
                         value={message}
                         onChange={(e) => setMessage(e.target.value)}
                         className="flex-1 rounded-lg border px-4 py-2.5 text-sm outline-none transition-shadow duration-150 focus:ring-2"
