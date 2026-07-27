@@ -25,29 +25,37 @@ export function AdminDashboard({ onNavigate }) {
           </div>
 
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-4">
-            <StatCard
-              label="Total Tutors"
-              value={totalTutors.toString()}
-              icon={Users}
-              trend={{ value: "+12", positive: true }}
-            />
-            <StatCard
-              label="Total Parents"
-              value={totalParents.toString()}
-              icon={Users}
-              trend={{ value: "+28", positive: true }}
-            />
-            <StatCard
-              label="Pending Approvals"
-              value={(pendingTutors + pendingParents).toString()}
-              icon={AlertCircle}
-            />
-            <StatCard
-              label="Total Revenue"
-              value={`৳${totalPayments}`}
-              icon={DollarSign}
-              trend={{ value: "+15%", positive: true }}
-            />
+            <div onClick={() => onNavigate("users")} className="cursor-pointer transition-transform hover:scale-[1.02]">
+              <StatCard
+                label="Total Tutors"
+                value={totalTutors.toString()}
+                icon={Users}
+                trend={{ value: "+12", positive: true }}
+              />
+            </div>
+            <div onClick={() => onNavigate("users")} className="cursor-pointer transition-transform hover:scale-[1.02]">
+              <StatCard
+                label="Total Parents"
+                value={totalParents.toString()}
+                icon={Users}
+                trend={{ value: "+28", positive: true }}
+              />
+            </div>
+            <div onClick={() => onNavigate("tutor-approvals")} className="cursor-pointer transition-transform hover:scale-[1.02]">
+              <StatCard
+                label="Pending Approvals"
+                value={(pendingTutors + pendingParents).toString()}
+                icon={AlertCircle}
+              />
+            </div>
+            <div onClick={() => onNavigate("admin-payments")} className="cursor-pointer transition-transform hover:scale-[1.02]">
+              <StatCard
+                label="Total Revenue"
+                value={`৳${totalPayments}`}
+                icon={DollarSign}
+                trend={{ value: "+15%", positive: true }}
+              />
+            </div>
           </div>
 
           <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-2">

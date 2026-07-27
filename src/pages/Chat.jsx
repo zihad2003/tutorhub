@@ -4,8 +4,40 @@ import { CHATS } from "../data/mockData";
 import { Send, MoreVertical, ArrowLeft } from "lucide-react";
 import { useState } from "react";
 
-export function Chat({ onNavigate }) {
-  const [selectedChat, setSelectedChat] = useState(CHATS[0]);
+const TUTOR_SIDE_CHATS = [
+  {
+    id: 101,
+    name: "Abdul Rahman (Parent)",
+    img: "https://i.pravatar.cc/150?img=33",
+    lastMessage: "See you tomorrow at 4 PM for the Physics lesson.",
+    lastMessageTime: "2 hours ago",
+    unread: 0,
+    messages: [
+      { id: 1, sender: "tutor", text: "Hello! I'm available for the lesson tomorrow.", time: "Yesterday, 6:00 PM" },
+      { id: 2, sender: "parent", text: "Great, 4 PM works for us.", time: "Yesterday, 6:15 PM" },
+      { id: 3, sender: "tutor", text: "Perfect. I'll bring the practice problems.", time: "Yesterday, 6:20 PM" },
+      { id: 4, sender: "tutor", text: "See you tomorrow at 4 PM for the Physics lesson.", time: "Today, 10:00 AM" },
+    ],
+  },
+  {
+    id: 102,
+    name: "Tanvir R. (Parent)",
+    img: "https://i.pravatar.cc/150?img=47",
+    lastMessage: "The essay assignment looks great!",
+    lastMessageTime: "1 day ago",
+    unread: 1,
+    messages: [
+      { id: 1, sender: "parent", text: "How is the essay coming along?", time: "2 days ago, 3:00 PM" },
+      { id: 2, sender: "tutor", text: "Working on it. Should be done by tomorrow.", time: "2 days ago, 5:00 PM" },
+      { id: 3, sender: "parent", text: "The essay assignment looks great!", time: "1 day ago, 2:00 PM" },
+    ],
+  },
+];
+
+export function Chat({ onNavigate, role = "parent" }) {
+  const isTutor = role === "tutor";
+  const activeChats = isTutor ? TUTOR_SIDE_CHATS : CHATS;
+  const [selectedChat, setSelectedChat] = useState(activeChats[0]);
   const [message, setMessage] = useState("");
   const [showMobileChat, setShowMobileChat] = useState(false);
 
@@ -23,7 +55,7 @@ export function Chat({ onNavigate }) {
           ...prev.messages,
           {
             id: Date.now(),
-            sender: "parent",
+            sender: isTutor ? "tutor" : "parent",
             text: message,
             time: "Just now"
           }
@@ -53,7 +85,7 @@ export function Chat({ onNavigate }) {
                 <Input placeholder="Search conversations..." />
               </div>
               <div className="space-y-1 overflow-y-auto max-h-[calc(100vh-140px)]">
-                {CHATS.map((chat) => (
+                {activeChats.map((chat) => (
                   <button
                     key={chat.id}
                     onClick={() => handleSelectChat(chat)}
@@ -63,8 +95,8 @@ export function Chat({ onNavigate }) {
                   >
                     <div className="relative">
                       <img
-                        src={chat.tutorImg}
-                        alt={chat.tutorName}
+                        src={chat.tutorImg || chat.img}
+                        alt={chat.tutorName || chat.name}
                         className="h-12 w-12 rounded-full object-cover"
                       />
                       {chat.unread > 0 && (
@@ -76,7 +108,7 @@ export function Chat({ onNavigate }) {
                     <div className="flex-1">
                       <div className="flex items-center justify-between">
                         <p className="text-sm font-semibold" style={{ color: C.text }}>
-                          {chat.tutorName}
+                          {chat.tutorName || chat.name}
                         </p>
                         <span className="text-xs" style={{ color: C.textSecondary }}>
                           {chat.lastMessageTime}
@@ -108,13 +140,13 @@ export function Chat({ onNavigate }) {
                         <ArrowLeft size={20} />
                       </button>
                       <img
-                        src={selectedChat.tutorImg}
-                        alt={selectedChat.tutorName}
+                        src={selectedChat.tutorImg || selectedChat.img}
+                        alt={selectedChat.tutorName || selectedChat.name}
                         className="h-10 w-10 rounded-full object-cover"
                       />
                       <div>
                         <p className="text-sm font-semibold" style={{ color: C.text }}>
-                          {selectedChat.tutorName}
+                          {selectedChat.tutorName || selectedChat.name}
                         </p>
                         <p className="text-xs" style={{ color: C.textSecondary }}>Online</p>
                       </div>
@@ -126,35 +158,38 @@ export function Chat({ onNavigate }) {
 
                   <div className="flex-1 overflow-y-auto p-4 sm:p-6">
                     <div className="space-y-4">
-                      {selectedChat.messages.map((msg) => (
-                        <div
-                          key={msg.id}
-                          className={`flex ${msg.sender === "parent" ? "justify-end" : "justify-start"}`}
-                        >
+                      {selectedChat.messages.map((msg) => {
+                        const isSelf = isTutor ? msg.sender === "tutor" : msg.sender === "parent";
+                        return (
                           <div
-                            className={`max-w-md rounded-lg px-4 py-2 ${
-                              msg.sender === "parent"
-                                ? "bg-blue-600 text-white"
-                                : "border"
-                            }`}
-                            style={
-                              msg.sender === "tutor"
-                                ? { borderColor: C.border, background: C.surface, color: C.text }
-                                : {}
-                            }
+                            key={msg.id}
+                            className={`flex ${isSelf ? "justify-end" : "justify-start"}`}
                           >
-                            <p className="text-sm">{msg.text}</p>
-                            <p
-                              className={`mt-1 text-xs ${
-                                msg.sender === "parent" ? "text-white/70" : ""
+                            <div
+                              className={`max-w-md rounded-lg px-4 py-2 ${
+                                isSelf
+                                  ? "bg-blue-600 text-white"
+                                  : "border"
                               }`}
-                              style={msg.sender === "tutor" ? { color: C.textSecondary } : {}}
+                              style={
+                                !isSelf
+                                  ? { borderColor: C.border, background: C.surface, color: C.text }
+                                  : {}
+                              }
                             >
-                              {msg.time}
-                            </p>
+                              <p className="text-sm">{msg.text}</p>
+                              <p
+                                className={`mt-1 text-xs ${
+                                  isSelf ? "text-white/70" : ""
+                                }`}
+                                style={!isSelf ? { color: C.textSecondary } : {}}
+                              >
+                                {msg.time}
+                              </p>
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
 

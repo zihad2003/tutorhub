@@ -88,11 +88,24 @@ export function TutorProfile({ tutor, go, isDashboard = false }) {
         {/* Sidebar */}
         <div>
           <div className="sticky top-20 rounded-lg border p-5" style={{ borderColor: C.border }}>
-            <p className="text-2xl font-semibold" style={{ color: C.text }}>৳{t.fee}<span className="text-sm font-normal" style={{ color: C.textSecondary }}> /hour</span></p>
-            <div className="mt-4 flex flex-col gap-2">
-              <PrimaryButton full onClick={() => go("post-request")}>Hire tutor</PrimaryButton>
-              <SecondaryButton full onClick={() => go("chat")}><MessageCircle size={14} className="mr-1.5 inline" />Message tutor</SecondaryButton>
-            </div>
+            {isDashboard ? (
+              <div>
+                <p className="text-base font-semibold" style={{ color: C.text }}>Profile Actions</p>
+                <p className="mt-1 text-xs" style={{ color: C.textSecondary }}>Manage your public tutor details and rate.</p>
+                <div className="mt-4 flex flex-col gap-2">
+                  <PrimaryButton full onClick={() => go("tutor-settings")}>Edit Profile Settings</PrimaryButton>
+                  <SecondaryButton full onClick={() => go("certificates")}>Manage Certificates</SecondaryButton>
+                </div>
+              </div>
+            ) : (
+              <div>
+                <p className="text-2xl font-semibold" style={{ color: C.text }}>৳{t.fee}<span className="text-sm font-normal" style={{ color: C.textSecondary }}> /hour</span></p>
+                <div className="mt-4 flex flex-col gap-2">
+                  <PrimaryButton full onClick={() => go("post-request")}>Hire tutor</PrimaryButton>
+                  <SecondaryButton full onClick={() => go("chat")}><MessageCircle size={14} className="mr-1.5 inline" />Message tutor</SecondaryButton>
+                </div>
+              </div>
+            )}
             <div className="mt-5 space-y-2 text-xs" style={{ color: C.textSecondary }}>
               <p className="flex items-center gap-2"><Calendar size={13} /> {t.availability}</p>
               <p className="flex items-center gap-2"><MapPin size={13} /> {t.location}</p>

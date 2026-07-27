@@ -173,10 +173,10 @@ export default function App() {
         {page === "certificates" && <Certificates onNavigate={go} />}
         {page === "availability" && <Availability onNavigate={go} />}
         {page === "requests" && <PostRequest onNavigate={go} mode="browse" />}
-        {page === "tutor-applications" && <TutorApplications onNavigate={go} />}
-        {page === "tutor-lessons" && <LessonLog onNavigate={go} />}
+        {page === "tutor-applications" && <TutorApplications onNavigate={go} role="tutor" />}
+        {page === "tutor-lessons" && <LessonLog onNavigate={go} role="tutor" />}
         {page === "earnings" && <MonthlySummary onNavigate={go} />}
-        {page === "tutor-chat" && <Chat onNavigate={go} />}
+        {page === "tutor-chat" && <Chat onNavigate={go} role="tutor" />}
         {page === "tutor-settings" && <Settings role="tutor" onNavigate={go} />}
 
         {/* Admin Dashboard Pages */}
