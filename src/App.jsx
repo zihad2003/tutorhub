@@ -36,7 +36,7 @@ export default function App() {
     const path = window.location.pathname.replace(/^\/+/, '');
     if (!path) return "home";
     const validPages = [
-      "home", "tutors", "profile", "auth", "about", "faq", "contact", "careers",
+      "home", "tutors", "profile", "auth", "login", "signup", "register", "about", "faq", "contact", "careers",
       "parent-dashboard", "post-request", "applications", "hired-tutors", "lessons", "lesson-confirm", "payments", "chat", "reviews", "summary", "settings",
       "tutor-dashboard", "tutor-profile", "certificates", "availability", "requests", "tutor-applications", "tutor-lessons", "earnings", "tutor-chat", "tutor-settings",
       "admin-dashboard", "admin-tutor-approvals", "admin-parent-approvals", "admin-categories", "admin-reports", "admin-payments", "admin-users", "admin-support", "admin-settings",
@@ -46,25 +46,47 @@ export default function App() {
     return validPages.includes(path) ? path : "home";
   };
 
-  const [page, setPage] = useState(getInitialPage());
-  const [activeNav, setActiveNav] = useState(getInitialPage());
+  const initialPath = getInitialPage();
+  const isAuthRoute = initialPath === "auth" || initialPath === "signup" || initialPath === "login" || initialPath === "register";
+
+  const [page, setPage] = useState(isAuthRoute ? "auth" : initialPath);
+  const [activeNav, setActiveNav] = useState(initialPath);
   const [selectedTutor, setSelectedTutor] = useState(null);
-  const [authTab, setAuthTab] = useState("login");
+  const [authTab, setAuthTab] = useState(initialPath === "signup" || initialPath === "register" ? "signup" : "login");
   const [userRole, setUserRole] = useState(() => localStorage.getItem("tutorhub_role") || null);
   const [isAuthenticated, setIsAuthenticated] = useState(() => !!localStorage.getItem("tutorhub_role"));
 
   useEffect(() => {
     const handlePopState = () => {
       const p = getInitialPage();
-      setPage(p);
-      setActiveNav(p);
+      if (p === "signup" || p === "register") {
+        setAuthTab("signup");
+        setPage("auth");
+        setActiveNav(p);
+      } else if (p === "login" || p === "auth") {
+        setAuthTab("login");
+        setPage("auth");
+        setActiveNav(p);
+      } else {
+        setPage(p);
+        setActiveNav(p);
+      }
     };
     window.addEventListener('popstate', handlePopState);
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
   const go = (p, section) => {
-    setPage(p);
+    let targetPage = p;
+    if (p === "signup" || p === "register") {
+      setAuthTab("signup");
+      targetPage = "auth";
+    } else if (p === "login") {
+      setAuthTab("login");
+      targetPage = "auth";
+    }
+
+    setPage(targetPage);
     
     const url = p === "home" ? "/" : `/${p}`;
     if (window.location.pathname !== url) {
@@ -88,7 +110,7 @@ export default function App() {
   };
 
   const openTutor = (t) => { setSelectedTutor(t); go("profile"); };
-  const openAuth = (tab) => { setAuthTab(tab); go("auth"); };
+  const openAuth = (tab) => { setAuthTab(tab); go(tab === "signup" ? "signup" : "login"); };
   const handleLogin = (role) => {
     setUserRole(role);
     setIsAuthenticated(true);
@@ -149,10 +171,22 @@ export default function App() {
       {/* Main Content Area */}
       <main className="w-full">
         {/* Public Pages */}
-        {page === "home" && <Home go={go} openTutor={openTutor} />}
+        {page === "home" && <Home go={go} openTutor={openTutor} openAuth={openAuth} />}
         {page === "tutors" && <TutorList openTutor={openTutor} />}
         {page === "profile" && <TutorProfile tutor={selectedTutor || TUTORS[0]} go={go} />}
-        {page === "auth" && <Auth tab={authTab} setTab={setAuthTab} onLogin={handleLogin} />}
+        {page === "auth" && (
+          <Auth 
+            tab={authTab} 
+            setTab={(t) => {
+              setAuthTab(t);
+              const url = `/${t}`;
+              if (window.location.pathname !== url) {
+                window.history.pushState(null, "", url);
+              }
+            }} 
+            onLogin={handleLogin} 
+          />
+        )}
         
         {/* Company Pages */}
         {page === "about" && <About />}
@@ -169,7 +203,7 @@ export default function App() {
         {page === "lesson-confirm" && <LessonConfirm onNavigate={go} />}
         {page === "payments" && <Payment onNavigate={go} />}
         {page === "chat" && <Chat onNavigate={go} />}
-        {(page === "reviews" || page === "summary") && <MonthlySummary onNavigate={go} />}
+        {["reviews", "summary", "rate-tutor", "review", "tutor-reviews", "summary-reviews"].includes(page) && <MonthlySummary onNavigate={go} role={activeRole} />}
         {page === "settings" && <Settings role={activeRole} onNavigate={go} />}
         
         {/* Tutor Dashboard Pages */}

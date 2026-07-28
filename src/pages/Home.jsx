@@ -8,7 +8,7 @@ import { useState, useEffect } from "react";
 
 const TYPING_WORDS = ["your child", "Math", "Physics", "English", "Science"];
 
-export function Home({ go, openTutor }) {
+export function Home({ go, openTutor, openAuth }) {
   const [currentWordIndex, setCurrentWordIndex] = useState(0);
   const [currentText, setCurrentText] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
@@ -212,7 +212,7 @@ export function Home({ go, openTutor }) {
           </p>
           <div className="mt-6">
             <button
-              onClick={() => go("auth")}
+              onClick={() => (openAuth ? openAuth("signup") : go("signup"))}
               className="rounded-lg bg-white px-5 py-2.5 text-sm font-semibold shadow hover:bg-gray-50 transition-colors"
               style={{ color: C.primary }}
             >
