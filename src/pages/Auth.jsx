@@ -96,6 +96,18 @@ export function Auth({ tab, setTab, onLogin }) {
               </div>
             </label>
           )}
+          {tab === "signup" && selectedRole === "Tutor" && (
+            <div>
+              <span className="mb-1.5 block text-sm font-semibold" style={{ color: C.text }}>Upload CV (PDF/Doc)</span>
+              <input type="file" accept=".pdf,.doc,.docx" className="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
+            </div>
+          )}
+          {tab === "signup" && selectedRole === "Parent / Student" && (
+            <div>
+              <span className="mb-1.5 block text-sm font-semibold" style={{ color: C.text }}>Upload Student ID (Image/PDF)</span>
+              <input type="file" accept="image/*,.pdf" className="w-full text-sm file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
+            </div>
+          )}
           <PrimaryButton full>{tab === "login" ? "Log in" : "Create account"}</PrimaryButton>
         </form>
 

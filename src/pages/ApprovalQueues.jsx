@@ -6,6 +6,7 @@ import { useState } from "react";
 
 export function ApprovalQueues({ onNavigate }) {
   const [activeTab, setActiveTab] = useState("tutors");
+  const [selectedDoc, setSelectedDoc] = useState(null);
 
   const pendingTutors = ADMIN_APPROVALS.tutors.filter(t => t.status === "pending");
   const pendingParents = ADMIN_APPROVALS.parents.filter(p => p.status === "pending");
@@ -114,7 +115,7 @@ export function ApprovalQueues({ onNavigate }) {
 
                       <div className="mt-4">
                         <p className="mb-2 text-xs font-semibold uppercase" style={{ color: C.textSecondary }}>
-                          Certificates
+                          Certificates & Documents
                         </p>
                         <div className="space-y-2">
                           {tutor.certificates.map((cert) => (
@@ -123,6 +124,16 @@ export function ApprovalQueues({ onNavigate }) {
                               <span className="text-sm" style={{ color: C.text }}>{cert}</span>
                             </div>
                           ))}
+                          {tutor.cvUrl && (
+                            <button
+                              type="button"
+                              onClick={() => setSelectedDoc({ title: `${tutor.name} - CV`, url: tutor.cvUrl })}
+                              className="flex w-full items-center gap-2 rounded-lg border p-3 text-left transition-colors hover:bg-gray-50"
+                              style={{ borderColor: C.border, background: C.surface }}
+                            >
+                              <span className="text-sm font-semibold" style={{ color: C.primary }}>View CV</span>
+                            </button>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -166,6 +177,18 @@ export function ApprovalQueues({ onNavigate }) {
                             <p className="flex items-center gap-2">
                               <Calendar size={14} /> Applied {parent.appliedDate}
                             </p>
+                            {parent.studentIdUrl && (
+                              <div className="mt-3">
+                                <button
+                                  type="button"
+                                  onClick={() => setSelectedDoc({ title: `${parent.name} - Student ID`, url: parent.studentIdUrl })}
+                                  className="inline-flex items-center gap-2 rounded-lg border p-2 px-3 transition-colors hover:bg-gray-50"
+                                  style={{ borderColor: C.border, background: C.surface }}
+                                >
+                                  <span className="text-sm font-semibold" style={{ color: C.primary }}>View Student ID</span>
+                                </button>
+                              </div>
+                            )}
                           </div>
                         </div>
                         <div className="flex gap-2">
@@ -187,6 +210,36 @@ export function ApprovalQueues({ onNavigate }) {
           </div>
         </div>
       </div>
+
+      {/* Document Modal Preview */}
+      {selectedDoc && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+          <div className="flex h-[88vh] w-full max-w-4xl flex-col rounded-xl bg-white shadow-2xl overflow-hidden">
+            <div className="flex items-center justify-between border-b px-6 py-4" style={{ borderColor: C.border }}>
+              <h3 className="text-lg font-semibold" style={{ color: C.text }}>
+                {selectedDoc.title}
+              </h3>
+              <button
+                type="button"
+                onClick={() => setSelectedDoc(null)}
+                className="rounded-lg p-1.5 text-gray-500 hover:bg-gray-100 hover:text-gray-700"
+              >
+                <XCircle size={22} />
+              </button>
+            </div>
+            <div className="flex-1 bg-gray-100 p-2">
+              <iframe
+                src={selectedDoc.url}
+                className="h-full w-full rounded-lg border-0 shadow-inner"
+                title={selectedDoc.title}
+              />
+            </div>
+            <div className="flex justify-end border-t px-6 py-3" style={{ borderColor: C.border }}>
+              <SecondaryButton onClick={() => setSelectedDoc(null)}>Close</SecondaryButton>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
