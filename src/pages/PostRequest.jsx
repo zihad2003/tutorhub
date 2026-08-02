@@ -31,6 +31,10 @@ export function PostRequest({ onNavigate }) {
               <Input label="Budget (per hour)" placeholder="e.g., 1000" />
             </div>
 
+            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+              <Input label="Preferred Time" placeholder="e.g., 9.00 P.M" />
+            </div>
+
             <div>
               <label className="mb-1.5 block text-sm font-semibold" style={{ color: C.text }}>
                 Preferred Days
