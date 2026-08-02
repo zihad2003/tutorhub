@@ -3,48 +3,59 @@ import { StatCard } from "../components/ui/StatCard";
 import { Table } from "../components/ui/Table";
 import { PrimaryButton, Badge } from "../components/ui";
 import { Users, DollarSign, FileText, AlertCircle, ChevronRight } from "lucide-react";
-import { ADMIN_APPROVALS, PAYMENTS } from "../data/mockData";
+import { ADMIN_APPROVALS, PAYMENTS, HIRED_TUTORS } from "../data/mockData";
+import { TUTORS } from "../data/tutors";
 
 export function AdminDashboard({ onNavigate }) {
+  const totalTutors = TUTORS.length + ADMIN_APPROVALS.tutors.length;
+  const totalParents = HIRED_TUTORS.length + ADMIN_APPROVALS.parents.length + 10;
   const pendingTutors = ADMIN_APPROVALS.tutors.filter(t => t.status === "pending").length;
   const pendingParents = ADMIN_APPROVALS.parents.filter(p => p.status === "pending").length;
   const totalPayments = PAYMENTS.filter(p => p.status === "paid").reduce((acc, p) => acc + p.totalAmount, 0);
 
   return (
-    <div className="flex min-h-screen bg-white lg:block">
-      <div className="flex-1 p-6 lg:ml-64">
+    <div className="flex min-h-screen bg-white">
+      <div className="flex-1 p-4 sm:p-6 lg:ml-64">
         <div className="mx-auto max-w-[1200px]">
-          <div className="mb-8 flex items-center justify-between">
+          <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h1 className="text-2xl font-semibold" style={{ color: C.text }}>Admin Dashboard</h1>
               <p className="mt-1 text-sm" style={{ color: C.textSecondary }}>Platform overview and management.</p>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4">
-            <StatCard
-              label="Total Tutors"
-              value="156"
-              icon={Users}
-              trend={{ value: "+12", positive: true }}
-            />
-            <StatCard
-              label="Total Parents"
-              value="342"
-              icon={Users}
-              trend={{ value: "+28", positive: true }}
-            />
-            <StatCard
-              label="Pending Approvals"
-              value={(pendingTutors + pendingParents).toString()}
-              icon={AlertCircle}
-            />
-            <StatCard
-              label="Total Revenue"
-              value={`৳${totalPayments}`}
-              icon={DollarSign}
-              trend={{ value: "+15%", positive: true }}
-            />
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6 lg:grid-cols-4">
+            <div onClick={() => onNavigate("admin-users")} className="cursor-pointer transition-transform hover:scale-[1.02]">
+              <StatCard
+                label="Total Tutors"
+                value={totalTutors.toString()}
+                icon={Users}
+                trend={{ value: "+12", positive: true }}
+              />
+            </div>
+            <div onClick={() => onNavigate("admin-users")} className="cursor-pointer transition-transform hover:scale-[1.02]">
+              <StatCard
+                label="Total Parents"
+                value={totalParents.toString()}
+                icon={Users}
+                trend={{ value: "+28", positive: true }}
+              />
+            </div>
+            <div onClick={() => onNavigate("admin-tutor-approvals")} className="cursor-pointer transition-transform hover:scale-[1.02]">
+              <StatCard
+                label="Pending Approvals"
+                value={(pendingTutors + pendingParents).toString()}
+                icon={AlertCircle}
+              />
+            </div>
+            <div onClick={() => onNavigate("admin-payments")} className="cursor-pointer transition-transform hover:scale-[1.02]">
+              <StatCard
+                label="Total Revenue"
+                value={`৳${totalPayments}`}
+                icon={DollarSign}
+                trend={{ value: "+15%", positive: true }}
+              />
+            </div>
           </div>
 
           <div className="mt-8 grid grid-cols-1 gap-8 lg:grid-cols-2">
@@ -52,7 +63,7 @@ export function AdminDashboard({ onNavigate }) {
               <div className="flex items-center justify-between">
                 <h2 className="text-lg font-semibold" style={{ color: C.text }}>Pending Tutor Approvals</h2>
                 <button
-                  onClick={() => onNavigate("tutor-approvals")}
+                  onClick={() => onNavigate("admin-tutor-approvals")}
                   className="text-sm font-semibold"
                   style={{ color: C.primary }}
                 >
@@ -79,7 +90,7 @@ export function AdminDashboard({ onNavigate }) {
                             <p className="text-xs" style={{ color: C.textSecondary }}>{tutor.subjects.join(", ")} · {tutor.experience}</p>
                           </div>
                         </div>
-                        <PrimaryButton size="sm" onClick={() => onNavigate("tutor-approvals")}>Review</PrimaryButton>
+                        <PrimaryButton size="sm" onClick={() => onNavigate("admin-tutor-approvals")}>Review</PrimaryButton>
                       </div>
                     ))}
                   </div>
@@ -91,7 +102,7 @@ export function AdminDashboard({ onNavigate }) {
               <div className="flex items-center justify-between">
                 <h2 className="text-lg font-semibold" style={{ color: C.text }}>Pending Parent Approvals</h2>
                 <button
-                  onClick={() => onNavigate("parent-approvals")}
+                  onClick={() => onNavigate("admin-parent-approvals")}
                   className="text-sm font-semibold"
                   style={{ color: C.primary }}
                 >
@@ -115,7 +126,7 @@ export function AdminDashboard({ onNavigate }) {
                           <p className="text-sm font-semibold" style={{ color: C.text }}>{parent.name}</p>
                           <p className="text-xs" style={{ color: C.textSecondary }}>{parent.email} · {parent.location}</p>
                         </div>
-                        <PrimaryButton size="sm" onClick={() => onNavigate("parent-approvals")}>Review</PrimaryButton>
+                        <PrimaryButton size="sm" onClick={() => onNavigate("admin-parent-approvals")}>Review</PrimaryButton>
                       </div>
                     ))}
                   </div>

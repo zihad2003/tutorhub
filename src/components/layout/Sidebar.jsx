@@ -33,13 +33,13 @@ const TUTOR_LINKS = [
 
 const ADMIN_LINKS = [
   { key: "admin-dashboard", label: "Dashboard", icon: LayoutDashboard },
-  { key: "tutor-approvals", label: "Tutor Approvals", icon: CheckCircle },
-  { key: "parent-approvals", label: "Parent Approvals", icon: CheckCircle },
-  { key: "categories", label: "Categories", icon: FileText },
-  { key: "reports", label: "Reports", icon: Shield },
+  { key: "admin-tutor-approvals", label: "Tutor Approvals", icon: CheckCircle },
+  { key: "admin-parent-approvals", label: "Parent Approvals", icon: CheckCircle },
+  { key: "admin-categories", label: "Categories", icon: FileText },
+  { key: "admin-reports", label: "Reports", icon: Shield },
   { key: "admin-payments", label: "Payments", icon: DollarSign },
-  { key: "users", label: "Users", icon: Users },
-  { key: "support", label: "Support", icon: MessageSquare },
+  { key: "admin-users", label: "Users", icon: Users },
+  { key: "admin-support", label: "Support", icon: MessageSquare },
   { key: "admin-settings", label: "Settings", icon: Settings },
 ];
 

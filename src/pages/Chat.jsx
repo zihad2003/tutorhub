@@ -1,46 +1,145 @@
 import { C } from "../constants/tokens";
 import { PrimaryButton, Input } from "../components/ui";
 import { CHATS } from "../data/mockData";
-import { Send, MoreVertical } from "lucide-react";
+import { Send, MoreVertical, ArrowLeft } from "lucide-react";
 import { useState } from "react";
 
-export function Chat({ onNavigate }) {
-  const [selectedChat, setSelectedChat] = useState(CHATS[0]);
+const TUTOR_SIDE_CHATS = [
+  {
+    id: 101,
+    name: "Abdul Rahman (Parent)",
+    img: "https://i.pravatar.cc/150?img=33",
+    lastMessage: "See you tomorrow at 4 PM for the Physics lesson.",
+    lastMessageTime: "2 hours ago",
+    unread: 0,
+    messages: [
+      { id: 1, sender: "tutor", text: "Hello! I'm available for the lesson tomorrow.", time: "Yesterday, 6:00 PM" },
+      { id: 2, sender: "parent", text: "Great, 4 PM works for us.", time: "Yesterday, 6:15 PM" },
+      { id: 3, sender: "tutor", text: "Perfect. I'll bring the practice problems.", time: "Yesterday, 6:20 PM" },
+      { id: 4, sender: "tutor", text: "See you tomorrow at 4 PM for the Physics lesson.", time: "Today, 10:00 AM" },
+    ],
+  },
+  {
+    id: 102,
+    name: "Tanvir R. (Parent)",
+    img: "https://i.pravatar.cc/150?img=47",
+    lastMessage: "The essay assignment looks great!",
+    lastMessageTime: "1 day ago",
+    unread: 1,
+    messages: [
+      { id: 1, sender: "parent", text: "How is the essay coming along?", time: "2 days ago, 3:00 PM" },
+      { id: 2, sender: "tutor", text: "Working on it. Should be done by tomorrow.", time: "2 days ago, 5:00 PM" },
+      { id: 3, sender: "parent", text: "The essay assignment looks great!", time: "1 day ago, 2:00 PM" },
+    ],
+  },
+];
+
+const ADMIN_SUPPORT_CHATS = [
+  {
+    id: 201,
+    name: "Rafiq Ahmed (Tutor - Ticket #201)",
+    img: "https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&q=80&w=200",
+    lastMessage: "Thank you for verifying my certificate so quickly!",
+    lastMessageTime: "1 hour ago",
+    unread: 0,
+    messages: [
+      { id: 1, sender: "user", text: "Hello Admin, I uploaded my BSc physics certificate 2 days ago. Could you please check the status?", time: "Yesterday, 4:00 PM" },
+      { id: 2, sender: "admin", text: "Hi Rafiq! We reviewed your documents. Your certificate has been approved and verified badge is active.", time: "Today, 10:00 AM" },
+      { id: 3, sender: "user", text: "Thank you for verifying my certificate so quickly!", time: "Today, 11:15 AM" },
+    ],
+  },
+  {
+    id: 202,
+    name: "Abdul Rahman (Parent - Ticket #202)",
+    img: "https://i.pravatar.cc/150?img=33",
+    lastMessage: "We have confirmed your payment receipt. Status updated!",
+    lastMessageTime: "3 hours ago",
+    unread: 1,
+    messages: [
+      { id: 1, sender: "user", text: "Hi Admin, I made a bKash payment for July lessons but the status still says pending.", time: "Yesterday, 8:00 PM" },
+      { id: 2, sender: "admin", text: "We have confirmed your payment receipt. Status updated!", time: "Today, 9:00 AM" },
+    ],
+  },
+  {
+    id: 203,
+    name: "Farhana Islam (Tutor - Ticket #203)",
+    img: "https://images.unsplash.com/photo-1580489944761-15a19d654956?auto=format&fit=crop&q=80&w=200",
+    lastMessage: "Can I update my teaching location to Gulshan?",
+    lastMessageTime: "Yesterday",
+    unread: 0,
+    messages: [
+      { id: 1, sender: "user", text: "Can I update my teaching location to Gulshan?", time: "Yesterday, 2:00 PM" },
+      { id: 2, sender: "admin", text: "Yes, you can edit your location in your account settings.", time: "Yesterday, 3:00 PM" },
+    ],
+  },
+];
+
+export function Chat({ onNavigate, role = "parent" }) {
+  const isAdmin = role === "admin";
+  const isTutor = role === "tutor";
+  const activeChats = isAdmin ? ADMIN_SUPPORT_CHATS : isTutor ? TUTOR_SIDE_CHATS : CHATS;
+  const [selectedChat, setSelectedChat] = useState(activeChats[0]);
   const [message, setMessage] = useState("");
+  const [showMobileChat, setShowMobileChat] = useState(false);
+
+  const handleSelectChat = (chat) => {
+    setSelectedChat(chat);
+    setShowMobileChat(true);
+  };
 
   const handleSend = (e) => {
     e.preventDefault();
     if (message.trim()) {
+      setSelectedChat(prev => ({
+        ...prev,
+        messages: [
+          ...prev.messages,
+          {
+            id: Date.now(),
+            sender: isAdmin ? "admin" : isTutor ? "tutor" : "parent",
+            text: message,
+            time: "Just now"
+          }
+        ]
+      }));
       setMessage("");
     }
   };
 
   return (
-    <div className="flex min-h-screen bg-white lg:block">
+    <div className="flex min-h-screen bg-white">
       <div className="flex-1 lg:ml-64">
         <div className="flex h-screen flex-col">
-          <div className="border-b px-6 py-4" style={{ borderColor: C.border }}>
-            <h1 className="text-xl font-semibold" style={{ color: C.text }}>Messages</h1>
+          <div className="border-b px-4 py-3 sm:px-6 sm:py-4" style={{ borderColor: C.border }}>
+            <h1 className="text-xl font-semibold" style={{ color: C.text }}>
+              {isAdmin ? "Admin Support Desk & Inquiry Tickets" : "Messages"}
+            </h1>
           </div>
 
           <div className="flex flex-1 overflow-hidden">
-            <div className="hidden w-80 border-r lg:block" style={{ borderColor: C.border }}>
+            {/* Conversation List Panel */}
+            <div 
+              className={`w-full border-r lg:w-80 lg:block ${
+                showMobileChat ? "hidden" : "block"
+              }`} 
+              style={{ borderColor: C.border }}
+            >
               <div className="p-4">
-                <Input placeholder="Search conversations..." />
+                <Input placeholder={isAdmin ? "Search support tickets..." : "Search conversations..."} />
               </div>
-              <div className="space-y-1">
-                {CHATS.map((chat) => (
+              <div className="space-y-1 overflow-y-auto max-h-[calc(100vh-140px)]">
+                {activeChats.map((chat) => (
                   <button
                     key={chat.id}
-                    onClick={() => setSelectedChat(chat)}
-                    className={`flex w-full items-start gap-3 p-4 transition-colors duration-150 ${
-                      selectedChat.id === chat.id ? "bg-blue-50" : "hover:bg-gray-50"
+                    onClick={() => handleSelectChat(chat)}
+                    className={`flex w-full items-start gap-3 p-4 text-left transition-colors duration-150 ${
+                      selectedChat?.id === chat.id ? "bg-blue-50" : "hover:bg-gray-50"
                     }`}
                   >
                     <div className="relative">
                       <img
-                        src={chat.tutorImg}
-                        alt={chat.tutorName}
+                        src={chat.tutorImg || chat.img}
+                        alt={chat.tutorName || chat.name}
                         className="h-12 w-12 rounded-full object-cover"
                       />
                       {chat.unread > 0 && (
@@ -49,10 +148,10 @@ export function Chat({ onNavigate }) {
                         </span>
                       )}
                     </div>
-                    <div className="flex-1 text-left">
+                    <div className="flex-1">
                       <div className="flex items-center justify-between">
                         <p className="text-sm font-semibold" style={{ color: C.text }}>
-                          {chat.tutorName}
+                          {chat.tutorName || chat.name}
                         </p>
                         <span className="text-xs" style={{ color: C.textSecondary }}>
                           {chat.lastMessageTime}
@@ -67,21 +166,34 @@ export function Chat({ onNavigate }) {
               </div>
             </div>
 
-            <div className="flex flex-1 flex-col">
+            {/* Active Chat Panel */}
+            <div 
+              className={`flex flex-1 flex-col ${
+                !showMobileChat ? "hidden lg:flex" : "flex"
+              }`}
+            >
               {selectedChat ? (
                 <>
-                  <div className="flex items-center justify-between border-b px-6 py-4" style={{ borderColor: C.border }}>
+                  <div className="flex items-center justify-between border-b px-4 py-3 sm:px-6 sm:py-4" style={{ borderColor: C.border }}>
                     <div className="flex items-center gap-3">
+                      <button 
+                        onClick={() => setShowMobileChat(false)}
+                        className="rounded p-1 text-gray-600 hover:bg-gray-100 lg:hidden"
+                      >
+                        <ArrowLeft size={20} />
+                      </button>
                       <img
-                        src={selectedChat.tutorImg}
-                        alt={selectedChat.tutorName}
+                        src={selectedChat.tutorImg || selectedChat.img}
+                        alt={selectedChat.tutorName || selectedChat.name}
                         className="h-10 w-10 rounded-full object-cover"
                       />
                       <div>
                         <p className="text-sm font-semibold" style={{ color: C.text }}>
-                          {selectedChat.tutorName}
+                          {selectedChat.tutorName || selectedChat.name}
                         </p>
-                        <p className="text-xs" style={{ color: C.textSecondary }}>Online</p>
+                        <p className="text-xs" style={{ color: C.textSecondary }}>
+                          {isAdmin ? "User Ticket Active" : "Online"}
+                        </p>
                       </div>
                     </div>
                     <button className="rounded p-2 transition-colors duration-150 hover:bg-gray-100">
@@ -89,45 +201,48 @@ export function Chat({ onNavigate }) {
                     </button>
                   </div>
 
-                  <div className="flex-1 overflow-y-auto p-6">
+                  <div className="flex-1 overflow-y-auto p-4 sm:p-6">
                     <div className="space-y-4">
-                      {selectedChat.messages.map((msg) => (
-                        <div
-                          key={msg.id}
-                          className={`flex ${msg.sender === "parent" ? "justify-end" : "justify-start"}`}
-                        >
+                      {selectedChat.messages.map((msg) => {
+                        const isSelf = isAdmin ? msg.sender === "admin" : isTutor ? msg.sender === "tutor" : msg.sender === "parent";
+                        return (
                           <div
-                            className={`max-w-md rounded-lg px-4 py-2 ${
-                              msg.sender === "parent"
-                                ? "bg-blue-600 text-white"
-                                : "border"
-                            }`}
-                            style={
-                              msg.sender === "tutor"
-                                ? { borderColor: C.border, background: C.surface, color: C.text }
-                                : {}
-                            }
+                            key={msg.id}
+                            className={`flex ${isSelf ? "justify-end" : "justify-start"}`}
                           >
-                            <p className="text-sm">{msg.text}</p>
-                            <p
-                              className={`mt-1 text-xs ${
-                                msg.sender === "parent" ? "text-white/70" : ""
+                            <div
+                              className={`max-w-md rounded-lg px-4 py-2 ${
+                                isSelf
+                                  ? "bg-blue-600 text-white"
+                                  : "border"
                               }`}
-                              style={msg.sender === "tutor" ? { color: C.textSecondary } : {}}
+                              style={
+                                !isSelf
+                                  ? { borderColor: C.border, background: C.surface, color: C.text }
+                                  : {}
+                              }
                             >
-                              {msg.time}
-                            </p>
+                              <p className="text-sm">{msg.text}</p>
+                              <p
+                                className={`mt-1 text-xs ${
+                                  isSelf ? "text-white/70" : ""
+                                }`}
+                                style={!isSelf ? { color: C.textSecondary } : {}}
+                              >
+                                {msg.time}
+                              </p>
+                            </div>
                           </div>
-                        </div>
-                      ))}
+                        );
+                      })}
                     </div>
                   </div>
 
-                  <form onSubmit={handleSend} className="border-t px-6 py-4" style={{ borderColor: C.border }}>
+                  <form onSubmit={handleSend} className="border-t px-4 py-3 sm:px-6 sm:py-4" style={{ borderColor: C.border }}>
                     <div className="flex gap-3">
                       <input
                         type="text"
-                        placeholder="Type a message..."
+                        placeholder={isAdmin ? "Reply to support ticket..." : "Type a message..."}
                         value={message}
                         onChange={(e) => setMessage(e.target.value)}
                         className="flex-1 rounded-lg border px-4 py-2.5 text-sm outline-none transition-shadow duration-150 focus:ring-2"
