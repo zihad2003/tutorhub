@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student ID Verification - Abdul Rahman</title>
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+        body, html {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            background-color: #f1f5f9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+        .id-card {
+            background-color: #ffffff;
+            width: 94%;
+            max-width: 620px;
+            height: 275px;
+            border-radius: 14px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+            overflow: hidden;
+            border: 1px solid #cbd5e1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+        }
+        .id-header {
+            background: linear-gradient(135deg, #1e40af 0%, #3b82f6 100%);
+            color: #ffffff;
+            text-align: center;
+            padding: 10px 0;
+            font-size: 16px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+        }
+        .id-body {
+            padding: 18px 24px;
+            display: flex;
+            flex-direction: row;
+            gap: 28px;
+            align-items: center;
+            flex: 1;
+        }
+        .id-photo-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+        }
+        .id-photo-container img.photo {
+            width: 105px;
+            height: 130px;
+            object-fit: cover;
+            border-radius: 8px;
+            border: 2px solid #e2e8f0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.06);
+        }
+        .id-details {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            min-width: 0;
+        }
+        .id-details h2 {
+            margin: 0 0 10px 0;
+            font-size: 22px;
+            color: #0f172a;
+            border-bottom: 2px solid #f1f5f9;
+            padding-bottom: 6px;
+            font-weight: 700;
+        }
+        .details-grid {
+            display: grid;
+            grid-template-columns: auto 1fr;
+            column-gap: 16px;
+            row-gap: 6px;
+            font-size: 13.5px;
+        }
+        .detail-label {
+            font-weight: 600;
+            color: #64748b;
+        }
+        .detail-value {
+            color: #1e293b;
+            font-weight: 500;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .id-qr-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin-left: auto;
+            flex-shrink: 0;
+            padding-left: 10px;
+            border-left: 1px dashed #e2e8f0;
+        }
+        .id-qr-container img.qr {
+            width: 75px;
+            height: 75px;
+        }
+        .id-footer {
+            background-color: #f8fafc;
+            padding: 8px 16px;
+            text-align: center;
+            font-size: 11px;
+            color: #64748b;
+            border-top: 1px solid #e2e8f0;
+            margin-top: auto;
+            letter-spacing: 0.5px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="id-card">
+    <div class="id-header">
+        Student ID Card
+    </div>
+    <div class="id-body">
+        <div class="id-photo-container">
+            <img class="photo" src="https://i.pravatar.cc/150?img=12" alt="Student Photo">
+        </div>
+        <div class="id-details">
+            <h2>Abdul Rahman</h2>
+            <div class="details-grid">
+                <span class="detail-label">ID No:</span>
+                <span class="detail-value">STU-982431</span>
+                
+                <span class="detail-label">DOB:</span>
+                <span class="detail-value">12 May 2012</span>
+
+                <span class="detail-label">Blood Grp:</span>
+                <span class="detail-value" style="color: #ef4444; font-weight: 700;">O+</span>
+
+                <span class="detail-label">School:</span>
+                <span class="detail-value">Dhaka Int. School</span>
+                
+                <span class="detail-label">Grade:</span>
+                <span class="detail-value">Class 8 (Section B)</span>
+
+                <span class="detail-label">Contact:</span>
+                <span class="detail-value">+880 1712-345678</span>
+            </div>
+        </div>
+        <div class="id-qr-container">
+            <img class="qr" src="https://upload.wikimedia.org/wikipedia/commons/4/41/QR_Code_Example.svg" alt="QR Code">
+        </div>
+    </div>
+    <div class="id-footer">
+        Issued by TutorHub Verification System • Valid through: Dec 2027
+    </div>
+</div>
+
+</body>
+</html>

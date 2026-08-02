@@ -1,13 +1,21 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { ChevronDown } from "lucide-react";
 import { C } from "../constants/tokens";
 import { TutorCard } from "../components/ui/TutorCard";
 import { TUTORS } from "../data/tutors";
+import { getStoredCategories } from "../data/categoriesData";
 
 export function TutorList({ openTutor, hiredOnly = false }) {
   const [subject, setSubject] = useState("All subjects");
   const [budgets, setBudgets] = useState([]);
   const [sort, setSort] = useState("Rating");
+  const [storedCategories, setStoredCategories] = useState(() => getStoredCategories());
+
+  useEffect(() => {
+    const handleUpdate = () => setStoredCategories(getStoredCategories());
+    window.addEventListener("tutorhub_categories_updated", handleUpdate);
+    return () => window.removeEventListener("tutorhub_categories_updated", handleUpdate);
+  }, []);
 
   const toggleBudget = (b) =>
     setBudgets((prev) => (prev.includes(b) ? prev.filter((x) => x !== b) : [...prev, b]));
@@ -20,14 +28,23 @@ export function TutorList({ openTutor, hiredOnly = false }) {
     return true;
   };
 
+  const subjectOptions = ["All subjects", ...storedCategories.filter(c => c.status === "active").map(c => c.name)];
+
   let list = hiredOnly ? TUTORS.slice(0, 2) : TUTORS;
-  list = list.filter((t) => subject === "All subjects" || t.subjects.includes(subject));
+  list = list.filter((t) => {
+    if (subject === "All subjects") return true;
+    const cat = storedCategories.find(c => c.name === subject);
+    if (cat && cat.subjects) {
+      return t.subjects.some(s => cat.subjects.includes(s) || s.toLowerCase().includes(subject.toLowerCase()));
+    }
+    return t.subjects.includes(subject) || t.subjects.some(s => subject.toLowerCase().includes(s.toLowerCase()));
+  });
+
   if (budgets.length) list = list.filter((t) => budgets.some((b) => inBudget(t.fee, b)));
   if (sort === "Rating") list = [...list].sort((a, b) => b.rating - a.rating);
   if (sort === "Fee: Low to High") list = [...list].sort((a, b) => a.fee - b.fee);
   if (sort === "Newest") list = [...list].sort((a, b) => b.id - a.id);
 
-  const subjects = ["All subjects", "Math", "Physics", "Chemistry", "Biology", "English", "Bangla"];
   const budgetChips = ["Under ৳600", "৳600 - ৳1000", "৳1000 - ৳1800", "৳1800+"];
 
   return (
@@ -46,10 +63,10 @@ export function TutorList({ openTutor, hiredOnly = false }) {
             <select
               value={subject}
               onChange={(e) => setSubject(e.target.value)}
-              className="appearance-none rounded-lg border py-2 pl-3 pr-8 text-sm font-semibold outline-none"
+              className="appearance-none rounded-lg border py-2 pl-3 pr-8 text-sm font-semibold outline-none bg-white"
               style={{ borderColor: C.border, color: C.text }}
             >
-              {subjects.map((s) => <option key={s}>{s}</option>)}
+              {subjectOptions.map((s) => <option key={s}>{s}</option>)}
             </select>
             <ChevronDown size={14} className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2" color={C.textSecondary} />
           </div>
@@ -77,7 +94,7 @@ export function TutorList({ openTutor, hiredOnly = false }) {
           <select
             value={sort}
             onChange={(e) => setSort(e.target.value)}
-            className="appearance-none rounded-lg border py-2 pl-3 pr-8 text-sm font-semibold outline-none"
+            className="appearance-none rounded-lg border py-2 pl-3 pr-8 text-sm font-semibold outline-none bg-white"
             style={{ borderColor: C.border, color: C.text }}
           >
             <option>Rating</option>
@@ -92,7 +109,7 @@ export function TutorList({ openTutor, hiredOnly = false }) {
       {list.length === 0 ? (
         <div className="mt-10 rounded-lg border p-10 text-center" style={{ borderColor: C.border }}>
           <p className="text-sm font-semibold" style={{ color: C.text }}>No tutors match these filters</p>
-          <p className="mt-1 text-sm" style={{ color: C.textSecondary }}>Try a different subject or budget range.</p>
+          <p className="mt-1 text-sm" style={{ color: C.textSecondary }}>Try selecting a different subject or budget range.</p>
         </div>
       ) : (
         <div className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">

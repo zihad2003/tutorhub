@@ -1,13 +1,14 @@
 import { C } from "../constants/tokens";
 import { Badge, PrimaryButton, SecondaryButton } from "../components/ui";
 import { ADMIN_APPROVALS } from "../data/mockData";
-import { CheckCircle2, XCircle, MapPin, Mail, Phone, Award, Calendar } from "lucide-react";
+import { CheckCircle2, XCircle, MapPin, Mail, Phone, Award, Calendar, ExternalLink } from "lucide-react";
 import { useState } from "react";
 
 export function ApprovalQueues({ onNavigate, initialTab = "tutors" }) {
   const [activeTab, setActiveTab] = useState(initialTab);
   const [tutorsList, setTutorsList] = useState(ADMIN_APPROVALS.tutors);
   const [parentsList, setParentsList] = useState(ADMIN_APPROVALS.parents);
+  const [selectedDoc, setSelectedDoc] = useState(null);
 
   const handleApproveTutor = (id) => {
     setTutorsList(prev => prev.filter(t => t.id !== id));
@@ -136,7 +137,7 @@ export function ApprovalQueues({ onNavigate, initialTab = "tutors" }) {
 
                       <div className="mt-4">
                         <p className="mb-2 text-xs font-semibold uppercase" style={{ color: C.textSecondary }}>
-                          Certificates
+                          Certificates & Documents
                         </p>
                         <div className="space-y-2">
                           {tutor.certificates.map((cert) => (
@@ -145,6 +146,28 @@ export function ApprovalQueues({ onNavigate, initialTab = "tutors" }) {
                               <span className="text-sm" style={{ color: C.text }}>{cert}</span>
                             </div>
                           ))}
+                          {tutor.cvUrl && (
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() => setSelectedDoc({ title: `${tutor.name} - CV`, url: tutor.cvUrl })}
+                                className="flex-1 flex items-center gap-2 rounded-lg border p-3 text-left transition-colors hover:bg-gray-50"
+                                style={{ borderColor: C.border, background: C.surface }}
+                              >
+                                <span className="text-sm font-semibold" style={{ color: C.primary }}>View CV</span>
+                              </button>
+                              <a
+                                href={tutor.cvUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex h-[50px] w-[50px] shrink-0 items-center justify-center rounded-lg border transition-colors hover:bg-gray-50"
+                                style={{ borderColor: C.border, background: C.surface }}
+                                title="Open in new tab"
+                              >
+                                <ExternalLink size={18} style={{ color: C.primary }} />
+                              </a>
+                            </div>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -168,7 +191,7 @@ export function ApprovalQueues({ onNavigate, initialTab = "tutors" }) {
                       style={{ borderColor: C.border }}
                     >
                       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                        <div>
+                        <div className="flex-1 w-full min-w-0">
                           <div className="flex flex-wrap items-center gap-2">
                             <h3 className="text-lg font-semibold" style={{ color: C.text }}>
                               {parent.name}
@@ -189,6 +212,15 @@ export function ApprovalQueues({ onNavigate, initialTab = "tutors" }) {
                               <Calendar size={14} /> Applied {parent.appliedDate}
                             </p>
                           </div>
+                          {parent.studentIdUrl && (
+                            <div className="mt-4 rounded-xl overflow-hidden border border-gray-200 w-full max-w-[680px] shadow-sm">
+                              <iframe 
+                                src={parent.studentIdUrl} 
+                                className="w-full h-[310px] border-0 bg-white block" 
+                                title={`${parent.name} Student ID`} 
+                              />
+                            </div>
+                          )}
                         </div>
                         <div className="flex gap-2">
                           <SecondaryButton onClick={() => handleRejectParent(parent.id)}>
@@ -209,6 +241,36 @@ export function ApprovalQueues({ onNavigate, initialTab = "tutors" }) {
           </div>
         </div>
       </div>
+
+      {/* Document Modal Preview */}
+      {selectedDoc && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+          <div className="flex h-[88vh] w-full max-w-4xl flex-col rounded-xl bg-white shadow-2xl overflow-hidden">
+            <div className="flex items-center justify-between border-b px-6 py-4" style={{ borderColor: C.border }}>
+              <h3 className="text-lg font-semibold" style={{ color: C.text }}>
+                {selectedDoc.title}
+              </h3>
+              <button
+                type="button"
+                onClick={() => setSelectedDoc(null)}
+                className="rounded-lg p-1.5 text-gray-500 hover:bg-gray-100 hover:text-gray-700"
+              >
+                <XCircle size={22} />
+              </button>
+            </div>
+            <div className="flex-1 bg-gray-100 p-2">
+              <iframe
+                src={selectedDoc.url}
+                className="h-full w-full rounded-lg border-0 shadow-inner"
+                title={selectedDoc.title}
+              />
+            </div>
+            <div className="flex justify-end border-t px-6 py-3" style={{ borderColor: C.border }}>
+              <SecondaryButton onClick={() => setSelectedDoc(null)}>Close</SecondaryButton>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
