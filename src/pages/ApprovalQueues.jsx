@@ -1,7 +1,7 @@
 import { C } from "../constants/tokens";
 import { Badge, PrimaryButton, SecondaryButton } from "../components/ui";
 import { ADMIN_APPROVALS } from "../data/mockData";
-import { CheckCircle2, XCircle, MapPin, Mail, Phone, Award, Calendar } from "lucide-react";
+import { CheckCircle2, XCircle, MapPin, Mail, Phone, Award, Calendar, ExternalLink } from "lucide-react";
 import { useState } from "react";
 
 export function ApprovalQueues({ onNavigate, initialTab = "tutors" }) {
@@ -147,14 +147,26 @@ export function ApprovalQueues({ onNavigate, initialTab = "tutors" }) {
                             </div>
                           ))}
                           {tutor.cvUrl && (
-                            <button
-                              type="button"
-                              onClick={() => setSelectedDoc({ title: `${tutor.name} - CV`, url: tutor.cvUrl })}
-                              className="flex w-full items-center gap-2 rounded-lg border p-3 text-left transition-colors hover:bg-gray-50"
-                              style={{ borderColor: C.border, background: C.surface }}
-                            >
-                              <span className="text-sm font-semibold" style={{ color: C.primary }}>View CV</span>
-                            </button>
+                            <div className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() => setSelectedDoc({ title: `${tutor.name} - CV`, url: tutor.cvUrl })}
+                                className="flex-1 flex items-center gap-2 rounded-lg border p-3 text-left transition-colors hover:bg-gray-50"
+                                style={{ borderColor: C.border, background: C.surface }}
+                              >
+                                <span className="text-sm font-semibold" style={{ color: C.primary }}>View CV</span>
+                              </button>
+                              <a
+                                href={tutor.cvUrl}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex h-[50px] w-[50px] shrink-0 items-center justify-center rounded-lg border transition-colors hover:bg-gray-50"
+                                style={{ borderColor: C.border, background: C.surface }}
+                                title="Open in new tab"
+                              >
+                                <ExternalLink size={18} style={{ color: C.primary }} />
+                              </a>
+                            </div>
                           )}
                         </div>
                       </div>
@@ -179,7 +191,7 @@ export function ApprovalQueues({ onNavigate, initialTab = "tutors" }) {
                       style={{ borderColor: C.border }}
                     >
                       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                        <div>
+                        <div className="flex-1 w-full min-w-0">
                           <div className="flex flex-wrap items-center gap-2">
                             <h3 className="text-lg font-semibold" style={{ color: C.text }}>
                               {parent.name}
@@ -199,19 +211,16 @@ export function ApprovalQueues({ onNavigate, initialTab = "tutors" }) {
                             <p className="flex items-center gap-2">
                               <Calendar size={14} /> Applied {parent.appliedDate}
                             </p>
-                            {parent.studentIdUrl && (
-                              <div className="mt-3">
-                                <button
-                                  type="button"
-                                  onClick={() => setSelectedDoc({ title: `${parent.name} - Student ID`, url: parent.studentIdUrl })}
-                                  className="inline-flex items-center gap-2 rounded-lg border p-2 px-3 transition-colors hover:bg-gray-50"
-                                  style={{ borderColor: C.border, background: C.surface }}
-                                >
-                                  <span className="text-sm font-semibold" style={{ color: C.primary }}>View Student ID</span>
-                                </button>
-                              </div>
-                            )}
                           </div>
+                          {parent.studentIdUrl && (
+                            <div className="mt-4 rounded-xl overflow-hidden border border-gray-200 w-full max-w-[680px] shadow-sm">
+                              <iframe 
+                                src={parent.studentIdUrl} 
+                                className="w-full h-[310px] border-0 bg-white block" 
+                                title={`${parent.name} Student ID`} 
+                              />
+                            </div>
+                          )}
                         </div>
                         <div className="flex gap-2">
                           <SecondaryButton onClick={() => handleRejectParent(parent.id)}>
