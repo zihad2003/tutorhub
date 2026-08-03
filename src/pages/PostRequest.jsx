@@ -187,6 +187,8 @@ export function PostRequest({ onNavigate, mode = "create" }) {
                         <th className="px-4 py-3 text-left font-semibold text-xs" style={{ color: C.textSecondary }}>Subject</th>
                         <th className="px-4 py-3 text-left font-semibold text-xs" style={{ color: C.textSecondary }}>Class</th>
                         <th className="px-4 py-3 text-left font-semibold text-xs" style={{ color: C.textSecondary }}>Location</th>
+                        <th className="px-4 py-3 text-left font-semibold text-xs" style={{ color: C.textSecondary }}>Preferred Days</th>
+                        <th className="px-4 py-3 text-left font-semibold text-xs" style={{ color: C.textSecondary }}>Time Slot</th>
                         <th className="px-4 py-3 text-left font-semibold text-xs" style={{ color: C.textSecondary }}>Budget</th>
                         <th className="px-4 py-3 text-left font-semibold text-xs" style={{ color: C.textSecondary }}>Status</th>
                         <th className="px-4 py-3 text-center font-semibold text-xs" style={{ color: C.textSecondary }}>Action</th>
@@ -200,6 +202,8 @@ export function PostRequest({ onNavigate, mode = "create" }) {
                             <td className="px-4 py-3 font-medium" style={{ color: C.text }}>{req.subject}</td>
                             <td className="px-4 py-3" style={{ color: C.text }}>{req.classLevel}</td>
                             <td className="px-4 py-3" style={{ color: C.text }}>{req.location}</td>
+                            <td className="px-4 py-3" style={{ color: C.text }}>{req.preferredDays || "N/A"}</td>
+                            <td className="px-4 py-3 font-semibold text-blue-600" style={{ color: C.text }}>{req.preferredTime || "Anytime"}</td>
                             <td className="px-4 py-3 font-bold" style={{ color: C.text }}>৳{req.budget}/hr</td>
                             <td className="px-4 py-3">
                               <Badge tone={req.status === "open" ? "accent" : "neutral"}>
