@@ -1,11 +1,39 @@
 import { C } from "../constants/tokens";
 import { Badge, PrimaryButton, SecondaryButton, Stars } from "../components/ui";
-import { APPLICATIONS } from "../data/mockData";
-import { CheckCircle2, Clock, MessageCircle, FileText } from "lucide-react";
+import { APPLICATIONS, REQUESTS } from "../data/mockData";
+import { CheckCircle2, Clock, MessageCircle, FileText, Sparkles } from "lucide-react";
+import { useState } from "react";
 
 export function TutorApplications({ onNavigate, role = "parent" }) {
   const isTutor = role === "tutor";
   const backLink = isTutor ? "tutor-dashboard" : "parent-dashboard";
+  const [coverLetter, setCoverLetter] = useState("");
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  const generateAutoCoverLetter = (requestId) => {
+    setIsGenerating(true);
+    const request = REQUESTS.find(r => r.id === requestId);
+    if (!request) {
+      setIsGenerating(false);
+      return;
+    }
+
+    // Auto-generate cover letter based on request details
+    const templates = [
+      `I am writing to express my interest in the ${request.subject} teaching position for ${request.classLevel}. With my expertise in ${request.subject} and proven track record of helping students achieve academic excellence, I am confident in my ability to provide quality education tailored to your specific requirements. I am available ${request.preferredDays} and can accommodate your preferred timing of ${request.preferredTime || "flexible hours"}. My teaching approach focuses on building strong fundamentals while making learning engaging and effective.`,
+      
+      `I would like to apply for the ${request.subject} tutor position. As an experienced educator specializing in ${request.classLevel}, I have successfully helped numerous students improve their academic performance. I understand you are looking for someone available ${request.preferredDays} in ${request.location}, and I am well-suited to meet these requirements. My teaching methodology emphasizes conceptual clarity and practical application, ensuring students not only understand the material but also develop problem-solving skills.`,
+      
+      `I am excited to apply for the ${request.subject} tutoring opportunity. With extensive experience teaching ${request.classLevel} students, I have developed effective strategies to help students excel in ${request.subject}. I am available during ${request.preferredDays} and can work within your budget range of ৳${request.budget}/hr. My goal is to create a supportive learning environment where students feel confident to ask questions and explore concepts deeply.`
+    ];
+
+    // Select a template based on request subject (simple hash)
+    const templateIndex = (request.subject.length + request.classLevel.length) % templates.length;
+    const generatedLetter = templates[templateIndex];
+    
+    setCoverLetter(generatedLetter);
+    setIsGenerating(false);
+  };
 
   if (isTutor) {
     return (
@@ -53,12 +81,29 @@ export function TutorApplications({ onNavigate, role = "parent" }) {
                   </div>
 
                   <div className="mt-4 rounded-lg border p-4" style={{ borderColor: C.border, background: C.surface }}>
-                    <p className="text-xs font-semibold uppercase" style={{ color: C.textSecondary }}>
-                      Your Cover Letter
-                    </p>
-                    <p className="mt-2 text-sm leading-relaxed" style={{ color: C.text }}>
-                      {app.coverLetter}
-                    </p>
+                    <div className="mb-3 flex items-center justify-between">
+                      <p className="text-xs font-semibold uppercase" style={{ color: C.textSecondary }}>
+                        Your Cover Letter
+                      </p>
+                      <button
+                        type="button"
+                        onClick={() => generateAutoCoverLetter(app.requestId)}
+                        disabled={isGenerating}
+                        className="flex items-center gap-1.5 rounded-md border bg-white px-3 py-1.5 text-xs font-semibold transition-colors hover:bg-gray-50 disabled:opacity-50"
+                        style={{ borderColor: C.border, color: C.primary }}
+                      >
+                        <Sparkles size={14} />
+                        {isGenerating ? "Generating..." : "Auto-Generate"}
+                      </button>
+                    </div>
+                    <textarea
+                      value={coverLetter || app.coverLetter}
+                      onChange={(e) => setCoverLetter(e.target.value)}
+                      rows={4}
+                      className="w-full rounded-lg border px-3 py-2 text-sm outline-none transition-shadow duration-150 focus:ring-2"
+                      style={{ borderColor: C.border, color: C.text }}
+                      placeholder="Your cover letter will appear here..."
+                    />
                   </div>
 
                   <div className="mt-4 flex items-center justify-between text-xs" style={{ color: C.textSecondary }}>

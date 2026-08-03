@@ -7,6 +7,7 @@ import { getStoredCategories } from "../data/categoriesData";
 
 export function TutorList({ openTutor, hiredOnly = false }) {
   const [subject, setSubject] = useState("All subjects");
+  const [classLevel, setClassLevel] = useState("All classes");
   const [budgets, setBudgets] = useState([]);
   const [sort, setSort] = useState("Rating");
   const [storedCategories, setStoredCategories] = useState(() => getStoredCategories());
@@ -29,6 +30,7 @@ export function TutorList({ openTutor, hiredOnly = false }) {
   };
 
   const subjectOptions = ["All subjects", ...storedCategories.filter(c => c.status === "active").map(c => c.name)];
+  const classOptions = ["All classes", "Class 1-5", "Class 6-8", "Class 9-10", "HSC", "University"];
 
   let list = hiredOnly ? TUTORS.slice(0, 2) : TUTORS;
   list = list.filter((t) => {
@@ -39,6 +41,17 @@ export function TutorList({ openTutor, hiredOnly = false }) {
     }
     return t.subjects.includes(subject) || t.subjects.some(s => subject.toLowerCase().includes(s.toLowerCase()));
   });
+
+  if (classLevel !== "All classes") {
+    list = list.filter((t) => {
+      if (classLevel === "Class 1-5") return t.classLevels?.includes("Class 1-5") || t.classLevels?.includes("Class 1") || t.classLevels?.includes("Class 2") || t.classLevels?.includes("Class 3") || t.classLevels?.includes("Class 4") || t.classLevels?.includes("Class 5");
+      if (classLevel === "Class 6-8") return t.classLevels?.includes("Class 6-8") || t.classLevels?.includes("Class 6") || t.classLevels?.includes("Class 7") || t.classLevels?.includes("Class 8");
+      if (classLevel === "Class 9-10") return t.classLevels?.includes("Class 9-10") || t.classLevels?.includes("Class 9") || t.classLevels?.includes("Class 10");
+      if (classLevel === "HSC") return t.classLevels?.includes("HSC") || t.classLevels?.includes("College");
+      if (classLevel === "University") return t.classLevels?.includes("University") || t.classLevels?.includes("University Level");
+      return true;
+    });
+  }
 
   if (budgets.length) list = list.filter((t) => budgets.some((b) => inBudget(t.fee, b)));
   if (sort === "Rating") list = [...list].sort((a, b) => b.rating - a.rating);
@@ -67,6 +80,18 @@ export function TutorList({ openTutor, hiredOnly = false }) {
               style={{ borderColor: C.border, color: C.text }}
             >
               {subjectOptions.map((s) => <option key={s}>{s}</option>)}
+            </select>
+            <ChevronDown size={14} className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2" color={C.textSecondary} />
+          </div>
+
+          <div className="relative">
+            <select
+              value={classLevel}
+              onChange={(e) => setClassLevel(e.target.value)}
+              className="appearance-none rounded-lg border py-2 pl-3 pr-8 text-sm font-semibold outline-none bg-white"
+              style={{ borderColor: C.border, color: C.text }}
+            >
+              {classOptions.map((c) => <option key={c}>{c}</option>)}
             </select>
             <ChevronDown size={14} className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2" color={C.textSecondary} />
           </div>

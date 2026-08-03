@@ -1,6 +1,6 @@
 import { C } from "../constants/tokens";
 import { Input, PrimaryButton, SecondaryButton, Badge } from "../components/ui";
-import { MapPin, Calendar, DollarSign, Send, CheckCircle2, ChevronDown, Clock, Sparkles } from "lucide-react";
+import { MapPin, Calendar, DollarSign, Send, CheckCircle2, ChevronDown, Clock, Sparkles, Upload, X } from "lucide-react";
 import { REQUESTS } from "../data/mockData";
 import { getStoredCategories } from "../data/categoriesData";
 import { useState, useEffect } from "react";
@@ -8,6 +8,7 @@ import { useState, useEffect } from "react";
 export function PostRequest({ onNavigate, mode = "create" }) {
   const [appliedIds, setAppliedIds] = useState([]);
   const [categories, setCategories] = useState(() => getStoredCategories());
+  const [viewMode, setViewMode] = useState("card"); // "card" or "table"
   
   // Form Fields
   const [selectedCategory, setSelectedCategory] = useState(categories[0]?.name || "Science & Math");
@@ -19,6 +20,8 @@ export function PostRequest({ onNavigate, mode = "create" }) {
   const [selectedDay, setSelectedDay] = useState("Weekdays");
   const [description, setDescription] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [uploadedImage, setUploadedImage] = useState(null);
+  const [imagePreview, setImagePreview] = useState(null);
 
   useEffect(() => {
     const handleUpdate = () => setCategories(getStoredCategories());
@@ -40,6 +43,23 @@ export function PostRequest({ onNavigate, mode = "create" }) {
     }
   };
 
+  const handleImageUpload = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setUploadedImage(file);
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setImagePreview(reader.result);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleRemoveImage = () => {
+    setUploadedImage(null);
+    setImagePreview(null);
+  };
+
   const handleSubmitRequest = (e) => {
     e.preventDefault();
     const newReq = {
@@ -52,7 +72,8 @@ export function PostRequest({ onNavigate, mode = "create" }) {
       preferredDays: selectedDay,
       status: "open",
       description: description || `Looking for an experienced tutor for ${selectedCategory} (${subject || "General"}).`,
-      postedDate: "Just now"
+      postedDate: "Just now",
+      image: imagePreview
     };
 
     REQUESTS.unshift(newReq);
@@ -79,58 +100,130 @@ export function PostRequest({ onNavigate, mode = "create" }) {
               Browse active tuition requests posted by parents and apply for teaching jobs.
             </p>
 
-            <div className="mt-6 space-y-6">
-              {REQUESTS.map((req) => {
-                const isApplied = appliedIds.includes(req.id);
-                return (
-                  <div
-                    key={req.id}
-                    className="rounded-lg border p-6 shadow-sm transition-all duration-150 hover:border-blue-200"
-                    style={{ borderColor: C.border }}
-                  >
-                    <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                      <div>
-                        <div className="flex flex-wrap items-center gap-2">
-                          <h3 className="text-lg font-semibold" style={{ color: C.text }}>
-                            {req.subject} Tutor Needed
-                          </h3>
-                          <Badge tone="neutral">{req.classLevel}</Badge>
-                          <Badge tone={req.status === "open" ? "accent" : "neutral"}>
-                            {req.status === "open" ? "Active Request" : "Closed"}
-                          </Badge>
-                        </div>
-                        <p className="mt-2 text-sm leading-relaxed" style={{ color: C.textSecondary }}>
-                          {req.description}
-                        </p>
+            <div className="mt-4 flex items-center justify-between">
+              <div className="flex gap-2">
+                <button
+                  onClick={() => setViewMode("card")}
+                  className={`rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors ${
+                    viewMode === "card" ? "bg-blue-50 text-blue-600" : "hover:bg-gray-50"
+                  }`}
+                >
+                  Card View
+                </button>
+                <button
+                  onClick={() => setViewMode("table")}
+                  className={`rounded-lg px-3 py-1.5 text-sm font-semibold transition-colors ${
+                    viewMode === "table" ? "bg-blue-50 text-blue-600" : "hover:bg-gray-50"
+                  }`}
+                >
+                  Table View
+                </button>
+              </div>
+            </div>
 
-                        <div className="mt-4 flex flex-wrap gap-4 text-xs font-semibold" style={{ color: C.textSecondary }}>
-                          <span className="flex items-center gap-1"><MapPin size={14} /> {req.location}</span>
-                          <span className="flex items-center gap-1"><Calendar size={14} /> Preferred: {req.preferredDays}</span>
-                          {req.preferredTime && (
-                            <span className="flex items-center gap-1"><Clock size={14} /> Time: {req.preferredTime}</span>
-                          )}
-                          <span className="flex items-center gap-1"><DollarSign size={14} /> Budget: <strong className="text-blue-600">৳{req.budget}/hr</strong></span>
+            <div className="mt-6">
+              {viewMode === "card" ? (
+                <div className="space-y-6">
+                  {REQUESTS.map((req) => {
+                    const isApplied = appliedIds.includes(req.id);
+                    return (
+                      <div
+                        key={req.id}
+                        className="rounded-lg border p-6 shadow-sm transition-all duration-150 hover:border-blue-200"
+                        style={{ borderColor: C.border }}
+                      >
+                        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                          <div>
+                            <div className="flex flex-wrap items-center gap-2">
+                              <h3 className="text-lg font-semibold" style={{ color: C.text }}>
+                                {req.subject} Tutor Needed
+                              </h3>
+                              <Badge tone="neutral">{req.classLevel}</Badge>
+                              <Badge tone={req.status === "open" ? "accent" : "neutral"}>
+                                {req.status === "open" ? "Active Request" : "Closed"}
+                              </Badge>
+                            </div>
+                            <p className="mt-2 text-sm leading-relaxed" style={{ color: C.textSecondary }}>
+                              {req.description}
+                            </p>
+
+                            <div className="mt-4 flex flex-wrap gap-4 text-xs font-semibold" style={{ color: C.textSecondary }}>
+                              <span className="flex items-center gap-1"><MapPin size={14} /> {req.location}</span>
+                              <span className="flex items-center gap-1"><Calendar size={14} /> Preferred: {req.preferredDays}</span>
+                              {req.preferredTime && (
+                                <span className="flex items-center gap-1"><Clock size={14} /> Time: {req.preferredTime}</span>
+                              )}
+                              <span className="flex items-center gap-1"><DollarSign size={14} /> Budget: <strong className="text-blue-600">৳{req.budget}/hr</strong></span>
+                            </div>
+                            {req.image && (
+                              <img src={req.image} alt="Request" className="mt-3 h-32 w-48 rounded-lg object-cover" />
+                            )}
+                          </div>
+
+                          <div className="flex flex-col items-end gap-2">
+                            {isApplied ? (
+                              <span className="flex items-center gap-1 rounded-lg border border-green-200 bg-green-50 px-4 py-2 text-xs font-semibold text-green-700">
+                                <CheckCircle2 size={16} /> Applied
+                              </span>
+                            ) : (
+                              <PrimaryButton size="sm" onClick={() => handleApply(req.id)}>
+                                <Send size={14} className="mr-1.5 inline" /> Apply Now
+                              </PrimaryButton>
+                            )}
+                            <span className="text-xs" style={{ color: C.textSecondary }}>
+                              Posted {req.postedDate}
+                            </span>
+                          </div>
                         </div>
                       </div>
-
-                      <div className="flex flex-col items-end gap-2">
-                        {isApplied ? (
-                          <span className="flex items-center gap-1 rounded-lg border border-green-200 bg-green-50 px-4 py-2 text-xs font-semibold text-green-700">
-                            <CheckCircle2 size={16} /> Applied
-                          </span>
-                        ) : (
-                          <PrimaryButton size="sm" onClick={() => handleApply(req.id)}>
-                            <Send size={14} className="mr-1.5 inline" /> Apply Now
-                          </PrimaryButton>
-                        )}
-                        <span className="text-xs" style={{ color: C.textSecondary }}>
-                          Posted {req.postedDate}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                );
-              })}
+                    );
+                  })}
+                </div>
+              ) : (
+                <div className="overflow-x-auto rounded-lg border" style={{ borderColor: C.border }}>
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b bg-gray-50/80" style={{ borderColor: C.border }}>
+                        <th className="px-4 py-3 text-left font-semibold text-xs" style={{ color: C.textSecondary }}>Subject</th>
+                        <th className="px-4 py-3 text-left font-semibold text-xs" style={{ color: C.textSecondary }}>Class</th>
+                        <th className="px-4 py-3 text-left font-semibold text-xs" style={{ color: C.textSecondary }}>Location</th>
+                        <th className="px-4 py-3 text-left font-semibold text-xs" style={{ color: C.textSecondary }}>Budget</th>
+                        <th className="px-4 py-3 text-left font-semibold text-xs" style={{ color: C.textSecondary }}>Status</th>
+                        <th className="px-4 py-3 text-center font-semibold text-xs" style={{ color: C.textSecondary }}>Action</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {REQUESTS.map((req) => {
+                        const isApplied = appliedIds.includes(req.id);
+                        return (
+                          <tr key={req.id} className="border-b hover:bg-gray-50/50" style={{ borderColor: C.border }}>
+                            <td className="px-4 py-3 font-medium" style={{ color: C.text }}>{req.subject}</td>
+                            <td className="px-4 py-3" style={{ color: C.text }}>{req.classLevel}</td>
+                            <td className="px-4 py-3" style={{ color: C.text }}>{req.location}</td>
+                            <td className="px-4 py-3 font-bold" style={{ color: C.text }}>৳{req.budget}/hr</td>
+                            <td className="px-4 py-3">
+                              <Badge tone={req.status === "open" ? "accent" : "neutral"}>
+                                {req.status === "open" ? "Active" : "Closed"}
+                              </Badge>
+                            </td>
+                            <td className="px-4 py-3 text-center">
+                              {isApplied ? (
+                                <span className="flex items-center justify-center gap-1 rounded-lg border border-green-200 bg-green-50 px-3 py-1 text-xs font-semibold text-green-700">
+                                  <CheckCircle2 size={14} /> Applied
+                                </span>
+                              ) : (
+                                <PrimaryButton size="sm" onClick={() => handleApply(req.id)}>
+                                  <Send size={14} className="mr-1 inline" /> Apply
+                                </PrimaryButton>
+                              )}
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           </div>
         </div>
@@ -271,6 +364,38 @@ export function PostRequest({ onNavigate, mode = "create" }) {
                   className="w-full rounded-lg border px-3.5 py-2.5 text-sm outline-none transition-shadow duration-150 focus:ring-2"
                   style={{ borderColor: C.border, color: C.text }}
                 />
+              </div>
+
+              <div>
+                <label className="mb-1.5 block text-sm font-semibold" style={{ color: C.text }}>
+                  Attach Image (Optional)
+                </label>
+                {imagePreview ? (
+                  <div className="relative rounded-lg border overflow-hidden" style={{ borderColor: C.border }}>
+                    <img src={imagePreview} alt="Preview" className="w-full h-48 object-cover" />
+                    <button
+                      type="button"
+                      onClick={handleRemoveImage}
+                      className="absolute top-2 right-2 rounded-full bg-white/90 p-2 shadow-sm hover:bg-white transition-colors"
+                    >
+                      <X size={16} color={C.text} />
+                    </button>
+                  </div>
+                ) : (
+                  <div className="flex items-center justify-center rounded-lg border-2 border-dashed p-8 transition-colors hover:border-blue-400" style={{ borderColor: C.border }}>
+                    <label className="flex cursor-pointer flex-col items-center">
+                      <Upload size={32} color={C.textSecondary} className="mb-2" />
+                      <span className="text-sm font-semibold" style={{ color: C.text }}>Click to upload image</span>
+                      <span className="text-xs" style={{ color: C.textSecondary }}>PNG, JPG up to 5MB</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleImageUpload}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
+                )}
               </div>
 
               <div className="flex gap-3">

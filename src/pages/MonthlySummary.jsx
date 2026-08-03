@@ -113,6 +113,10 @@ export function MonthlySummary({ onNavigate, role = "parent" }) {
     }
   };
 
+  const handleDownloadPDF = () => {
+    window.print();
+  };
+
   const avgRating = reviewsList.length > 0 
     ? (reviewsList.reduce((a, b) => a + (b.overallRating || 0), 0) / reviewsList.length).toFixed(1) 
     : "0.0";
@@ -142,7 +146,7 @@ export function MonthlySummary({ onNavigate, role = "parent" }) {
                     : "Complete lesson summary, rate your active tutors, and view submitted feedback history."}
                 </p>
               </div>
-              <PrimaryButton onClick={() => alert("Downloading PDF Summary Report...")}>
+              <PrimaryButton onClick={handleDownloadPDF}>
                 <Download size={16} className="mr-1.5 inline" />
                 Download Statement
               </PrimaryButton>
@@ -212,6 +216,7 @@ export function MonthlySummary({ onNavigate, role = "parent" }) {
                       <th className="px-4 py-3 text-left font-semibold text-xs" style={{ color: C.textSecondary }}>Topic</th>
                       <th className="px-4 py-3 text-left font-semibold text-xs" style={{ color: C.textSecondary }}>Duration</th>
                       <th className="px-4 py-3 text-right font-semibold text-xs" style={{ color: C.textSecondary }}>{isTutor ? "Earnings" : "Fee"}</th>
+                      <th className="px-4 py-3 text-center font-semibold text-xs" style={{ color: C.textSecondary }}>Action</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -225,12 +230,21 @@ export function MonthlySummary({ onNavigate, role = "parent" }) {
                         <td className="px-4 py-3 text-right font-bold" style={{ color: C.text }}>
                           ৳{lesson.fee || 0}
                         </td>
+                        <td className="px-4 py-3 text-center">
+                          <button
+                            onClick={() => alert(`Viewing details for lesson on ${lesson.date || "2026-07-20"}`)}
+                            className="rounded-md border px-3 py-1 text-xs font-semibold transition-colors hover:bg-gray-50"
+                            style={{ borderColor: C.border, color: C.primary }}
+                          >
+                            View
+                          </button>
+                        </td>
                       </tr>
                     ))}
                   </tbody>
                   <tfoot>
                     <tr className="bg-gray-50/90 font-bold">
-                      <td colSpan={5} className="px-4 py-3 text-right" style={{ color: C.text }}>
+                      <td colSpan={6} className="px-4 py-3 text-right" style={{ color: C.text }}>
                         Total Billing Amount
                       </td>
                       <td className="px-4 py-3 text-right text-base text-blue-600">
@@ -542,7 +556,7 @@ export function MonthlySummary({ onNavigate, role = "parent" }) {
             <SecondaryButton onClick={handleNavBack}>
               Back to Dashboard
             </SecondaryButton>
-            <PrimaryButton onClick={() => alert("Downloading PDF Summary Report...")}>
+            <PrimaryButton onClick={handleDownloadPDF}>
               <Download size={16} className="mr-1.5 inline" />
               Download Statement
             </PrimaryButton>
