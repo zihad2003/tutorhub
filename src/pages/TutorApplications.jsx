@@ -149,6 +149,36 @@ export function TutorApplications({ onNavigate, role = "parent" }) {
                     </p>
                   </div>
 
+                  {(app.cvUrl || app.certificateUrl) && (
+                    <div className="mt-4 rounded-lg border p-4" style={{ borderColor: C.border, background: C.surface }}>
+                      <p className="mb-3 text-xs font-semibold uppercase" style={{ color: C.textSecondary }}>
+                        Documents & Certificates
+                      </p>
+                      <div className="flex flex-wrap gap-3">
+                        {app.cvUrl && (
+                          <a
+                            href={app.cvUrl}
+                            download
+                            className="flex items-center gap-1.5 rounded-md border bg-white px-3 py-1.5 text-sm font-semibold transition-colors hover:bg-gray-50 shadow-sm"
+                            style={{ borderColor: C.border, color: C.primary }}
+                          >
+                            <FileText size={16} /> Download CV
+                          </a>
+                        )}
+                        {app.certificateUrl && (
+                          <a
+                            href={app.certificateUrl}
+                            download
+                            className="flex items-center gap-1.5 rounded-md border bg-white px-3 py-1.5 text-sm font-semibold transition-colors hover:bg-gray-50 shadow-sm"
+                            style={{ borderColor: C.border, color: C.primary }}
+                          >
+                            <FileText size={16} /> Download Certificate
+                          </a>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
                   <div className="mt-4 flex items-center justify-between text-xs" style={{ color: C.textSecondary }}>
                     <span>Applied on {app.appliedDate}</span>
                     <span>Request ID: {app.requestId}</span>
