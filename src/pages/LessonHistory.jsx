@@ -78,12 +78,14 @@ export function LessonHistory({ onNavigate, role = "parent" }) {
             </table>
           </div>
 
-          <div className="mt-8 flex justify-center">
-            <PrimaryButton onClick={() => onNavigate("lesson-log")}>
-              <ChevronRight size={16} className="mr-1.5 inline" />
-              Log New Lesson
-            </PrimaryButton>
-          </div>
+          {isTutor && (
+            <div className="mt-8 flex justify-center">
+              <PrimaryButton onClick={() => onNavigate("lesson-log")}>
+                <ChevronRight size={16} className="mr-1.5 inline" />
+                Log New Lesson
+              </PrimaryButton>
+            </div>
+          )}
         </div>
       </div>
 
@@ -190,9 +192,11 @@ export function LessonHistory({ onNavigate, role = "parent" }) {
                   Confirm Lesson
                 </PrimaryButton>
               )}
-              <PrimaryButton onClick={() => { setSelectedLesson(null); onNavigate("lesson-log"); }}>
-                Log New Lesson
-              </PrimaryButton>
+              {isTutor && (
+                <PrimaryButton onClick={() => { setSelectedLesson(null); onNavigate("lesson-log"); }}>
+                  Log New Lesson
+                </PrimaryButton>
+              )}
             </div>
           </div>
         </div>
