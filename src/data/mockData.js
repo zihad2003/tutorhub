@@ -81,6 +81,8 @@ export const APPLICATIONS = [
     coverLetter: "I have extensive experience teaching Physics and Math for Class 9-10 and HSC students. I focus on building strong fundamentals and preparing students for board exams.",
     appliedDate: "2026-07-18",
     status: "pending",
+    cvUrl: "/sample-cv-karim.html",
+    certificateUrl: "/sample-id.pdf",
   },
   {
     id: 2,
@@ -95,6 +97,7 @@ export const APPLICATIONS = [
     coverLetter: "I specialize in HSC Physics and Chemistry with a focus on admission test preparation. My students consistently achieve high grades.",
     appliedDate: "2026-07-19",
     status: "pending",
+    cvUrl: "/sample-cv-nasreen.html",
   },
   {
     id: 3,
