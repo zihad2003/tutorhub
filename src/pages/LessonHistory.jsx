@@ -1,13 +1,21 @@
 import { C } from "../constants/tokens";
 import { Badge, PrimaryButton, SecondaryButton } from "../components/ui";
 import { LESSONS, HIRED_TUTORS } from "../data/mockData";
-import { Calendar, Clock, DollarSign, BookOpen, FileText, ChevronRight, X, Eye } from "lucide-react";
+import { Calendar, Clock, DollarSign, BookOpen, FileText, ChevronRight, X, Eye, Check } from "lucide-react";
 import { useState } from "react";
 
 export function LessonHistory({ onNavigate, role = "parent" }) {
   const isTutor = role === "tutor";
   const backLink = isTutor ? "tutor-dashboard" : "parent-dashboard";
   const [selectedLesson, setSelectedLesson] = useState(null);
+  const [lessons, setLessons] = useState(LESSONS);
+
+  const handleConfirmLesson = (lessonId) => {
+    setLessons(lessons.map(l => 
+      l.id === lessonId ? { ...l, status: "confirmed" } : l
+    ));
+    setSelectedLesson(null);
+  };
 
   return (
     <div className="flex min-h-screen bg-white">
@@ -43,7 +51,7 @@ export function LessonHistory({ onNavigate, role = "parent" }) {
                 </tr>
               </thead>
               <tbody>
-                {LESSONS.map((lesson) => (
+                {lessons.map((lesson) => (
                   <tr key={lesson.id} className="border-b hover:bg-gray-50/50" style={{ borderColor: C.border }}>
                     <td className="px-4 py-3 font-medium" style={{ color: C.text }}>{lesson.subject}</td>
                     <td className="px-4 py-3" style={{ color: C.text }}>{lesson.classLevel}</td>
@@ -176,6 +184,12 @@ export function LessonHistory({ onNavigate, role = "parent" }) {
 
             <div className="flex justify-end gap-3 border-t p-6" style={{ borderColor: C.border }}>
               <SecondaryButton onClick={() => setSelectedLesson(null)}>Close</SecondaryButton>
+              {!isTutor && selectedLesson.status === "pending" && (
+                <PrimaryButton onClick={() => handleConfirmLesson(selectedLesson.id)}>
+                  <Check size={16} className="mr-1.5 inline" />
+                  Confirm Lesson
+                </PrimaryButton>
+              )}
               <PrimaryButton onClick={() => { setSelectedLesson(null); onNavigate("lesson-log"); }}>
                 Log New Lesson
               </PrimaryButton>
