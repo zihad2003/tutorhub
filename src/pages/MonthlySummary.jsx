@@ -1,9 +1,10 @@
 import { C } from "../constants/tokens";
-import { PrimaryButton, SecondaryButton, Badge } from "../components/ui";
-import { LESSONS, PAYMENTS, HIRED_TUTORS } from "../data/mockData";
+import { Input, PrimaryButton, SecondaryButton, Badge } from "../components/ui";
+import { LESSONS, PAYMENTS, HIRED_TUTORS, TUTOR_EARNINGS, WITHDRAWAL_REQUESTS } from "../data/mockData";
 import { 
   Download, FileText, Calendar, Clock, DollarSign, Star, 
-  ThumbsUp, CheckCircle, MessageSquare, Trash2, UserCheck, Award
+  ThumbsUp, CheckCircle, MessageSquare, Trash2, UserCheck, Award,
+  Wallet, ArrowRight, CheckCircle2, XCircle
 } from "lucide-react";
 import { useState } from "react";
 
@@ -64,6 +65,42 @@ export function MonthlySummary({ onNavigate, role = "parent" }) {
   const [comment, setComment] = useState("");
   const [recommend, setRecommend] = useState(true);
   const [showSuccessToast, setShowSuccessToast] = useState(false);
+
+  // Withdrawal logic merged
+  const [activeTab, setActiveTab] = useState("earnings"); // "earnings" or "withdrawal"
+  const [withdrawals, setWithdrawals] = useState(WITHDRAWAL_REQUESTS);
+  const [amount, setAmount] = useState("");
+  const [method, setMethod] = useState("bKash");
+  const [accountNumber, setAccountNumber] = useState("");
+  const [bankName, setBankName] = useState("");
+  const [branch, setBranch] = useState("");
+  const [notes, setNotes] = useState("");
+  const [submitted, setSubmitted] = useState(false);
+
+  const availableBalance = TUTOR_EARNINGS
+    .filter(e => e.status === "pending")
+    .reduce((acc, e) => acc + e.totalEarnings, 0);
+
+  const handleWithdrawSubmit = (e) => {
+    e.preventDefault();
+    const newWithdrawal = {
+      id: Date.now(),
+      tutorId: 1,
+      tutorName: "Rafiq Ahmed",
+      tutorImg: "https://i.pravatar.cc/150?img=12",
+      amount: parseInt(amount),
+      method,
+      accountNumber,
+      bankName: method === "Bank Transfer" ? bankName : null,
+      branch: method === "Bank Transfer" ? branch : null,
+      requestedDate: new Date().toISOString().split("T")[0],
+      status: "pending",
+      notes,
+    };
+    WITHDRAWAL_REQUESTS.unshift(newWithdrawal);
+    setWithdrawals([newWithdrawal, ...withdrawals]);
+    setSubmitted(true);
+  };
 
   const rawLessons = Array.isArray(LESSONS) ? LESSONS : [];
   const monthLessons = isTutor ? [
@@ -153,18 +190,173 @@ export function MonthlySummary({ onNavigate, role = "parent" }) {
             </div>
           </div>
 
-          {/* Success Notification Banner */}
-          {showSuccessToast && (
-            <div className="flex items-center gap-3 rounded-lg border border-green-200 bg-green-50 p-4 text-green-800 shadow-sm">
-              <CheckCircle size={20} className="text-green-600 flex-shrink-0" />
-              <div>
-                <p className="text-sm font-semibold">Review Submitted Successfully!</p>
-                <p className="text-xs text-green-700">Thank you for rating your tutor. Your review has been added to the feedback log below.</p>
-              </div>
+          {isTutor && (
+            <div className="flex gap-4 border-b pb-px" style={{ borderColor: C.border }}>
+              <button
+                onClick={() => setActiveTab("earnings")}
+                className={`pb-3 text-sm font-semibold border-b-2 px-1 transition-all ${
+                  activeTab === "earnings"
+                    ? "border-blue-600 text-blue-600"
+                    : "border-transparent text-gray-500 hover:text-blue-600"
+                }`}
+                style={{ borderColor: activeTab === "earnings" ? C.primary : "transparent", color: activeTab === "earnings" ? C.primary : undefined }}
+              >
+                Earnings Statement & Reviews
+              </button>
+              <button
+                onClick={() => setActiveTab("withdrawal")}
+                className={`pb-3 text-sm font-semibold border-b-2 px-1 transition-all ${
+                  activeTab === "withdrawal"
+                    ? "border-blue-600 text-blue-600"
+                    : "border-transparent text-gray-500 hover:text-blue-600"
+                }`}
+                style={{ borderColor: activeTab === "withdrawal" ? C.primary : "transparent", color: activeTab === "withdrawal" ? C.primary : undefined }}
+              >
+                Withdraw Funds
+              </button>
             </div>
           )}
 
-          {/* SECTION 1: MONTHLY LESSON SUMMARY & STATEMENT */}
+          {isTutor && activeTab === "withdrawal" ? (
+            <div className="space-y-6 animate-fade-in">
+              {submitted ? (
+                <div className="rounded-2xl border p-8 text-center bg-green-50/50 shadow-sm" style={{ borderColor: C.border }}>
+                  <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-full bg-emerald-100 text-emerald-600">
+                    <CheckCircle2 size={32} />
+                  </div>
+                  <h2 className="mt-4 text-xl font-bold text-gray-900">Withdrawal Request Submitted!</h2>
+                  <p className="mt-2 text-sm text-gray-600">
+                    Your request for <strong>৳{parseInt(amount).toLocaleString()}</strong> has been submitted and is pending admin approval.
+                  </p>
+                  <div className="mt-6 flex justify-center gap-3">
+                    <SecondaryButton onClick={() => setSubmitted(false)}>Submit Another Request</SecondaryButton>
+                    <PrimaryButton onClick={() => onNavigate("tutor-dashboard")}>Go to Dashboard</PrimaryButton>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div className="rounded-xl border p-6 shadow-sm bg-white" style={{ borderColor: C.border }}>
+                    <div className="flex items-center justify-between">
+                      <div>
+                        <p className="text-sm font-semibold" style={{ color: C.textSecondary }}>Available Balance</p>
+                        <p className="mt-1 text-3xl font-bold text-blue-600">৳{availableBalance.toLocaleString()}</p>
+                      </div>
+                      <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                        <Wallet size={24} />
+                      </div>
+                    </div>
+                  </div>
+
+                  <form className="rounded-xl border bg-white p-5 sm:p-8 shadow-sm space-y-6" style={{ borderColor: C.border }} onSubmit={handleWithdrawSubmit}>
+                    <Input
+                      label="Withdrawal Amount (৳)"
+                      type="number"
+                      placeholder="Enter amount"
+                      value={amount}
+                      onChange={(e) => setAmount(e.target.value)}
+                      max={availableBalance}
+                      required
+                      helper={`Maximum withdrawable: ৳${availableBalance.toLocaleString()}`}
+                    />
+
+                    <div>
+                      <label className="mb-1.5 block text-sm font-semibold" style={{ color: C.text }}>
+                        Withdrawal Method
+                      </label>
+                      <div className="grid grid-cols-2 gap-3">
+                        {["bKash", "Bank Transfer"].map((m) => (
+                          <button
+                            key={m}
+                            type="button"
+                            onClick={() => setMethod(m)}
+                            className={`rounded-lg border py-3 text-sm font-semibold transition-all ${
+                              method === m ? "border-blue-600 bg-blue-50 text-blue-600 shadow-sm" : "hover:bg-gray-50 border-gray-200"
+                            }`}
+                            style={{ borderColor: method === m ? C.primary : undefined }}
+                          >
+                            {m}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+
+                    <Input
+                      label="Account Number"
+                      placeholder={method === "bKash" ? "e.g., 01712345678" : "Bank Account Number"}
+                      value={accountNumber}
+                      onChange={(e) => setAccountNumber(e.target.value)}
+                      required
+                    />
+
+                    {method === "Bank Transfer" && (
+                      <div className="space-y-6">
+                        <Input
+                          label="Bank Name"
+                          placeholder="e.g., Dutch-Bangla Bank"
+                          value={bankName}
+                          onChange={(e) => setBankName(e.target.value)}
+                          required
+                        />
+                        <Input
+                          label="Branch Name"
+                          placeholder="e.g., Dhanmondi Branch"
+                          value={branch}
+                          onChange={(e) => setBranch(e.target.value)}
+                          required
+                        />
+                      </div>
+                    )}
+
+                    <div>
+                      <label className="mb-1.5 block text-sm font-semibold" style={{ color: C.text }}>
+                        Notes (Optional)
+                      </label>
+                      <textarea
+                        placeholder="Any additional notes about this withdrawal request..."
+                        rows={3}
+                        value={notes}
+                        onChange={(e) => setNotes(e.target.value)}
+                        className="w-full rounded-lg border px-3.5 py-2.5 text-sm outline-none transition-shadow duration-150 focus:ring-2 focus:ring-blue-100"
+                        style={{ borderColor: C.border, color: C.text }}
+                      />
+                    </div>
+
+                    <div className="flex gap-3 pt-3 border-t" style={{ borderColor: C.border }}>
+                      <SecondaryButton type="button" onClick={() => onNavigate("tutor-dashboard")}>Cancel</SecondaryButton>
+                      <PrimaryButton full type="submit">
+                        <ArrowRight size={16} className="mr-1.5 inline" />
+                        Submit Withdrawal Request
+                      </PrimaryButton>
+                    </div>
+                  </form>
+
+                  <div className="rounded-xl border bg-white p-5 sm:p-8 shadow-sm" style={{ borderColor: C.border }}>
+                    <h3 className="mb-4 text-sm font-semibold" style={{ color: C.text }}>Recent Withdrawal History</h3>
+                    <div className="space-y-3">
+                      {withdrawals.filter(w => w.tutorId === 1).map((w) => (
+                        <div key={w.id} className="flex items-center justify-between rounded-lg border p-4 hover:bg-gray-50/50 transition-colors" style={{ borderColor: C.border }}>
+                          <div>
+                            <p className="text-sm font-bold" style={{ color: C.text }}>৳{w.amount.toLocaleString()}</p>
+                            <p className="text-xs mt-0.5" style={{ color: C.textSecondary }}>{w.method} · {w.requestedDate}</p>
+                          </div>
+                          <Badge 
+                            tone={
+                              w.status === "approved" ? "success" : 
+                              w.status === "rejected" ? "error" : "warning"
+                            }
+                          >
+                            {w.status.charAt(0).toUpperCase() + w.status.slice(1)}
+                          </Badge>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                </>
+              )}
+            </div>
+          ) : (
+            <>
+              {/* SECTION 1: MONTHLY LESSON SUMMARY & STATEMENT */}
           <div className="rounded-xl border bg-white p-5 sm:p-8 shadow-sm" style={{ borderColor: C.border }}>
             <div className="mb-6 flex flex-col sm:flex-row sm:items-center justify-between border-b pb-4 gap-2" style={{ borderColor: C.border }}>
               <div>
@@ -551,18 +743,20 @@ export function MonthlySummary({ onNavigate, role = "parent" }) {
             </div>
           </div>
 
-          {/* Bottom Action Footer */}
-          <div className="flex justify-end gap-3 pt-4 border-t" style={{ borderColor: C.border }}>
-            <SecondaryButton onClick={handleNavBack}>
-              Back to Dashboard
-            </SecondaryButton>
-            <PrimaryButton onClick={handleDownloadPDF}>
-              <Download size={16} className="mr-1.5 inline" />
-              Download Statement
-            </PrimaryButton>
-          </div>
-        </div>
+            {/* Bottom Action Footer */}
+            <div className="flex justify-end gap-3 pt-4 border-t" style={{ borderColor: C.border }}>
+              <SecondaryButton onClick={handleNavBack}>
+                Back to Dashboard
+              </SecondaryButton>
+              <PrimaryButton onClick={handleDownloadPDF}>
+                <Download size={16} className="mr-1.5 inline" />
+                Download Statement
+              </PrimaryButton>
+            </div>
+          </>
+        )}
       </div>
     </div>
+  </div>
   );
 }

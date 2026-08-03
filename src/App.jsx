@@ -24,7 +24,6 @@ import { Settings } from "./pages/Settings";
 import { Categories } from "./pages/Categories";
 import { Reports } from "./pages/Reports";
 import { Users } from "./pages/Users";
-import { Withdrawal } from "./pages/Withdrawal";
 import { LessonHistory } from "./pages/LessonHistory";
 import { TUTORS } from "./data/tutors";
 
@@ -40,8 +39,8 @@ export default function App() {
     const validPages = [
       "home", "tutors", "profile", "auth", "login", "signup", "register", "about", "faq", "contact", "careers",
       "parent-dashboard", "post-request", "applications", "hired-tutors", "lessons", "lesson-confirm", "payments", "chat", "reviews", "summary", "settings",
-      "tutor-dashboard", "tutor-profile", "certificates", "availability", "requests", "tutor-applications", "tutor-lessons", "earnings", "withdrawal", "tutor-chat", "tutor-settings",
-      "admin-dashboard", "admin-tutor-approvals", "admin-parent-approvals", "admin-withdrawals", "admin-categories", "admin-reports", "admin-payments", "admin-users", "admin-support", "admin-settings",
+      "tutor-dashboard", "tutor-profile", "certificates", "availability", "requests", "tutor-applications", "tutor-lessons", "earnings", "tutor-chat", "tutor-settings",
+      "admin-dashboard", "admin-tutor-approvals", "admin-parent-approvals", "admin-categories", "admin-reports", "admin-payments", "admin-users", "admin-support", "admin-settings",
       "tutor-approvals", "parent-approvals", "categories", "reports", "users", "support",
       "lesson-log", "lesson-history"
     ];
@@ -128,8 +127,8 @@ export default function App() {
 
   const isDashboardPage = [
     "parent-dashboard", "post-request", "applications", "hired-tutors", "lessons", "lesson-confirm", "payments", "chat", "reviews", "summary", "settings",
-    "tutor-dashboard", "tutor-profile", "certificates", "availability", "requests", "tutor-applications", "tutor-lessons", "earnings", "withdrawal", "tutor-chat", "tutor-settings",
-    "admin-dashboard", "admin-tutor-approvals", "admin-parent-approvals", "admin-withdrawals", "admin-categories", "admin-reports", "admin-payments", "admin-users", "admin-support", "admin-settings",
+    "tutor-dashboard", "tutor-profile", "certificates", "availability", "requests", "tutor-applications", "tutor-lessons", "earnings", "tutor-chat", "tutor-settings",
+    "admin-dashboard", "admin-tutor-approvals", "admin-parent-approvals", "admin-categories", "admin-reports", "admin-payments", "admin-users", "admin-support", "admin-settings",
     "tutor-approvals", "parent-approvals", "categories", "reports", "users", "support",
     "lesson-log", "lesson-history"
   ].includes(page);
@@ -218,7 +217,6 @@ export default function App() {
         {page === "tutor-applications" && <TutorApplications onNavigate={go} role="tutor" />}
         {page === "tutor-lessons" && <LessonLog onNavigate={go} role="tutor" />}
         {page === "earnings" && <MonthlySummary onNavigate={go} role="tutor" />}
-        {page === "withdrawal" && <Withdrawal onNavigate={go} role="tutor" />}
         {page === "tutor-chat" && <Chat onNavigate={go} role="tutor" />}
         {page === "tutor-settings" && <Settings role="tutor" onNavigate={go} />}
 
@@ -226,7 +224,6 @@ export default function App() {
         {page === "admin-dashboard" && <AdminDashboard onNavigate={go} />}
         {(page === "admin-tutor-approvals" || page === "tutor-approvals") && <ApprovalQueues onNavigate={go} initialTab="tutors" />}
         {(page === "admin-parent-approvals" || page === "parent-approvals") && <ApprovalQueues onNavigate={go} initialTab="parents" />}
-        {(page === "admin-withdrawals" || page === "withdrawals") && <Withdrawal onNavigate={go} role="admin" />}
         {(page === "admin-categories" || page === "categories") && <Categories onNavigate={go} />}
         {(page === "admin-reports" || page === "reports") && <Reports onNavigate={go} />}
         {page === "admin-payments" && <Payment onNavigate={go} role="admin" />}

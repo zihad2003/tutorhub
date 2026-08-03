@@ -27,7 +27,6 @@ const TUTOR_LINKS = [
   { key: "tutor-applications", label: "Applications", icon: FileText },
   { key: "tutor-lessons", label: "Lessons", icon: Calendar },
   { key: "earnings", label: "Earnings", icon: DollarSign },
-  { key: "withdrawal", label: "Withdrawal", icon: Wallet },
   { key: "tutor-chat", label: "Chat", icon: MessageSquare },
   { key: "tutor-settings", label: "Settings", icon: Settings },
 ];
@@ -36,7 +35,6 @@ const ADMIN_LINKS = [
   { key: "admin-dashboard", label: "Dashboard", icon: LayoutDashboard },
   { key: "admin-tutor-approvals", label: "Tutor Approvals", icon: CheckCircle },
   { key: "admin-parent-approvals", label: "Parent Approvals", icon: CheckCircle },
-  { key: "admin-withdrawals", label: "Withdrawals", icon: Wallet },
   { key: "admin-categories", label: "Categories", icon: FileText },
   { key: "admin-reports", label: "Reports", icon: Shield },
   { key: "admin-payments", label: "Payments", icon: DollarSign },
