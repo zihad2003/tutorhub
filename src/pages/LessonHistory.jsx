@@ -1,11 +1,13 @@
 import { C } from "../constants/tokens";
 import { Badge, PrimaryButton, SecondaryButton } from "../components/ui";
 import { LESSONS, HIRED_TUTORS } from "../data/mockData";
-import { Calendar, Clock, DollarSign, BookOpen, FileText, ChevronRight } from "lucide-react";
+import { Calendar, Clock, DollarSign, BookOpen, FileText, ChevronRight, X, Eye } from "lucide-react";
+import { useState } from "react";
 
 export function LessonHistory({ onNavigate, role = "parent" }) {
   const isTutor = role === "tutor";
   const backLink = isTutor ? "tutor-dashboard" : "parent-dashboard";
+  const [selectedLesson, setSelectedLesson] = useState(null);
 
   return (
     <div className="flex min-h-screen bg-white">
@@ -28,81 +30,44 @@ export function LessonHistory({ onNavigate, role = "parent" }) {
               : "View all completed lessons with tutor notes and homework assignments."}
           </p>
 
-          <div className="mt-8 space-y-6">
-            {LESSONS.map((lesson, index) => (
-              <div
-                key={lesson.id}
-                className="rounded-lg border p-6 shadow-sm transition-all duration-150 hover:border-blue-200"
-                style={{ borderColor: C.border }}
-              >
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3">
-                      <div className="flex h-12 w-12 items-center justify-center rounded-full bg-blue-100 text-blue-600 font-bold">
-                        {index + 1}
-                      </div>
-                      <div>
-                        <h3 className="text-lg font-semibold" style={{ color: C.text }}>
-                          Lesson {index + 1}: {lesson.topic}
-                        </h3>
-                        <div className="mt-1 flex flex-wrap items-center gap-2">
-                          <Badge tone="neutral">{lesson.subject}</Badge>
-                          <Badge tone={lesson.status === "confirmed" ? "success" : "warning"}>
-                            {lesson.status === "confirmed" ? "Confirmed" : "Pending"}
-                          </Badge>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
-                      <div className="flex items-center gap-2">
-                        <Calendar size={16} color={C.textSecondary} />
-                        <span className="text-sm" style={{ color: C.text }}>{lesson.date}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Clock size={16} color={C.textSecondary} />
-                        <span className="text-sm" style={{ color: C.text }}>{lesson.duration}</span>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <DollarSign size={16} color={C.textSecondary} />
-                        <span className="text-sm font-bold" style={{ color: C.text }}>৳{lesson.fee}</span>
-                      </div>
-                    </div>
-
-                    <div className="mt-4 rounded-lg border p-4" style={{ borderColor: C.border, background: C.surface }}>
-                      <div className="mb-2 flex items-center gap-2">
-                        <BookOpen size={16} color={C.primary} />
-                        <p className="text-xs font-semibold uppercase" style={{ color: C.textSecondary }}>
-                          Homework Assigned
-                        </p>
-                      </div>
-                      <p className="text-sm" style={{ color: C.text }}>{lesson.homework}</p>
-                    </div>
-
-                    {lesson.notes && (
-                      <div className="mt-4 rounded-lg border p-4" style={{ borderColor: C.border, background: C.surface }}>
-                        <div className="mb-2 flex items-center gap-2">
-                          <FileText size={16} color={C.primary} />
-                          <p className="text-xs font-semibold uppercase" style={{ color: C.textSecondary }}>
-                            Tutor Notes
-                          </p>
-                        </div>
-                        <p className="text-sm" style={{ color: C.text }}>{lesson.notes}</p>
-                      </div>
-                    )}
-                  </div>
-
-                  <div className="flex flex-col items-end gap-2">
-                    <span className="text-sm" style={{ color: C.textSecondary }}>
-                      {isTutor ? "Student" : "Tutor"}: {isTutor ? "Abdul Rahman's Son" : lesson.tutorName}
-                    </span>
-                    <SecondaryButton size="sm" onClick={() => onNavigate("lesson-log")}>
-                      Log New Lesson
-                    </SecondaryButton>
-                  </div>
-                </div>
-              </div>
-            ))}
+          <div className="mt-8 overflow-x-auto rounded-lg border" style={{ borderColor: C.border }}>
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="border-b bg-gray-50/80" style={{ borderColor: C.border }}>
+                  <th className="px-4 py-3 text-left font-semibold text-xs" style={{ color: C.textSecondary }}>Subject</th>
+                  <th className="px-4 py-3 text-left font-semibold text-xs" style={{ color: C.textSecondary }}>Class</th>
+                  <th className="px-4 py-3 text-left font-semibold text-xs" style={{ color: C.textSecondary }}>Lesson Date</th>
+                  <th className="px-4 py-3 text-left font-semibold text-xs" style={{ color: C.textSecondary }}>Time Slot</th>
+                  <th className="px-4 py-3 text-left font-semibold text-xs" style={{ color: C.textSecondary }}>Status</th>
+                  <th className="px-4 py-3 text-center font-semibold text-xs" style={{ color: C.textSecondary }}>Action</th>
+                </tr>
+              </thead>
+              <tbody>
+                {LESSONS.map((lesson) => (
+                  <tr key={lesson.id} className="border-b hover:bg-gray-50/50" style={{ borderColor: C.border }}>
+                    <td className="px-4 py-3 font-medium" style={{ color: C.text }}>{lesson.subject}</td>
+                    <td className="px-4 py-3" style={{ color: C.text }}>{lesson.classLevel}</td>
+                    <td className="px-4 py-3" style={{ color: C.text }}>{lesson.date}</td>
+                    <td className="px-4 py-3" style={{ color: C.text }}>{lesson.timeSlot}</td>
+                    <td className="px-4 py-3">
+                      <Badge tone={lesson.status === "confirmed" ? "success" : "warning"}>
+                        {lesson.status === "confirmed" ? "Confirmed" : "Pending"}
+                      </Badge>
+                    </td>
+                    <td className="px-4 py-3 text-center">
+                      <button
+                        onClick={() => setSelectedLesson(lesson)}
+                        className="inline-flex items-center gap-1 rounded-md border px-3 py-1.5 text-xs font-semibold transition-colors hover:bg-gray-50"
+                        style={{ borderColor: C.border, color: C.primary }}
+                      >
+                        <Eye size={14} />
+                        View
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
 
           <div className="mt-8 flex justify-center">
@@ -113,6 +78,111 @@ export function LessonHistory({ onNavigate, role = "parent" }) {
           </div>
         </div>
       </div>
+
+      {/* Lesson Detail Modal */}
+      {selectedLesson && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-2xl rounded-lg bg-white shadow-xl">
+            <div className="flex items-center justify-between border-b p-6" style={{ borderColor: C.border }}>
+              <div>
+                <h2 className="text-xl font-semibold" style={{ color: C.text }}>
+                  Lesson {LESSONS.findIndex(l => l.id === selectedLesson.id) + 1} Details
+                </h2>
+                <p className="mt-1 text-sm" style={{ color: C.textSecondary }}>
+                  {selectedLesson.topic}
+                </p>
+              </div>
+              <button
+                onClick={() => setSelectedLesson(null)}
+                className="rounded-lg p-2 hover:bg-gray-100 transition-colors"
+              >
+                <X size={20} color={C.textSecondary} />
+              </button>
+            </div>
+
+            <div className="p-6 space-y-6">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="rounded-lg border p-4" style={{ borderColor: C.border, background: C.surface }}>
+                  <div className="flex items-center gap-2 mb-2">
+                    <BookOpen size={16} color={C.primary} />
+                    <p className="text-xs font-semibold uppercase" style={{ color: C.textSecondary }}>Subject</p>
+                  </div>
+                  <p className="text-sm font-semibold" style={{ color: C.text }}>{selectedLesson.subject}</p>
+                </div>
+                <div className="rounded-lg border p-4" style={{ borderColor: C.border, background: C.surface }}>
+                  <div className="flex items-center gap-2 mb-2">
+                    <FileText size={16} color={C.primary} />
+                    <p className="text-xs font-semibold uppercase" style={{ color: C.textSecondary }}>Class Level</p>
+                  </div>
+                  <p className="text-sm font-semibold" style={{ color: C.text }}>{selectedLesson.classLevel}</p>
+                </div>
+                <div className="rounded-lg border p-4" style={{ borderColor: C.border, background: C.surface }}>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Calendar size={16} color={C.primary} />
+                    <p className="text-xs font-semibold uppercase" style={{ color: C.textSecondary }}>Date</p>
+                  </div>
+                  <p className="text-sm font-semibold" style={{ color: C.text }}>{selectedLesson.date}</p>
+                </div>
+                <div className="rounded-lg border p-4" style={{ borderColor: C.border, background: C.surface }}>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Clock size={16} color={C.primary} />
+                    <p className="text-xs font-semibold uppercase" style={{ color: C.textSecondary }}>Time Slot</p>
+                  </div>
+                  <p className="text-sm font-semibold" style={{ color: C.text }}>{selectedLesson.timeSlot}</p>
+                </div>
+                <div className="rounded-lg border p-4" style={{ borderColor: C.border, background: C.surface }}>
+                  <div className="flex items-center gap-2 mb-2">
+                    <Clock size={16} color={C.primary} />
+                    <p className="text-xs font-semibold uppercase" style={{ color: C.textSecondary }}>Duration</p>
+                  </div>
+                  <p className="text-sm font-semibold" style={{ color: C.text }}>{selectedLesson.duration}</p>
+                </div>
+                <div className="rounded-lg border p-4" style={{ borderColor: C.border, background: C.surface }}>
+                  <div className="flex items-center gap-2 mb-2">
+                    <DollarSign size={16} color={C.primary} />
+                    <p className="text-xs font-semibold uppercase" style={{ color: C.textSecondary }}>Fee</p>
+                  </div>
+                  <p className="text-sm font-semibold" style={{ color: C.text }}>৳{selectedLesson.fee}</p>
+                </div>
+              </div>
+
+              <div className="rounded-lg border p-4" style={{ borderColor: C.border, background: C.surface }}>
+                <div className="mb-2 flex items-center gap-2">
+                  <BookOpen size={16} color={C.primary} />
+                  <p className="text-xs font-semibold uppercase" style={{ color: C.textSecondary }}>Homework Assigned</p>
+                </div>
+                <p className="text-sm" style={{ color: C.text }}>{selectedLesson.homework}</p>
+              </div>
+
+              {selectedLesson.notes && (
+                <div className="rounded-lg border p-4" style={{ borderColor: C.border, background: C.surface }}>
+                  <div className="mb-2 flex items-center gap-2">
+                    <FileText size={16} color={C.primary} />
+                    <p className="text-xs font-semibold uppercase" style={{ color: C.textSecondary }}>Tutor Notes</p>
+                  </div>
+                  <p className="text-sm" style={{ color: C.text }}>{selectedLesson.notes}</p>
+                </div>
+              )}
+
+              <div className="flex items-center justify-between pt-4 border-t" style={{ borderColor: C.border }}>
+                <span className="text-sm" style={{ color: C.textSecondary }}>
+                  {isTutor ? "Student" : "Tutor"}: {isTutor ? "Abdul Rahman's Son" : selectedLesson.tutorName}
+                </span>
+                <Badge tone={selectedLesson.status === "confirmed" ? "success" : "warning"}>
+                  {selectedLesson.status === "confirmed" ? "Confirmed" : "Pending"}
+                </Badge>
+              </div>
+            </div>
+
+            <div className="flex justify-end gap-3 border-t p-6" style={{ borderColor: C.border }}>
+              <SecondaryButton onClick={() => setSelectedLesson(null)}>Close</SecondaryButton>
+              <PrimaryButton onClick={() => { setSelectedLesson(null); onNavigate("lesson-log"); }}>
+                Log New Lesson
+              </PrimaryButton>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
