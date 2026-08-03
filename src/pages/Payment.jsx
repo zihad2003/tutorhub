@@ -9,7 +9,6 @@ export function Payment({ onNavigate, role = "parent" }) {
   const isAdmin = role === "admin";
   const backLink = isAdmin ? "admin-dashboard" : "parent-dashboard";
 
-  const [adminTab, setAdminTab] = useState("ledger"); // "ledger" or "withdrawals"
   const [withdrawals, setWithdrawals] = useState(WITHDRAWAL_REQUESTS);
 
   const handleApprove = (id) => {
@@ -54,75 +53,57 @@ export function Payment({ onNavigate, role = "parent" }) {
               Comprehensive audit log of parent payments, tutor payouts, and platform commission.
             </p>
 
-            <div className="flex gap-4 border-b mt-6 pb-px" style={{ borderColor: C.border }}>
-              <button
-                onClick={() => setAdminTab("ledger")}
-                className={`pb-3 text-sm font-semibold border-b-2 px-1 transition-all ${
-                  adminTab === "ledger"
-                    ? "border-blue-600 text-blue-600"
-                    : "border-transparent text-gray-500 hover:text-blue-600"
-                }`}
-                style={{ borderColor: adminTab === "ledger" ? C.primary : "transparent", color: adminTab === "ledger" ? C.primary : undefined }}
-              >
-                Platform Financial Ledger
-              </button>
-              <button
-                onClick={() => setAdminTab("withdrawals")}
-                className={`pb-3 text-sm font-semibold border-b-2 px-1 transition-all ${
-                  adminTab === "withdrawals"
-                    ? "border-blue-600 text-blue-600"
-                    : "border-transparent text-gray-500 hover:text-blue-600"
-                }`}
-                style={{ borderColor: adminTab === "withdrawals" ? C.primary : "transparent", color: adminTab === "withdrawals" ? C.primary : undefined }}
-              >
-                Tutor Withdrawal Requests
-              </button>
+            <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
+              <div className="rounded-lg border p-5 shadow-sm" style={{ borderColor: C.border }}>
+                <p className="text-xs uppercase font-semibold" style={{ color: C.textSecondary }}>Total Volume</p>
+                <p className="mt-2 text-2xl font-semibold" style={{ color: C.text }}>৳{totalVolume}</p>
+              </div>
+              <div className="rounded-lg border p-5 shadow-sm" style={{ borderColor: C.border }}>
+                <p className="text-xs uppercase font-semibold" style={{ color: C.textSecondary }}>Tutor Payouts (90%)</p>
+                <p className="mt-2 text-2xl font-semibold text-green-600">৳{tutorPayouts}</p>
+              </div>
+              <div className="rounded-lg border p-5 shadow-sm" style={{ borderColor: C.border }}>
+                <p className="text-xs uppercase font-semibold" style={{ color: C.textSecondary }}>Platform Profit (10%)</p>
+                <p className="mt-2 text-2xl font-semibold text-blue-600">৳{commission}</p>
+              </div>
             </div>
 
-            {adminTab === "ledger" ? (
-              <div className="animate-fade-in space-y-8 mt-8">
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-                  <div className="rounded-lg border p-5 shadow-sm" style={{ borderColor: C.border }}>
-                    <p className="text-xs uppercase font-semibold" style={{ color: C.textSecondary }}>Total Volume</p>
-                    <p className="mt-2 text-2xl font-semibold" style={{ color: C.text }}>৳{totalVolume}</p>
-                  </div>
-                  <div className="rounded-lg border p-5 shadow-sm" style={{ borderColor: C.border }}>
-                    <p className="text-xs uppercase font-semibold" style={{ color: C.textSecondary }}>Tutor Payouts (90%)</p>
-                    <p className="mt-2 text-2xl font-semibold text-green-600">৳{tutorPayouts}</p>
-                  </div>
-                  <div className="rounded-lg border p-5 shadow-sm" style={{ borderColor: C.border }}>
-                    <p className="text-xs uppercase font-semibold" style={{ color: C.textSecondary }}>Platform Profit (10%)</p>
-                    <p className="mt-2 text-2xl font-semibold text-blue-600">৳{commission}</p>
-                  </div>
-                </div>
-
-                <div className="rounded-lg border p-6 shadow-sm" style={{ borderColor: C.border }}>
-                  <div className="flex items-center justify-between">
-                    <h2 className="text-lg font-semibold" style={{ color: C.text }}>Transaction Audit History</h2>
-                    <PrimaryButton size="sm">
-                      <Download size={14} className="mr-1.5 inline" /> Export CSV
-                    </PrimaryButton>
-                  </div>
-
-                  <div className="mt-4">
-                    <Table
-                      columns={[
-                        { key: "id", label: "Txn ID", render: (id) => `#TXN-${100 + id}` },
-                        { key: "month", label: "Billing Period" },
-                        { key: "totalLessons", label: "Lessons", render: (l) => `${l} Sessions` },
-                        { key: "totalAmount", label: "Gross Fee", render: (amt) => `৳${amt}` },
-                        { key: "totalAmount", label: "Platform Cut (10%)", render: (amt) => `৳${Math.round(amt * 0.1)}` },
-                        { key: "status", label: "Status", render: (status) => (
-                          <Badge tone={status === "paid" ? "success" : "warning"}>{status}</Badge>
-                        )},
-                      ]}
-                      data={PAYMENTS}
-                    />
-                  </div>
-                </div>
+            <div className="mt-8 rounded-lg border p-6 shadow-sm" style={{ borderColor: C.border }}>
+              <div className="flex items-center justify-between">
+                <h2 className="text-lg font-semibold" style={{ color: C.text }}>Transaction Audit History</h2>
+                <PrimaryButton size="sm">
+                  <Download size={14} className="mr-1.5 inline" /> Export CSV
+                </PrimaryButton>
               </div>
-            ) : (
-              <div className="mt-8 space-y-6 animate-fade-in">
+
+              <div className="mt-4">
+                <Table
+                  columns={[
+                    { key: "id", label: "Txn ID", render: (id) => `#TXN-${100 + id}` },
+                    { key: "month", label: "Billing Period" },
+                    { key: "totalLessons", label: "Lessons", render: (l) => `${l} Sessions` },
+                    { key: "totalAmount", label: "Gross Fee", render: (amt) => `৳${amt}` },
+                    { key: "totalAmount", label: "Platform Cut (10%)", render: (amt) => `৳${Math.round(amt * 0.1)}` },
+                    { key: "status", label: "Status", render: (status) => (
+                      <Badge tone={status === "paid" ? "success" : "warning"}>{status}</Badge>
+                    )},
+                  ]}
+                  data={PAYMENTS}
+                />
+              </div>
+            </div>
+            <div className="mt-8 rounded-lg border p-6 shadow-sm bg-white" style={{ borderColor: C.border }}>
+              <div className="border-b pb-4">
+                <h2 className="text-lg font-bold flex items-center gap-2" style={{ color: C.text }}>
+                  <Wallet size={20} className="text-blue-600" />
+                  Tutor Withdrawal Requests
+                </h2>
+                <p className="text-xs mt-0.5" style={{ color: C.textSecondary }}>
+                  Review and process tutor withdrawal requests.
+                </p>
+              </div>
+
+              <div className="mt-6 space-y-6">
                 {withdrawals.length === 0 ? (
                   <div className="rounded-lg border p-10 text-center" style={{ borderColor: C.border }}>
                     <Wallet size={48} color={C.textSecondary} className="mx-auto" />
@@ -135,7 +116,7 @@ export function Payment({ onNavigate, role = "parent" }) {
                   withdrawals.map((withdrawal) => (
                     <div
                       key={withdrawal.id}
-                      className="rounded-lg border p-6 bg-white"
+                      className="rounded-lg border p-6 bg-white hover:shadow-sm transition-shadow"
                       style={{ borderColor: C.border }}
                     >
                       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
@@ -215,7 +196,7 @@ export function Payment({ onNavigate, role = "parent" }) {
                   ))
                 )}
               </div>
-            )}
+            </div>
           </div>
         </div>
       </div>
