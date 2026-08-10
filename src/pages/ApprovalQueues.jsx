@@ -258,10 +258,12 @@ export function ApprovalQueues({ onNavigate, initialTab = "tutors" }) {
                 <XCircle size={22} />
               </button>
             </div>
-            <div className="flex-1 bg-gray-100 p-2">
+            <div className="flex-1 bg-gray-50 p-6 overflow-y-auto flex justify-center">
               <iframe
                 src={selectedDoc.url}
-                className="h-full w-full rounded-lg border-0 shadow-inner"
+                className="w-full max-w-3xl rounded-lg border shadow-md bg-white"
+                style={{ height: "1050px", minHeight: "1050px" }}
+                scrolling="no"
                 title={selectedDoc.title}
               />
             </div>

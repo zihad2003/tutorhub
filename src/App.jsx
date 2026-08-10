@@ -25,6 +25,7 @@ import { Settings } from "./pages/Settings";
 import { Categories } from "./pages/Categories";
 import { Reports } from "./pages/Reports";
 import { Users } from "./pages/Users";
+import { LessonHistory } from "./pages/LessonHistory";
 import { TUTORS } from "./data/tutors";
 
 import { About } from "./pages/About";
@@ -42,7 +43,7 @@ export default function App() {
       "tutor-dashboard", "tutor-profile", "certificates", "availability", "requests", "tutor-applications", "tutor-lessons", "earnings", "tutor-chat", "tutor-settings",
       "admin-dashboard", "admin-tutor-approvals", "admin-parent-approvals", "admin-categories", "admin-reports", "admin-payments", "admin-users", "admin-support", "admin-settings",
       "tutor-approvals", "parent-approvals", "categories", "reports", "users", "support",
-      "lesson-log", "bkash-callback"
+      "lesson-log", "bkash-callbac" "lesson-history"
     ];
     return validPages.includes(path) ? path : "home";
   };
@@ -126,11 +127,11 @@ export default function App() {
   };
 
   const isDashboardPage = [
-    "parent-dashboard", "post-request", "applications", "hired-tutors", "lessons", "payments", "chat", "reviews", "settings",
+    "parent-dashboard", "post-request", "applications", "hired-tutors", "lessons", "lesson-confirm", "payments", "chat", "reviews", "summary", "settings",
     "tutor-dashboard", "tutor-profile", "certificates", "availability", "requests", "tutor-applications", "tutor-lessons", "earnings", "tutor-chat", "tutor-settings",
     "admin-dashboard", "admin-tutor-approvals", "admin-parent-approvals", "admin-categories", "admin-reports", "admin-payments", "admin-users", "admin-support", "admin-settings",
     "tutor-approvals", "parent-approvals", "categories", "reports", "users", "support",
-    "lesson-log", "lesson-confirm", "summary"
+    "lesson-log", "lesson-history"
   ].includes(page);
 
   const getRoleFromPage = (p) => {
@@ -200,7 +201,8 @@ export default function App() {
         {page === "post-request" && <PostRequest onNavigate={go} mode="create" />}
         {page === "applications" && <TutorApplications onNavigate={go} />}
         {page === "hired-tutors" && <TutorList openTutor={openTutor} hiredOnly={true} />}
-        {(page === "lessons" || page === "lesson-log") && <LessonLog onNavigate={go} />}
+        {page === "lessons" && <LessonHistory onNavigate={go} />}
+        {page === "lesson-log" && <LessonLog onNavigate={go} />}
         {page === "lesson-confirm" && <LessonConfirm onNavigate={go} />}
         {page === "payments" && <Payment onNavigate={go} />}
         {page === "chat" && <Chat onNavigate={go} />}

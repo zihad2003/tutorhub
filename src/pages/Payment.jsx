@@ -2,8 +2,8 @@ import { useState } from "react";
 import { C } from "../constants/tokens";
 import { Badge, PrimaryButton, SecondaryButton } from "../components/ui";
 import { Table } from "../components/ui/Table";
-import { PAYMENTS } from "../data/mockData";
-import { CreditCard, Download, Calendar, DollarSign, TrendingUp, Users } from "lucide-react";
+import { PAYMENTS, WITHDRAWAL_REQUESTS } from "../data/mockData";
+import { CreditCard, Download, Calendar, DollarSign, TrendingUp, Users, Wallet, CheckCircle2, XCircle, Clock } from "lucide-react";
 
 import { PaymentGateway } from "../components/ui/PaymentGateway";
 
@@ -12,6 +12,28 @@ export function Payment({ onNavigate, role = "parent" }) {
   const [showGateway, setShowGateway] = useState(false);
   const isAdmin = role === "admin";
   const backLink = isAdmin ? "admin-dashboard" : "parent-dashboard";
+
+  const [withdrawals, setWithdrawals] = useState(WITHDRAWAL_REQUESTS);
+
+  const handleApprove = (id) => {
+    setWithdrawals(prev => prev.map(w => 
+      w.id === id ? { ...w, status: "approved", processedDate: new Date().toISOString().split("T")[0] } : w
+    ));
+    const idx = WITHDRAWAL_REQUESTS.findIndex(w => w.id === id);
+    if (idx !== -1) {
+      WITHDRAWAL_REQUESTS[idx] = { ...WITHDRAWAL_REQUESTS[idx], status: "approved", processedDate: new Date().toISOString().split("T")[0] };
+    }
+  };
+
+  const handleReject = (id) => {
+    setWithdrawals(prev => prev.map(w => 
+      w.id === id ? { ...w, status: "rejected" } : w
+    ));
+    const idx = WITHDRAWAL_REQUESTS.findIndex(w => w.id === id);
+    if (idx !== -1) {
+      WITHDRAWAL_REQUESTS[idx] = { ...WITHDRAWAL_REQUESTS[idx], status: "rejected" };
+    }
+  };
 
   if (isAdmin) {
     const totalVolume = PAYMENTS.reduce((acc, p) => acc + p.totalAmount, 0) + 35000;
@@ -72,6 +94,111 @@ export function Payment({ onNavigate, role = "parent" }) {
                   ]}
                   data={PAYMENTS}
                 />
+              </div>
+            </div>
+            <div className="mt-8 rounded-lg border p-6 shadow-sm bg-white" style={{ borderColor: C.border }}>
+              <div className="border-b pb-4">
+                <h2 className="text-lg font-bold flex items-center gap-2" style={{ color: C.text }}>
+                  <Wallet size={20} className="text-blue-600" />
+                  Tutor Withdrawal Requests
+                </h2>
+                <p className="text-xs mt-0.5" style={{ color: C.textSecondary }}>
+                  Review and process tutor withdrawal requests.
+                </p>
+              </div>
+
+              <div className="mt-6 space-y-6">
+                {withdrawals.length === 0 ? (
+                  <div className="rounded-lg border p-10 text-center" style={{ borderColor: C.border }}>
+                    <Wallet size={48} color={C.textSecondary} className="mx-auto" />
+                    <p className="mt-4 text-sm font-semibold" style={{ color: C.text }}>No withdrawal requests</p>
+                    <p className="mt-1 text-sm" style={{ color: C.textSecondary }}>
+                      No tutors have requested withdrawals yet.
+                    </p>
+                  </div>
+                ) : (
+                  withdrawals.map((withdrawal) => (
+                    <div
+                      key={withdrawal.id}
+                      className="rounded-lg border p-6 bg-white hover:shadow-sm transition-shadow"
+                      style={{ borderColor: C.border }}
+                    >
+                      <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+                        <div className="flex items-start gap-4">
+                          <img
+                            src={withdrawal.tutorImg}
+                            alt={withdrawal.tutorName}
+                            className="h-14 w-14 rounded-full object-cover border"
+                          />
+                          <div>
+                            <div className="flex flex-wrap items-center gap-2">
+                              <h3 className="text-lg font-semibold" style={{ color: C.text }}>
+                                {withdrawal.tutorName}
+                              </h3>
+                              <Badge 
+                                tone={
+                                  withdrawal.status === "approved" ? "success" : 
+                                  withdrawal.status === "rejected" ? "error" : "warning"
+                                }
+                              >
+                                {withdrawal.status.charAt(0).toUpperCase() + withdrawal.status.slice(1)}
+                              </Badge>
+                            </div>
+                            <p className="mt-1 text-sm" style={{ color: C.textSecondary }}>
+                              Requested on {withdrawal.requestedDate}
+                            </p>
+                            <div className="mt-2 space-y-1 text-sm" style={{ color: C.text }}>
+                              <p className="flex items-center gap-2 font-medium">
+                                <span>৳{withdrawal.amount.toLocaleString()}</span>
+                              </p>
+                              <p className="flex items-center gap-2 text-xs" style={{ color: C.textSecondary }}>
+                                Method: {withdrawal.method} · {withdrawal.accountNumber}
+                              </p>
+                              {withdrawal.bankName && (
+                                <p className="flex items-center gap-2 text-xs" style={{ color: C.textSecondary }}>
+                                  Bank: {withdrawal.bankName} · {withdrawal.branch}
+                                </p>
+                              )}
+                            </div>
+                            {withdrawal.notes && (
+                              <p className="mt-2 text-sm italic bg-gray-50 p-2.5 rounded-md border" style={{ borderColor: C.border, color: C.textSecondary }}>
+                                "{withdrawal.notes}"
+                              </p>
+                            )}
+                          </div>
+                        </div>
+
+                        {withdrawal.status === "pending" ? (
+                          <div className="flex gap-2">
+                            <SecondaryButton onClick={() => handleReject(withdrawal.id)}>
+                              <XCircle size={16} className="mr-1.5 inline" />
+                              Reject
+                            </SecondaryButton>
+                            <PrimaryButton onClick={() => handleApprove(withdrawal.id)}>
+                              <CheckCircle2 size={16} className="mr-1.5 inline" />
+                              Approve
+                            </PrimaryButton>
+                          </div>
+                        ) : (
+                          <div className="text-sm">
+                            {withdrawal.status === "approved" && (
+                              <span className="flex items-center gap-1 text-green-600 font-semibold">
+                                <CheckCircle2 size={16} />
+                                Processed on {withdrawal.processedDate}
+                              </span>
+                            )}
+                            {withdrawal.status === "rejected" && (
+                              <span className="flex items-center gap-1 text-red-600 font-semibold">
+                                <XCircle size={16} />
+                                Request rejected
+                              </span>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  ))
+                )}
               </div>
             </div>
           </div>

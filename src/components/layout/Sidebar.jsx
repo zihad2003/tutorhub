@@ -2,7 +2,7 @@ import { C } from "../../constants/tokens";
 import { 
   LayoutDashboard, User, UserPlus, FileText, Calendar, DollarSign, 
   MessageSquare, Star, Settings, GraduationCap, Shield, Users,
-  CheckCircle, LogOut, Menu, X
+  CheckCircle, LogOut, Menu, X, Wallet
 } from "lucide-react";
 import { useState } from "react";
 
