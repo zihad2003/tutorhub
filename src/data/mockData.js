@@ -98,8 +98,8 @@ export const PAYMENTS = [
   {
     id: 3,
     month: "August 2026",
-    totalLessons: 0,
-    totalAmount: 0,
+    totalLessons: 8,
+    totalAmount: 8500,
     status: "pending",
     paidDate: null,
     dueDate: "2026-08-05",
