@@ -112,7 +112,15 @@ export function MonthlySummary({ onNavigate, role = "parent" }) {
 
   const handleReviewSubmit = (e) => {
     e.preventDefault();
+    if (!rating || !punctuality || !knowledge || !communication) {
+      alert("Please provide ratings for all criteria before submitting.");
+      return;
+    }
     const targetTutor = tutorOptions.find(t => t.tutorId === Number(selectedTutorId)) || tutorOptions[0];
+    if (!targetTutor) {
+      alert("Please select a tutor to review.");
+      return;
+    }
     const tutorSubjects = Array.isArray(targetTutor.subjects) ? targetTutor.subjects.join(" & ") : (targetTutor.subjects || "Tuition");
 
     const newRev = {
@@ -121,10 +129,10 @@ export function MonthlySummary({ onNavigate, role = "parent" }) {
       tutorName: targetTutor.tutorName || "Tutor",
       tutorImg: targetTutor.tutorImg || "https://i.pravatar.cc/150?img=12",
       subject: tutorSubjects,
-      overallRating: rating || 5,
-      punctualityRating: punctuality || 5,
-      knowledgeRating: knowledge || 5,
-      communicationRating: communication || 5,
+      overallRating: rating,
+      punctualityRating: punctuality,
+      knowledgeRating: knowledge,
+      communicationRating: communication,
       comment: comment.trim() || "Great teaching performance and very helpful overall.",
       recommend: recommend,
       date: new Date().toISOString().split("T")[0],
@@ -132,6 +140,12 @@ export function MonthlySummary({ onNavigate, role = "parent" }) {
     };
 
     setReviewsList([newRev, ...reviewsList]);
+    
+    // Reset form
+    setRating(0);
+    setPunctuality(0);
+    setKnowledge(0);
+    setCommunication(0);
     setComment("");
     setShowSuccessToast(true);
     setTimeout(() => {

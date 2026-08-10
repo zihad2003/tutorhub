@@ -2,9 +2,10 @@ import { C } from "../constants/tokens";
 import { StatCard } from "../components/ui/StatCard";
 import { Table } from "../components/ui/Table";
 import { PrimaryButton, SecondaryButton, Badge } from "../components/ui";
-import { Users, Calendar, DollarSign, ChevronRight, Plus, Send, CheckCircle2 } from "lucide-react";
+import { Users, Calendar, DollarSign, ChevronRight, Plus, Send, CheckCircle2, X } from "lucide-react";
 import { LESSONS, TUTOR_EARNINGS, REQUESTS, HIRED_TUTORS } from "../data/mockData";
 import { useState } from "react";
+import { Input } from "../components/ui";
 
 export function TutorDashboard({ onNavigate }) {
   const [appliedIds, setAppliedIds] = useState([]);
@@ -14,10 +15,30 @@ export function TutorDashboard({ onNavigate }) {
   const pendingEarnings = LESSONS.filter(l => l.status === "pending").reduce((acc, l) => acc + l.fee, 0);
   const openRequests = REQUESTS.filter(r => r.status === "open");
 
-  const handleQuickApply = (id) => {
-    if (!appliedIds.includes(id)) {
-      setAppliedIds([...appliedIds, id]);
+  const [applyModalOpen, setApplyModalOpen] = useState(false);
+  const [applyRequestId, setApplyRequestId] = useState(null);
+  const [applyFee, setApplyFee] = useState("");
+  const [applyCoverLetter, setApplyCoverLetter] = useState("");
+  const [applyError, setApplyError] = useState("");
+
+  const handleQuickApply = (req) => {
+    setApplyRequestId(req.id);
+    setApplyFee(req.budget);
+    setApplyCoverLetter(`I am interested in tutoring ${req.subject}. I have experience teaching ${req.classLevel} and can easily adapt to the required schedule.`);
+    setApplyError("");
+    setApplyModalOpen(true);
+  };
+
+  const submitApplication = (e) => {
+    e.preventDefault();
+    if (!applyFee || !applyCoverLetter.trim()) {
+      setApplyError("Please fill in all required fields.");
+      return;
     }
+    if (!appliedIds.includes(applyRequestId)) {
+      setAppliedIds([...appliedIds, applyRequestId]);
+    }
+    setApplyModalOpen(false);
   };
 
   return (
@@ -143,7 +164,7 @@ export function TutorDashboard({ onNavigate }) {
                               <CheckCircle2 size={14} /> Applied
                             </span>
                           ) : (
-                            <PrimaryButton size="sm" onClick={() => handleQuickApply(req.id)}>
+                            <PrimaryButton size="sm" onClick={() => handleQuickApply(req)}>
                               <Send size={14} className="mr-1.5 inline" /> Quick Apply
                             </PrimaryButton>
                           )}
@@ -158,6 +179,53 @@ export function TutorDashboard({ onNavigate }) {
           </div>
         </div>
       </div>
+
+      {/* Quick Apply Modal */}
+      {applyModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-md rounded-xl bg-white p-6 shadow-lg">
+            <div className="mb-4 flex items-center justify-between">
+              <h3 className="text-lg font-bold" style={{ color: C.text }}>Submit Application</h3>
+              <button onClick={() => setApplyModalOpen(false)} className="text-gray-400 hover:text-gray-600">
+                <X size={20} />
+              </button>
+            </div>
+            <form onSubmit={submitApplication} className="space-y-4">
+              {applyError && (
+                <div className="rounded-md bg-red-50 p-3 text-sm text-red-600 border border-red-200">
+                  {applyError}
+                </div>
+              )}
+              <div>
+                <label className="mb-1 block text-sm font-semibold" style={{ color: C.text }}>Proposed Hourly Rate (৳)</label>
+                <Input 
+                  type="number" 
+                  value={applyFee} 
+                  onChange={(e) => setApplyFee(e.target.value)} 
+                  placeholder="e.g. 800" 
+                  required 
+                />
+              </div>
+              <div>
+                <label className="mb-1 block text-sm font-semibold" style={{ color: C.text }}>Cover Letter</label>
+                <textarea
+                  rows={4}
+                  value={applyCoverLetter}
+                  onChange={(e) => setApplyCoverLetter(e.target.value)}
+                  className="w-full rounded-lg border p-3 text-sm outline-none transition-all focus:ring-2 focus:ring-blue-500"
+                  style={{ borderColor: C.border }}
+                  placeholder="Briefly explain why you are a good fit for this tuition..."
+                  required
+                />
+              </div>
+              <div className="flex justify-end gap-3 pt-2">
+                <SecondaryButton type="button" onClick={() => setApplyModalOpen(false)}>Cancel</SecondaryButton>
+                <PrimaryButton type="submit">Submit Application</PrimaryButton>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
