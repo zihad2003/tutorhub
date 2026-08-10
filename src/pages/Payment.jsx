@@ -208,7 +208,7 @@ export function Payment({ onNavigate, role = "parent" }) {
   }
 
   const pendingPayment = PAYMENTS.find(p => p.status === "pending");
-  const [customAmount, setCustomAmount] = useState(pendingPayment ? pendingPayment.totalAmount : 0);
+  const [customAmount, setCustomAmount] = useState(pendingPayment ? pendingPayment.totalAmount + 250 : 0);
 
   const handlePayment = async () => {
     setShowGateway(true);
@@ -247,9 +247,9 @@ export function Payment({ onNavigate, role = "parent" }) {
 
               <div className="space-y-4">
                 <div className="flex justify-between text-sm">
-                  <span style={{ color: C.textSecondary }}>Total Lessons</span>
+                  <span style={{ color: C.textSecondary }}>Total Lessons ({pendingPayment.totalLessons})</span>
                   <span className="font-semibold" style={{ color: C.text }}>
-                    {pendingPayment.totalLessons}
+                    ৳{pendingPayment.totalAmount}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
@@ -260,7 +260,7 @@ export function Payment({ onNavigate, role = "parent" }) {
                 </div>
                 <div className="flex justify-between text-sm">
                   <span style={{ color: C.textSecondary }}>Platform Fee</span>
-                  <span className="font-semibold" style={{ color: C.text }}>৳0</span>
+                  <span className="font-semibold" style={{ color: C.text }}>৳250</span>
                 </div>
                 <div className="my-4 h-px" style={{ background: C.border }} />
                 <div className="flex justify-between">
