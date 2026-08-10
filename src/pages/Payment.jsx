@@ -1,10 +1,15 @@
+import { useState } from "react";
 import { C } from "../constants/tokens";
 import { Badge, PrimaryButton, SecondaryButton } from "../components/ui";
 import { Table } from "../components/ui/Table";
 import { PAYMENTS } from "../data/mockData";
 import { CreditCard, Download, Calendar, DollarSign, TrendingUp, Users } from "lucide-react";
 
+import { PaymentGateway } from "../components/ui/PaymentGateway";
+
 export function Payment({ onNavigate, role = "parent" }) {
+  const [selectedMethod, setSelectedMethod] = useState("card");
+  const [showGateway, setShowGateway] = useState(false);
   const isAdmin = role === "admin";
   const backLink = isAdmin ? "admin-dashboard" : "parent-dashboard";
 
@@ -76,6 +81,11 @@ export function Payment({ onNavigate, role = "parent" }) {
   }
 
   const pendingPayment = PAYMENTS.find(p => p.status === "pending");
+  const [customAmount, setCustomAmount] = useState(pendingPayment ? pendingPayment.totalAmount : 0);
+
+  const handlePayment = async () => {
+    setShowGateway(true);
+  };
 
   return (
     <div className="flex min-h-screen bg-white">
@@ -127,10 +137,15 @@ export function Payment({ onNavigate, role = "parent" }) {
                 </div>
                 <div className="my-4 h-px" style={{ background: C.border }} />
                 <div className="flex justify-between">
-                  <span className="text-base font-semibold" style={{ color: C.text }}>Total</span>
-                  <span className="text-xl font-semibold" style={{ color: C.text }}>
-                    ৳{pendingPayment.totalAmount}
-                  </span>
+                  <span className="text-base font-semibold" style={{ color: C.text }}>Total (Customizable)</span>
+                  <div className="flex items-center text-xl font-semibold" style={{ color: C.text }}>
+                    ৳ <input 
+                      type="number" 
+                      value={customAmount} 
+                      onChange={(e) => setCustomAmount(Number(e.target.value))}
+                      className="ml-1 w-24 rounded border px-2 py-1 text-right outline-none focus:border-blue-500"
+                    />
+                  </div>
                 </div>
               </div>
 
@@ -139,14 +154,20 @@ export function Payment({ onNavigate, role = "parent" }) {
                   Payment Method
                 </label>
                 <div className="space-y-2">
-                  <button className="flex w-full items-center gap-3 rounded-lg border p-4 text-left transition-colors duration-150 hover:bg-gray-50" style={{ borderColor: C.border }}>
+                  <button 
+                    onClick={() => setSelectedMethod("card")}
+                    className={`flex w-full items-center gap-3 rounded-lg border p-4 text-left transition-colors duration-150 ${selectedMethod === 'card' ? 'bg-blue-50 border-blue-500' : 'hover:bg-gray-50'}`}
+                  >
                     <CreditCard size={20} color={C.primary} />
                     <div>
                       <p className="text-sm font-semibold" style={{ color: C.text }}>Credit/Debit Card</p>
                       <p className="text-xs" style={{ color: C.textSecondary }}>Visa, Mastercard, Amex</p>
                     </div>
                   </button>
-                  <button className="flex w-full items-center gap-3 rounded-lg border p-4 text-left transition-colors duration-150 hover:bg-gray-50" style={{ borderColor: C.border }}>
+                  <button 
+                    onClick={() => setSelectedMethod("bkash")}
+                    className={`flex w-full items-center gap-3 rounded-lg border p-4 text-left transition-colors duration-150 ${selectedMethod === 'bkash' ? 'bg-pink-50 border-pink-500' : 'hover:bg-gray-50'}`}
+                  >
                     <div className="flex h-5 w-5 items-center justify-center rounded" style={{ background: C.primary }}>
                       <span className="text-xs font-semibold text-white">bKash</span>
                     </div>
@@ -163,7 +184,7 @@ export function Payment({ onNavigate, role = "parent" }) {
                   <Download size={16} className="mr-1.5 inline" />
                   View Summary
                 </SecondaryButton>
-                <PrimaryButton full>Pay ৳{pendingPayment.totalAmount}</PrimaryButton>
+                <PrimaryButton full onClick={handlePayment}>Pay ৳{customAmount}</PrimaryButton>
               </div>
             </div>
           ) : (
@@ -205,6 +226,18 @@ export function Payment({ onNavigate, role = "parent" }) {
           </div>
         </div>
       </div>
+      
+      {showGateway && pendingPayment && (
+        <PaymentGateway
+          method={selectedMethod}
+          amount={customAmount}
+          onComplete={() => {
+            setShowGateway(false);
+            onNavigate("summary");
+          }}
+          onCancel={() => setShowGateway(false)}
+        />
+      )}
     </div>
   );
 }

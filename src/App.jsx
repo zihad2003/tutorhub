@@ -17,6 +17,7 @@ import { Payment } from "./pages/Payment";
 import { MonthlySummary } from "./pages/MonthlySummary";
 import { TutorDashboard } from "./pages/TutorDashboard";
 import { AdminDashboard } from "./pages/AdminDashboard";
+import { PaymentCallback } from "./pages/PaymentCallback";
 import { ApprovalQueues } from "./pages/ApprovalQueues";
 import { Availability } from "./pages/Availability";
 import { Certificates } from "./pages/Certificates";
@@ -41,7 +42,7 @@ export default function App() {
       "tutor-dashboard", "tutor-profile", "certificates", "availability", "requests", "tutor-applications", "tutor-lessons", "earnings", "tutor-chat", "tutor-settings",
       "admin-dashboard", "admin-tutor-approvals", "admin-parent-approvals", "admin-categories", "admin-reports", "admin-payments", "admin-users", "admin-support", "admin-settings",
       "tutor-approvals", "parent-approvals", "categories", "reports", "users", "support",
-      "lesson-log"
+      "lesson-log", "bkash-callback"
     ];
     return validPages.includes(path) ? path : "home";
   };
