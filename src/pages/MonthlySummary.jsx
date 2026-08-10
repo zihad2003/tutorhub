@@ -282,7 +282,11 @@ export function MonthlySummary({ onNavigate, role = "parent" }) {
                         </td>
                         <td className="px-4 py-3 text-center">
                           <button
-                            onClick={() => alert(`Viewing details for lesson on ${lesson.date || "2026-07-20"}`)}
+                            onClick={() => {
+                              if (typeof onNavigate === 'function') {
+                                onNavigate("lessons");
+                              }
+                            }}
                             className="rounded-md border px-3 py-1 text-xs font-semibold transition-colors hover:bg-gray-50"
                             style={{ borderColor: C.border, color: C.primary }}
                           >
