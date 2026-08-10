@@ -247,9 +247,9 @@ export function Payment({ onNavigate, role = "parent" }) {
 
               <div className="space-y-4">
                 <div className="flex justify-between text-sm">
-                  <span style={{ color: C.textSecondary }}>Total Lessons ({pendingPayment.totalLessons})</span>
+                  <span style={{ color: C.textSecondary }}>Total Lessons</span>
                   <span className="font-semibold" style={{ color: C.text }}>
-                    ৳{pendingPayment.totalAmount}
+                    {pendingPayment.totalLessons}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
