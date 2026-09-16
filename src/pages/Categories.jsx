@@ -73,6 +73,7 @@ export function Categories({ onNavigate }) {
   const [subjectsInput, setSubjectsInput] = useState("");
   const [salaryRange, setSalaryRange] = useState("৳8,000 - ৳15,000/mo");
   const [selectedPhoto, setSelectedPhoto] = useState(PRESET_PHOTOS[0].url);
+  const [customPhotoUrl, setCustomPhotoUrl] = useState("");
   const [status, setStatus] = useState("active");
   const [toastMessage, setToastMessage] = useState(null);
 
@@ -113,7 +114,7 @@ export function Categories({ onNavigate }) {
       description: description.trim() || "Custom tuition category",
       count: "0 Tutors",
       status: status,
-      image: selectedPhoto,
+      image: customPhotoUrl.trim() || selectedPhoto,
       iconName: "BookOpen",
       color: "#2563eb",
       subjects: subjectsList,
@@ -125,6 +126,7 @@ export function Categories({ onNavigate }) {
     setName("");
     setDescription("");
     setSubjectsInput("");
+    setCustomPhotoUrl("");
     setIsAddModalOpen(false);
     showToast(`Added "${newCat.name}" category successfully!`);
   };
@@ -133,6 +135,18 @@ export function Categories({ onNavigate }) {
     e.stopPropagation();
     updateCategories(categories.filter(c => c.id !== id));
     showToast(`Deleted "${catName}"`);
+  };
+
+  const handleFileChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        setCustomPhotoUrl(reader.result);
+        setSelectedPhoto("");
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handleToggleStatus = (e, id) => {
@@ -514,19 +528,38 @@ export function Categories({ onNavigate }) {
                     <button
                       key={idx}
                       type="button"
-                      onClick={() => setSelectedPhoto(photo.url)}
+                      onClick={() => { setSelectedPhoto(photo.url); setCustomPhotoUrl(""); }}
                       className={`relative h-12 w-12 overflow-hidden rounded-lg border-2 transition-all ${
-                        selectedPhoto === photo.url ? "border-blue-600 scale-105 shadow-md ring-2 ring-blue-300" : "border-gray-200 opacity-70 hover:opacity-100"
+                        (!customPhotoUrl && selectedPhoto === photo.url) ? "border-blue-600 scale-105 shadow-md ring-2 ring-blue-300" : "border-gray-200 opacity-70 hover:opacity-100"
                       }`}
                     >
                       <img src={photo.url} alt={photo.label} className="h-full w-full object-cover" />
-                      {selectedPhoto === photo.url && (
+                      {(!customPhotoUrl && selectedPhoto === photo.url) && (
                         <div className="absolute inset-0 flex items-center justify-center bg-blue-600/40 text-white">
                           <Check size={16} />
                         </div>
                       )}
                     </button>
                   ))}
+                </div>
+                <div className="mt-3">
+                  <label className="block text-xs font-medium text-gray-500 mb-1">
+                    Or upload from device gallery
+                  </label>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    onChange={handleFileChange}
+                    className="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100 cursor-pointer"
+                  />
+                  {customPhotoUrl && (
+                    <div className="mt-3 relative h-16 w-16 rounded-lg overflow-hidden border-2 border-blue-600 shadow-sm ring-2 ring-blue-200">
+                      <img src={customPhotoUrl} alt="Uploaded custom" className="h-full w-full object-cover" />
+                      <div className="absolute inset-0 flex items-center justify-center bg-black/10 text-white">
+                        <Check size={18} className="text-white drop-shadow-md" />
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
 

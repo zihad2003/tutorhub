@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { C } from "../constants/tokens";
 import { StatCard } from "../components/ui/StatCard";
 import { Table } from "../components/ui/Table";
@@ -6,7 +7,35 @@ import { TrendingUp, Users, DollarSign, BookOpen } from "lucide-react";
 import { PAYMENTS } from "../data/mockData";
 
 export function Reports({ onNavigate }) {
-  const totalRevenue = PAYMENTS.filter(p => p.status === "paid").reduce((acc, p) => acc + p.totalAmount, 0);
+  const [filterType, setFilterType] = useState("single");
+  const [singleMonth, setSingleMonth] = useState("All");
+  const [startMonth, setStartMonth] = useState("All");
+  const [endMonth, setEndMonth] = useState("All");
+
+  const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
+  
+  const getMonthValue = (monthStr) => {
+    if (!monthStr || monthStr === "All") return -1;
+    const [m, y] = monthStr.split(" ");
+    return parseInt(y) * 12 + monthNames.indexOf(m);
+  };
+
+  const filteredPayments = PAYMENTS.filter(p => {
+    if (filterType === "single") {
+      return singleMonth === "All" || p.month === singleMonth;
+    } else {
+      const pVal = getMonthValue(p.month);
+      const fromVal = getMonthValue(startMonth);
+      const toVal = getMonthValue(endMonth);
+      
+      if (fromVal !== -1 && pVal < fromVal) return false;
+      if (toVal !== -1 && pVal > toVal) return false;
+      return true;
+    }
+  });
+
+  const totalRevenue = filteredPayments.filter(p => p.status === "paid").reduce((acc, p) => acc + p.totalAmount, 0);
+  const uniqueMonths = ["All", ...new Set(PAYMENTS.map(p => p.month))];
 
   return (
     <div className="flex min-h-screen bg-white">
@@ -53,8 +82,63 @@ export function Reports({ onNavigate }) {
           </div>
 
           <div className="mt-8 rounded-lg border p-6 shadow-sm" style={{ borderColor: C.border }}>
-            <h2 className="text-lg font-semibold" style={{ color: C.text }}>Monthly Revenue & Payout Logs</h2>
-            <p className="mt-1 text-xs" style={{ color: C.textSecondary }}>Audited financial records across all tutors and parents</p>
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-4">
+              <div>
+                <h2 className="text-lg font-semibold" style={{ color: C.text }}>Monthly Revenue & Payout Logs</h2>
+                <p className="mt-1 text-xs" style={{ color: C.textSecondary }}>Audited financial records across all tutors and parents</p>
+              </div>
+              <div className="flex items-center gap-3">
+                <select
+                  value={filterType}
+                  onChange={(e) => setFilterType(e.target.value)}
+                  className="rounded-lg border py-1.5 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-gray-50 font-medium"
+                  style={{ borderColor: C.border, color: C.textSecondary }}
+                >
+                  <option value="single">Single Month</option>
+                  <option value="range">Month Range</option>
+                </select>
+
+                {filterType === "single" ? (
+                  <select
+                    value={singleMonth}
+                    onChange={(e) => setSingleMonth(e.target.value)}
+                    className="rounded-lg border py-1.5 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                    style={{ borderColor: C.border, color: C.text }}
+                  >
+                    <option value="All">All Months</option>
+                    {uniqueMonths.filter(m => m !== "All").map(m => (
+                      <option key={m} value={m}>{m}</option>
+                    ))}
+                  </select>
+                ) : (
+                  <>
+                    <select
+                      value={startMonth}
+                      onChange={(e) => setStartMonth(e.target.value)}
+                      className="rounded-lg border py-1.5 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                      style={{ borderColor: C.border, color: C.text }}
+                    >
+                      <option value="All">From: All</option>
+                      {uniqueMonths.filter(m => m !== "All").map(m => (
+                        <option key={m} value={m}>{m}</option>
+                      ))}
+                    </select>
+                    <span className="text-gray-400 text-sm">to</span>
+                    <select
+                      value={endMonth}
+                      onChange={(e) => setEndMonth(e.target.value)}
+                      className="rounded-lg border py-1.5 px-3 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 bg-white"
+                      style={{ borderColor: C.border, color: C.text }}
+                    >
+                      <option value="All">To: All</option>
+                      {uniqueMonths.filter(m => m !== "All").map(m => (
+                        <option key={m} value={m}>{m}</option>
+                      ))}
+                    </select>
+                  </>
+                )}
+              </div>
+            </div>
             <div className="mt-4">
               <Table
                 columns={[
@@ -66,7 +150,7 @@ export function Reports({ onNavigate }) {
                     <Badge tone={status === "paid" ? "success" : "warning"}>{status}</Badge>
                   )},
                 ]}
-                data={PAYMENTS}
+                data={filteredPayments}
               />
             </div>
           </div>

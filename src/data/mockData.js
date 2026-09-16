@@ -77,33 +77,23 @@ export const LESSONS = [
 ];
 
 export const PAYMENTS = [
-  {
-    id: 1,
-    month: "July 2026",
-    totalLessons: 8,
-    totalAmount: 7200,
-    status: "paid",
-    paidDate: "2026-07-01",
-    dueDate: "2026-07-05",
-  },
-  {
-    id: 2,
-    month: "June 2026",
-    totalLessons: 10,
-    totalAmount: 9000,
-    status: "paid",
-    paidDate: "2026-06-03",
-    dueDate: "2026-06-05",
-  },
-  {
-    id: 3,
-    month: "August 2026",
-    totalLessons: 8,
-    totalAmount: 8500,
-    status: "pending",
-    paidDate: null,
-    dueDate: "2026-08-05",
-  },
+  { id: 1, month: "August 2026", totalLessons: 12, totalAmount: 11500, status: "pending", paidDate: null, dueDate: "2026-08-05" },
+  { id: 2, month: "August 2026", totalLessons: 8, totalAmount: 8500, status: "pending", paidDate: null, dueDate: "2026-08-05" },
+  { id: 3, month: "July 2026", totalLessons: 8, totalAmount: 7200, status: "paid", paidDate: "2026-07-01", dueDate: "2026-07-05" },
+  { id: 4, month: "July 2026", totalLessons: 15, totalAmount: 13500, status: "paid", paidDate: "2026-07-02", dueDate: "2026-07-05" },
+  { id: 5, month: "June 2026", totalLessons: 10, totalAmount: 9000, status: "paid", paidDate: "2026-06-03", dueDate: "2026-06-05" },
+  { id: 6, month: "June 2026", totalLessons: 11, totalAmount: 9900, status: "paid", paidDate: "2026-06-02", dueDate: "2026-06-05" },
+  { id: 7, month: "May 2026", totalLessons: 12, totalAmount: 10800, status: "paid", paidDate: "2026-05-02", dueDate: "2026-05-05" },
+  { id: 8, month: "May 2026", totalLessons: 14, totalAmount: 12500, status: "paid", paidDate: "2026-05-02", dueDate: "2026-05-05" },
+  { id: 9, month: "April 2026", totalLessons: 9, totalAmount: 8100, status: "paid", paidDate: "2026-04-04", dueDate: "2026-04-05" },
+  { id: 10, month: "April 2026", totalLessons: 7, totalAmount: 6300, status: "paid", paidDate: "2026-04-03", dueDate: "2026-04-05" },
+  { id: 11, month: "March 2026", totalLessons: 14, totalAmount: 12600, status: "paid", paidDate: "2026-03-01", dueDate: "2026-03-05" },
+  { id: 12, month: "February 2026", totalLessons: 8, totalAmount: 7200, status: "paid", paidDate: "2026-02-05", dueDate: "2026-02-05" },
+  { id: 13, month: "January 2026", totalLessons: 10, totalAmount: 9000, status: "paid", paidDate: "2026-01-03", dueDate: "2026-01-05" },
+  { id: 14, month: "December 2025", totalLessons: 12, totalAmount: 10800, status: "paid", paidDate: "2025-12-04", dueDate: "2025-12-05" },
+  { id: 15, month: "November 2025", totalLessons: 10, totalAmount: 9000, status: "paid", paidDate: "2025-11-02", dueDate: "2025-11-05" },
+  { id: 16, month: "October 2025", totalLessons: 11, totalAmount: 9900, status: "paid", paidDate: "2025-10-05", dueDate: "2025-10-05" },
+  { id: 17, month: "September 2025", totalLessons: 8, totalAmount: 7200, status: "paid", paidDate: "2025-09-01", dueDate: "2025-09-05" },
 ];
 
 export const APPLICATIONS = [
@@ -276,7 +266,9 @@ export const ADMIN_APPROVALS = {
       subjects: ["Math", "Physics"],
       experience: "4 years",
       location: "Savar, Dhaka",
-      certificates: ["BSc in Mathematics", "Teaching Certificate"],
+      certificates: [
+        { name: "BSc in Mathematics", url: "/certificate-karim.html" }
+      ],
       cvUrl: "/sample-cv-karim.html",
       appliedDate: "2026-07-20",
       status: "pending",
@@ -289,7 +281,9 @@ export const ADMIN_APPROVALS = {
       subjects: ["Chemistry", "Biology"],
       experience: "2 years",
       location: "Gazipur, Dhaka",
-      certificates: ["MSc in Chemistry"],
+      certificates: [
+        { name: "MSc in Chemistry", url: "/certificate-nasreen.html" }
+      ],
       cvUrl: "/sample-cv-nasreen.html",
       appliedDate: "2026-07-19",
       status: "pending",
