@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BSc in Mathematics - Karim Uddin</title>
+<style>
+  body {
+    background-color: #e0e6ed;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    margin: 0;
+    font-family: 'Georgia', serif;
+  }
+  .certificate-wrapper {
+    background-color: white;
+    width: 850px;
+    height: 750px;
+    padding: 10px;
+    box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+  }
+  .certificate {
+    width: 100%;
+    height: 100%;
+    border: 10px double #2c3e50;
+    box-sizing: border-box;
+    padding: 40px;
+    position: relative;
+    text-align: center;
+    background: radial-gradient(circle, #ffffff 50%, #f9f9f9 100%);
+  }
+  .header {
+    font-size: 38px;
+    font-weight: bold;
+    color: #1a252f;
+    margin-top: 10px;
+    text-transform: uppercase;
+    letter-spacing: 3px;
+    border-bottom: 2px solid #e74c3c;
+    display: inline-block;
+    padding-bottom: 10px;
+  }
+  .sub-header {
+    font-size: 18px;
+    margin-top: 35px;
+    color: #555;
+    font-style: italic;
+  }
+  .name {
+    font-size: 52px;
+    font-weight: normal;
+    margin: 25px 0;
+    font-family: 'Brush Script MT', 'Lucida Handwriting', cursive;
+    color: #2c3e50;
+  }
+  .sub-header-2 {
+    font-size: 18px;
+    color: #555;
+    margin-bottom: 15px;
+  }
+  .degree {
+    font-size: 30px;
+    font-weight: bold;
+    color: #c0392b;
+    margin: 15px 0;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .details {
+    font-size: 16px;
+    margin-top: 20px;
+    line-height: 1.6;
+    color: #333;
+    padding: 0 60px;
+    position: relative;
+    z-index: 10;
+  }
+  .seal {
+    position: absolute;
+    bottom: 40px;
+    left: 60px;
+    width: 110px;
+    height: 110px;
+    background-color: #d4af37;
+    border-radius: 50%;
+    border: 3px solid #b8860b;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-weight: bold;
+    font-size: 11px;
+    color: #fff;
+    text-align: center;
+    box-shadow: inset 0 0 10px rgba(0,0,0,0.3), 0 5px 10px rgba(0,0,0,0.2);
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
+  }
+  .seal::before {
+    content: '';
+    position: absolute;
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    border: 1px dashed #fff;
+  }
+  .signature-container {
+    position: absolute;
+    bottom: 50px;
+    right: 60px;
+    text-align: center;
+  }
+  .signature {
+    width: 220px;
+    border-bottom: 1px solid #2c3e50;
+    height: 50px;
+    font-family: 'Brush Script MT', cursive;
+    font-size: 32px;
+    line-height: 70px;
+    color: #2c3e50;
+  }
+  .signature-title {
+    margin-top: 8px;
+    font-size: 14px;
+    font-weight: bold;
+    text-transform: uppercase;
+    color: #555;
+    letter-spacing: 1px;
+  }
+</style>
+</head>
+<body>
+  <div class="certificate-wrapper">
+    <div class="certificate">
+      <div class="header">University of Dhaka</div>
+      <div class="sub-header">This is to certify that</div>
+      <div class="name">Karim Uddin</div>
+      <div class="sub-header-2">has successfully completed the prescribed courses of study for the degree of</div>
+      <div class="degree">Bachelor of Science in Mathematics</div>
+      <div class="details">
+        <span style="font-family: monospace; font-size: 14px; color: #555;">Registration No: 2018334055 &nbsp; | &nbsp; Session: 2018-2019</span><br>
+        <div style="margin-top: 15px; margin-bottom: 25px;">
+          Having completed the prescribed courses of study and passed the final examination with a <br>
+          <strong style="color: #1a252f; font-size: 18px;">Cumulative Grade Point Average (CGPA) of 3.85</strong> on a scale of 4.00.
+        </div>
+        With all the rights, honors, and privileges appertaining to that degree.<br>
+        In witness whereof, this Diploma is issued under the seal of the University.
+      </div>
+      <div class="seal">OFFICIAL<br>UNIVERSITY<br>SEAL</div>
+      <div class="signature-container">
+        <div class="signature">Prof. Dr. A. Rahman</div>
+        <div class="signature-title">Vice Chancellor</div>
+      </div>
+    </div>
+  </div>
+</body>
+</html>

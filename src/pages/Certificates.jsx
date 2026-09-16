@@ -1,17 +1,17 @@
 import { C } from "../constants/tokens";
 import { PrimaryButton, SecondaryButton, Badge } from "../components/ui";
-import { Award, Upload, CheckCircle2, Trash2, Plus } from "lucide-react";
+import { Award, Upload, CheckCircle2, Trash2, Plus, ExternalLink, XCircle } from "lucide-react";
 import { useState } from "react";
 
 export function Certificates({ onNavigate }) {
   const [certs, setCerts] = useState([
-    { id: 1, title: "BSc in Physics, Dhaka University", status: "verified", date: "2024-05-15" },
-    { id: 2, title: "Certified Physics Olympiad Trainer", status: "verified", date: "2025-02-10" },
-    { id: 3, title: "HSC Academic Excellence Certificate", status: "pending", date: "2026-07-01" },
+    { id: 1, title: "BSc in Mathematics, University of Dhaka", status: "verified", date: "2024-05-15", url: "/certificate-karim.html" },
+    { id: 3, title: "HSC Academic Excellence Certificate", status: "pending", date: "2026-07-01", url: "/certificate-karim.html" },
   ]);
 
   const [newCertTitle, setNewCertTitle] = useState("");
   const [showAddForm, setShowAddForm] = useState(false);
+  const [selectedDoc, setSelectedDoc] = useState(null);
 
   const handleAddCert = (e) => {
     e.preventDefault();
@@ -117,17 +117,58 @@ export function Certificates({ onNavigate }) {
                   </div>
                 </div>
 
-                <button
-                  onClick={() => handleDelete(cert.id)}
-                  className="rounded p-2 text-gray-400 hover:bg-red-50 hover:text-red-600 transition-colors"
-                >
-                  <Trash2 size={16} />
-                </button>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => setSelectedDoc({ title: cert.title, url: cert.url })}
+                    className="rounded p-2 text-gray-500 hover:bg-gray-100 transition-colors flex items-center gap-1 text-xs font-semibold"
+                    title="View Certificate"
+                  >
+                    View
+                  </button>
+                  <button
+                    onClick={() => handleDelete(cert.id)}
+                    className="rounded p-2 text-gray-400 hover:bg-red-50 hover:text-red-600 transition-colors"
+                  >
+                    <Trash2 size={16} />
+                  </button>
+                </div>
               </div>
             ))}
           </div>
         </div>
       </div>
+
+      {/* Document Modal Preview */}
+      {selectedDoc && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4 backdrop-blur-sm">
+          <div className="flex h-[88vh] w-full max-w-4xl flex-col rounded-xl bg-white shadow-2xl overflow-hidden">
+            <div className="flex items-center justify-between border-b px-6 py-4" style={{ borderColor: C.border }}>
+              <h3 className="text-lg font-semibold" style={{ color: C.text }}>
+                {selectedDoc.title}
+              </h3>
+              <button
+                type="button"
+                onClick={() => setSelectedDoc(null)}
+                className="rounded-lg p-1.5 text-gray-500 hover:bg-gray-100 hover:text-gray-700"
+              >
+                <XCircle size={22} />
+              </button>
+            </div>
+            <div className="flex-1 bg-gray-50 p-6 overflow-y-auto flex justify-center">
+              <iframe
+                src={selectedDoc.url}
+                className="w-full max-w-3xl rounded-lg border shadow-md bg-white"
+                style={{ height: "1050px", minHeight: "1050px" }}
+                scrolling="no"
+                title={selectedDoc.title}
+              />
+            </div>
+            <div className="flex justify-end border-t px-6 py-3" style={{ borderColor: C.border }}>
+              <SecondaryButton onClick={() => setSelectedDoc(null)}>Close</SecondaryButton>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

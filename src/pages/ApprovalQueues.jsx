@@ -140,10 +140,27 @@ export function ApprovalQueues({ onNavigate, initialTab = "tutors" }) {
                           Certificates & Documents
                         </p>
                         <div className="space-y-2">
-                          {tutor.certificates.map((cert) => (
-                            <div key={cert} className="flex items-center gap-2 rounded-lg border p-3" style={{ borderColor: C.border, background: C.surface }}>
-                              <Award size={16} color={C.accent} />
-                              <span className="text-sm" style={{ color: C.text }}>{cert}</span>
+                          {tutor.certificates.map((cert, index) => (
+                            <div key={index} className="flex items-center gap-2">
+                              <button
+                                type="button"
+                                onClick={() => setSelectedDoc({ title: `${tutor.name} - ${cert.name}`, url: cert.url })}
+                                className="flex-1 flex items-center gap-2 rounded-lg border p-3 text-left transition-colors hover:bg-gray-50"
+                                style={{ borderColor: C.border, background: C.surface }}
+                              >
+                                <Award size={16} color={C.accent} />
+                                <span className="text-sm font-semibold" style={{ color: C.primary }}>View {cert.name}</span>
+                              </button>
+                              <a
+                                href={cert.url}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="flex h-[50px] w-[50px] shrink-0 items-center justify-center rounded-lg border transition-colors hover:bg-gray-50"
+                                style={{ borderColor: C.border, background: C.surface }}
+                                title="Open in new tab"
+                              >
+                                <ExternalLink size={18} style={{ color: C.primary }} />
+                              </a>
                             </div>
                           ))}
                           {tutor.cvUrl && (
