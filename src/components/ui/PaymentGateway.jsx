@@ -16,43 +16,14 @@ export function PaymentGateway({ method, amount, onComplete, onCancel }) {
         setStep(2); // Go to PIN/OTP
       }, 1000);
     } else {
-      try {
-        // Step 2: Confirming the PIN, call the API in the background
-        const createRes = await fetch('/api/bkash/create', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ amount: amount, reference: 'TutorHub' })
-        });
-        const createData = await createRes.json();
-        
-        if (createData.paymentID) {
-          // Immediately execute it
-          const executeRes = await fetch('/api/bkash/execute', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ paymentID: createData.paymentID })
-          });
-          const executeData = await executeRes.json();
-          
-          if (executeData.statusCode === '0000') {
-            setStep(3); // Success
-            setTimeout(() => {
-              onComplete();
-            }, 2000);
-          } else {
-            alert('Payment failed: ' + (executeData.statusMessage || 'Unknown error'));
-            setStep(1);
-          }
-        } else {
-          alert('Failed to initiate payment.');
-          setStep(1);
-        }
-      } catch (err) {
-        alert('An error occurred during payment processing.');
-        setStep(1);
-      } finally {
+      // Mock API call to succeed
+      setTimeout(() => {
         setLoading(false);
-      }
+        setStep(3); // Success
+        setTimeout(() => {
+          onComplete();
+        }, 2000);
+      }, 1000);
     }
   };
 
