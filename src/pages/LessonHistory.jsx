@@ -9,6 +9,14 @@ export function LessonHistory({ onNavigate, role = "parent" }) {
   const backLink = isTutor ? "tutor-dashboard" : "parent-dashboard";
   const [selectedLesson, setSelectedLesson] = useState(null);
   const [lessons, setLessons] = useState(LESSONS);
+  const [filterSubject, setFilterSubject] = useState("");
+  const [filterMonth, setFilterMonth] = useState("");
+
+  const filteredLessons = lessons.filter(l => {
+    const matchSubject = filterSubject ? l.subject.toLowerCase().includes(filterSubject.toLowerCase()) : true;
+    const matchMonth = filterMonth ? l.date.startsWith(filterMonth) : true;
+    return matchSubject && matchMonth;
+  });
 
   const handleConfirmLesson = (lessonId) => {
     setLessons(lessons.map(l => 
@@ -38,6 +46,24 @@ export function LessonHistory({ onNavigate, role = "parent" }) {
               : "View all completed lessons with tutor notes and homework assignments."}
           </p>
 
+          <div className="mt-6 flex flex-col gap-4 sm:flex-row">
+            <input 
+              type="text" 
+              placeholder="Filter by Subject..." 
+              value={filterSubject}
+              onChange={(e) => setFilterSubject(e.target.value)}
+              className="rounded-md border px-3 py-2 text-sm"
+              style={{ borderColor: C.border, outlineColor: C.primary }}
+            />
+            <input 
+              type="month" 
+              value={filterMonth}
+              onChange={(e) => setFilterMonth(e.target.value)}
+              className="rounded-md border px-3 py-2 text-sm"
+              style={{ borderColor: C.border, outlineColor: C.primary }}
+            />
+          </div>
+
           <div className="mt-8 overflow-x-auto rounded-lg border" style={{ borderColor: C.border }}>
             <table className="w-full text-sm">
               <thead>
@@ -51,7 +77,7 @@ export function LessonHistory({ onNavigate, role = "parent" }) {
                 </tr>
               </thead>
               <tbody>
-                {lessons.map((lesson) => (
+                {filteredLessons.map((lesson) => (
                   <tr key={lesson.id} className="border-b hover:bg-gray-50/50" style={{ borderColor: C.border }}>
                     <td className="px-4 py-3 font-medium" style={{ color: C.text }}>{lesson.subject}</td>
                     <td className="px-4 py-3" style={{ color: C.text }}>{lesson.classLevel}</td>
@@ -146,13 +172,6 @@ export function LessonHistory({ onNavigate, role = "parent" }) {
                     <p className="text-xs font-semibold uppercase" style={{ color: C.textSecondary }}>Duration</p>
                   </div>
                   <p className="text-sm font-semibold" style={{ color: C.text }}>{selectedLesson.duration}</p>
-                </div>
-                <div className="rounded-lg border p-4" style={{ borderColor: C.border, background: C.surface }}>
-                  <div className="flex items-center gap-2 mb-2">
-                    <DollarSign size={16} color={C.primary} />
-                    <p className="text-xs font-semibold uppercase" style={{ color: C.textSecondary }}>Fee</p>
-                  </div>
-                  <p className="text-sm font-semibold" style={{ color: C.text }}>৳{selectedLesson.fee}</p>
                 </div>
               </div>
 

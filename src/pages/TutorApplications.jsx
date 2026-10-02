@@ -7,8 +7,13 @@ import { useState } from "react";
 export function TutorApplications({ onNavigate, role = "parent" }) {
   const isTutor = role === "tutor";
   const backLink = isTutor ? "tutor-dashboard" : "parent-dashboard";
-  const [coverLetter, setCoverLetter] = useState("");
-  const [isGenerating, setIsGenerating] = useState(false);
+  const [apps, setApps] = useState(APPLICATIONS);
+  const [hiringApp, setHiringApp] = useState(null);
+  const [offerAmount, setOfferAmount] = useState("");
+
+  const handleHire = (app) => {
+    setApps(apps.map(a => a.id === app.id ? { ...a, status: "offer_sent" } : a));
+  };
 
   const generateAutoCoverLetter = (requestId) => {
     setIsGenerating(true);
@@ -54,7 +59,7 @@ export function TutorApplications({ onNavigate, role = "parent" }) {
             </p>
 
             <div className="mt-8 space-y-6">
-              {APPLICATIONS.map((app) => (
+              {apps.map((app) => (
                 <div
                   key={app.id}
                   className="rounded-lg border p-6 shadow-sm"
@@ -71,7 +76,7 @@ export function TutorApplications({ onNavigate, role = "parent" }) {
                         </Badge>
                       </div>
                       <p className="mt-1 text-sm" style={{ color: C.textSecondary }}>
-                        Subjects: {app.subjects.join(", ")} · Proposed Rate: <strong className="text-blue-600">৳{app.fee}/hr</strong>
+                        Subjects: {app.subjects.join(", ")}
                       </p>
                     </div>
 
@@ -119,7 +124,7 @@ export function TutorApplications({ onNavigate, role = "parent" }) {
     );
   }
 
-  const pendingApps = APPLICATIONS.filter(a => a.status === "pending");
+  const pendingApps = apps.filter(a => a.status === "pending");
 
   return (
     <div className="flex min-h-screen bg-white">
@@ -150,7 +155,9 @@ export function TutorApplications({ onNavigate, role = "parent" }) {
             </div>
           ) : (
             <div className="mt-8 space-y-6">
-              {pendingApps.map((app) => (
+              {pendingApps.map((app) => {
+                const request = REQUESTS.find(r => r.id === app.requestId) || {};
+                return (
                 <div
                   key={app.id}
                   className="rounded-lg border p-6"
@@ -172,16 +179,17 @@ export function TutorApplications({ onNavigate, role = "parent" }) {
                       <p className="mt-1 text-sm" style={{ color: C.textSecondary }}>
                         {app.subjects.join(", ")} · {app.experience} experience
                       </p>
-                      <p className="mt-2 text-sm font-semibold" style={{ color: C.text }}>
-                        ৳{app.fee}<span className="font-normal" style={{ color: C.textSecondary }}>/hour</span>
-                      </p>
+                      <div className="mt-2 flex gap-4 text-sm font-semibold" style={{ color: C.text }}>
+                        <p>Expected Salary: ৳{request.budget}</p>
+                        <p>Time: {request.preferredTime}</p>
+                      </div>
                     </div>
                     <div className="flex gap-2">
                       <SecondaryButton size="sm" onClick={() => onNavigate("chat")}>
                         <MessageCircle size={14} className="mr-1.5 inline" />
                         Message
                       </SecondaryButton>
-                      <PrimaryButton size="sm">Hire</PrimaryButton>
+                      <PrimaryButton size="sm" onClick={() => { setHiringApp(app); setOfferAmount(""); }}>Hire</PrimaryButton>
                     </div>
                   </div>
 
@@ -229,11 +237,45 @@ export function TutorApplications({ onNavigate, role = "parent" }) {
                     <span>Request ID: {app.requestId}</span>
                   </div>
                 </div>
-              ))}
+              )})}
             </div>
           )}
         </div>
       </div>
+
+      {hiringApp && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+          <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
+            <h2 className="text-xl font-bold" style={{ color: C.text }}>Send Offer to {hiringApp.tutorName}</h2>
+            <p className="mt-2 text-sm text-gray-600">
+              Please enter the salary you are willing to offer. The tutor will review this offer and decide whether to accept or reject it.
+            </p>
+            <div className="my-4">
+              <label className="block text-sm font-semibold mb-2" style={{ color: C.text }}>Offer Amount (৳/hour)</label>
+              <input 
+                type="number"
+                placeholder="e.g. 1000"
+                value={offerAmount}
+                onChange={(e) => setOfferAmount(e.target.value)}
+                className="w-full rounded-lg border p-3 text-lg outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
+                style={{ borderColor: C.border }}
+              />
+            </div>
+            <div className="mt-6 flex justify-end gap-3">
+              <SecondaryButton onClick={() => setHiringApp(null)}>Cancel</SecondaryButton>
+              <PrimaryButton 
+                onClick={() => {
+                  if(!offerAmount) return alert("Please enter an offer amount.");
+                  handleHire(hiringApp);
+                  setHiringApp(null);
+                }}
+              >
+                Send Offer
+              </PrimaryButton>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
