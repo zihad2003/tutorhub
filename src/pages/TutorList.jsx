@@ -4,6 +4,7 @@ import { C } from "../constants/tokens";
 import { TutorCard } from "../components/ui/TutorCard";
 import { TUTORS as mockTutors } from "../data/tutors";
 import { getStoredCategories } from "../data/categoriesData";
+import { fetchFromAPI } from "../api";
 
 export function TutorList({ openTutor, hiredOnly = false }) {
   const [subject, setSubject] = useState("All subjects");
@@ -21,12 +22,8 @@ export function TutorList({ openTutor, hiredOnly = false }) {
   }, []);
 
   useEffect(() => {
-    fetch('http://localhost:5001/api/data/tutors')
-      .then(res => res.json())
+    fetchFromAPI('/tutors')
       .then(data => {
-        // Data format might be slightly different. Mock data used arrays for subjects.
-        // If subjects is a string in DB, we'd parse it, or we rely on the DB layout.
-        // For now, let's merge or use DB data.
         setDbTutors(data.length > 0 ? data : mockTutors);
         setIsLoading(false);
       })

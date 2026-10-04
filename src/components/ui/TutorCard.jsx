@@ -16,7 +16,7 @@ export function TutorCard({ t, onOpen }) {
             <h3 className="truncate text-sm font-semibold" style={{ color: C.text }}>{t.name}</h3>
             {t.verified && <CheckCircle2 size={15} color={C.accent} />}
           </div>
-          <p className="mt-0.5 truncate text-xs" style={{ color: C.textSecondary }}>{t.subjects.join(", ")}</p>
+          <p className="mt-0.5 truncate text-xs" style={{ color: C.textSecondary }}>{(Array.isArray(t.subjects) ? t.subjects : (t.subjects ? t.subjects.split(',') : [])).join(", ")}</p>
           <div className="mt-1.5 flex items-center gap-3">
             <Stars rating={t.rating} />
             <span className="text-xs" style={{ color: C.textSecondary }}>{t.reviews} reviews</span>
@@ -28,7 +28,7 @@ export function TutorCard({ t, onOpen }) {
 
       <div className="flex items-center justify-between text-xs" style={{ color: C.textSecondary }}>
         <span className="inline-flex items-center gap-1"><Clock size={13} /> {t.experience}</span>
-        <span className="inline-flex items-center gap-1"><MapPin size={13} /> {t.location.split(",")[0]}</span>
+        <span className="inline-flex items-center gap-1"><MapPin size={13} /> {t.location ? t.location.split(",")[0] : ""}</span>
       </div>
 
       <div className="mt-3 flex items-center justify-between">
