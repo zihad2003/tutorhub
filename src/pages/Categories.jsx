@@ -1,6 +1,6 @@
 import { C } from "../constants/tokens";
 import { Badge, PrimaryButton, SecondaryButton, Input } from "../components/ui";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { 
   Plus, 
   Trash2, 
@@ -61,6 +61,18 @@ export function Categories({ onNavigate }) {
       return INITIAL_CATEGORIES;
     }
   });
+
+  useEffect(() => {
+    fetch('http://localhost:5001/api/data/categories')
+      .then(res => res.json())
+      .then(data => {
+        if (data.length > 0) {
+          setCategoriesState(data);
+        }
+      })
+      .catch(err => console.error("Failed to fetch categories:", err));
+  }, []);
+
   const [searchQuery, setSearchQuery] = useState("");
   
   // Modals State
