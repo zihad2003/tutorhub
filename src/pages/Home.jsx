@@ -3,8 +3,9 @@ import { C } from "../constants/tokens";
 import { PrimaryButton } from "../components/ui/PrimaryButton";
 import { TextButton } from "../components/ui/TextButton";
 import { TutorCard } from "../components/ui/TutorCard";
-import { TUTORS } from "../data/tutors";
+import { TUTORS as mockTutors } from "../data/tutors";
 import { useState, useEffect } from "react";
+import { fetchFromAPI } from "../api";
 
 const TYPING_WORDS = ["your child", "Math", "Physics", "English", "Science"];
 
@@ -13,6 +14,13 @@ export function Home({ go, openTutor, openAuth }) {
   const [currentText, setCurrentText] = useState("");
   const [isDeleting, setIsDeleting] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [dbTutors, setDbTutors] = useState([]);
+
+  useEffect(() => {
+    fetchFromAPI('/tutors')
+      .then(data => setDbTutors(data.length ? data : mockTutors))
+      .catch(() => setDbTutors(mockTutors));
+  }, []);
 
   useEffect(() => {
     const word = TYPING_WORDS[currentWordIndex];
@@ -196,7 +204,7 @@ export function Home({ go, openTutor, openAuth }) {
             <TextButton onClick={() => go("tutors")}>View all <ChevronRight size={14} className="inline" /></TextButton>
           </div>
           <div className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
-            {TUTORS.slice(0, 3).map((t) => (
+            {dbTutors.slice(0, 3).map((t) => (
               <TutorCard key={t.id} t={t} onOpen={openTutor} />
             ))}
           </div>

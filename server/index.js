@@ -13,6 +13,7 @@ app.use(express.json());
 
 // Routes
 app.use('/api/bkash', bkashRoutes);
+app.use('/api/data', require('./api'));
 
 app.get('/', (req, res) => {
   res.send('TutorHub Backend API');

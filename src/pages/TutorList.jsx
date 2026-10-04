@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { ChevronDown } from "lucide-react";
 import { C } from "../constants/tokens";
 import { TutorCard } from "../components/ui/TutorCard";
-import { TUTORS } from "../data/tutors";
+import { TUTORS as mockTutors } from "../data/tutors";
 import { getStoredCategories } from "../data/categoriesData";
 
 export function TutorList({ openTutor, hiredOnly = false }) {
@@ -11,11 +11,30 @@ export function TutorList({ openTutor, hiredOnly = false }) {
   const [budgets, setBudgets] = useState([]);
   const [sort, setSort] = useState("Rating");
   const [storedCategories, setStoredCategories] = useState(() => getStoredCategories());
+  const [dbTutors, setDbTutors] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const handleUpdate = () => setStoredCategories(getStoredCategories());
     window.addEventListener("tutorhub_categories_updated", handleUpdate);
     return () => window.removeEventListener("tutorhub_categories_updated", handleUpdate);
+  }, []);
+
+  useEffect(() => {
+    fetch('http://localhost:5001/api/data/tutors')
+      .then(res => res.json())
+      .then(data => {
+        // Data format might be slightly different. Mock data used arrays for subjects.
+        // If subjects is a string in DB, we'd parse it, or we rely on the DB layout.
+        // For now, let's merge or use DB data.
+        setDbTutors(data.length > 0 ? data : mockTutors);
+        setIsLoading(false);
+      })
+      .catch(err => {
+        console.error("Failed to fetch tutors:", err);
+        setDbTutors(mockTutors); // Fallback
+        setIsLoading(false);
+      });
   }, []);
 
   const toggleBudget = (b) =>
@@ -32,14 +51,16 @@ export function TutorList({ openTutor, hiredOnly = false }) {
   const subjectOptions = ["All subjects", ...storedCategories.filter(c => c.status === "active").map(c => c.name)];
   const classOptions = ["All classes", "Class 1-5", "Class 6-8", "Class 9-10", "HSC", "University"];
 
-  let list = hiredOnly ? TUTORS.slice(0, 2) : TUTORS;
+  let list = hiredOnly ? dbTutors.slice(0, 2) : dbTutors;
   list = list.filter((t) => {
     if (subject === "All subjects") return true;
     const cat = storedCategories.find(c => c.name === subject);
+    const tutorSubjects = Array.isArray(t.subjects) ? t.subjects : (t.subjects ? t.subjects.split(',') : []);
+    
     if (cat && cat.subjects) {
-      return t.subjects.some(s => cat.subjects.includes(s) || s.toLowerCase().includes(subject.toLowerCase()));
+      return tutorSubjects.some(s => cat.subjects.includes(s) || s.toLowerCase().includes(subject.toLowerCase()));
     }
-    return t.subjects.includes(subject) || t.subjects.some(s => subject.toLowerCase().includes(s.toLowerCase()));
+    return tutorSubjects.includes(subject) || tutorSubjects.some(s => subject.toLowerCase().includes(s.toLowerCase()));
   });
 
   if (classLevel !== "All classes") {
@@ -59,6 +80,8 @@ export function TutorList({ openTutor, hiredOnly = false }) {
   if (sort === "Newest") list = [...list].sort((a, b) => b.id - a.id);
 
   const budgetChips = ["Under ৳600", "৳600 - ৳1000", "৳1000 - ৳1800", "৳1800+"];
+
+  if (isLoading) return <div className="p-10 text-center">Loading tutors...</div>;
 
   return (
     <div className={`mx-auto max-w-[1200px] px-4 py-10 sm:px-6 ${hiredOnly ? "lg:ml-64" : ""}`}>
