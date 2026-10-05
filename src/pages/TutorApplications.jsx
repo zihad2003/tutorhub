@@ -10,6 +10,8 @@ export function TutorApplications({ onNavigate, role = "parent" }) {
   const [apps, setApps] = useState(APPLICATIONS);
   const [hiringApp, setHiringApp] = useState(null);
   const [offerAmount, setOfferAmount] = useState("");
+  const [coverLetter, setCoverLetter] = useState("");
+  const [isGenerating, setIsGenerating] = useState(false);
 
   const handleHire = (app) => {
     setApps(apps.map(a => a.id === app.id ? { ...a, status: "offer_sent" } : a));
@@ -76,7 +78,7 @@ export function TutorApplications({ onNavigate, role = "parent" }) {
                         </Badge>
                       </div>
                       <p className="mt-1 text-sm" style={{ color: C.textSecondary }}>
-                        Subjects: {app.subjects.join(", ")}
+                        Subjects: {(Array.isArray(app.subjects) ? app.subjects : []).join(", ")}
                       </p>
                     </div>
 
