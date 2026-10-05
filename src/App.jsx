@@ -44,6 +44,26 @@ const PARENT_LOCKED_PAGES = [
   "reviews", "summary", "settings", "lesson-history", "rate-tutor", "review", "tutor-reviews", "summary-reviews",
 ];
 
+function dashboardKind(p) {
+  return {
+    adminPage: p.startsWith("admin-") || ["categories", "reports", "users", "support", "tutor-approvals", "parent-approvals"].includes(p),
+    tutorPage: p.startsWith("tutor-") || ["certificates", "availability", "requests", "earnings", "lesson-log"].includes(p),
+    parentPage: p.startsWith("parent-") || ["post-request", "applications", "hired-tutors", "lessons", "payments", "chat", "reviews", "summary", "settings", "lesson-history", "lesson-confirm"].includes(p),
+  };
+}
+
+function roleGuardedPage(p, activeSession) {
+  if (isOwnTutorLocked(activeSession) && TUTOR_LOCKED_PAGES.includes(p)) return "tutor-dashboard";
+  if (isOwnParentLocked(activeSession) && PARENT_LOCKED_PAGES.includes(p)) return "parent-dashboard";
+  if (activeSession && !activeSession.demo) {
+    const { adminPage, tutorPage, parentPage } = dashboardKind(p);
+    if (activeSession.role === "tutor" && (adminPage || parentPage)) return "tutor-dashboard";
+    if (activeSession.role === "parent" && (adminPage || tutorPage)) return "parent-dashboard";
+    if (activeSession.role === "admin" && (tutorPage || parentPage)) return "admin-dashboard";
+  }
+  return p;
+}
+
 function readStoredSession() {
   try {
     const raw = localStorage.getItem(SESSION_KEY);
@@ -116,16 +136,7 @@ export default function App() {
   }, []);
 
   const go = (p, section, activeSession = session) => {
-    if (isOwnTutorLocked(activeSession) && TUTOR_LOCKED_PAGES.includes(p)) p = "tutor-dashboard";
-    if (isOwnParentLocked(activeSession) && PARENT_LOCKED_PAGES.includes(p)) p = "parent-dashboard";
-    if (activeSession && !activeSession.demo) {
-      const adminPage = p.startsWith("admin-") || ["categories", "reports", "users", "support", "tutor-approvals", "parent-approvals"].includes(p);
-      const tutorPage = p.startsWith("tutor-") || ["certificates", "availability", "requests", "earnings", "lesson-log"].includes(p);
-      const parentPage = p.startsWith("parent-") || ["post-request", "applications", "hired-tutors", "lessons", "payments", "chat", "reviews", "summary", "settings", "lesson-history", "lesson-confirm"].includes(p);
-      if (activeSession.role === "tutor" && (adminPage || parentPage)) p = "tutor-dashboard";
-      if (activeSession.role === "parent" && (adminPage || tutorPage)) p = "parent-dashboard";
-      if (activeSession.role === "admin" && (tutorPage || parentPage)) p = "admin-dashboard";
-    }
+    p = roleGuardedPage(p, activeSession);
     let targetPage = p;
     if (p === "signup" || p === "register") {
       setAuthTab("signup");
@@ -207,8 +218,8 @@ export default function App() {
   }, [session?.id, session?.role, session?.status]);
 
   useEffect(() => {
-    if (isOwnTutorLocked(session) && TUTOR_LOCKED_PAGES.includes(page)) go("tutor-dashboard");
-    if (isOwnParentLocked(session) && PARENT_LOCKED_PAGES.includes(page)) go("parent-dashboard");
+    const guarded = roleGuardedPage(page, session);
+    if (guarded !== page) go(guarded);
   }, [page, session]);
 
   const isDashboardPage = [

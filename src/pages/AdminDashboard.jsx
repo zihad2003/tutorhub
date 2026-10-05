@@ -1,24 +1,26 @@
-import { authUrl } from "../api";
+import { authUrl, fetchFromAPI } from "../api";
 import { C } from "../constants/tokens";
 import { StatCard } from "../components/ui/StatCard";
 import { Table } from "../components/ui/Table";
 import { PrimaryButton, Badge } from "../components/ui";
-import { Users, DollarSign, FileText, AlertCircle, ChevronRight } from "lucide-react";
-import { ADMIN_APPROVALS, PAYMENTS, HIRED_TUTORS } from "../data/mockData";
-import { TUTORS } from "../data/tutors";
+import { Users, DollarSign, AlertCircle, ChevronRight } from "lucide-react";
 import { useEffect, useState } from "react";
 
 export function AdminDashboard({ onNavigate }) {
   const [pendingTutorRows, setPendingTutorRows] = useState([]);
   const [pendingParentRows, setPendingParentRows] = useState([]);
+  const [summary, setSummary] = useState(null);
+  const [recentPayments, setRecentPayments] = useState([]);
 
   useEffect(() => {
     let cancelled = false;
     async function load() {
       try {
-        const [tutorResponse, parentResponse] = await Promise.all([
+        const [tutorResponse, parentResponse, summaryData, paymentRows] = await Promise.all([
           fetch(authUrl("/api/auth/pending/tutors")),
           fetch(authUrl("/api/auth/pending/parents")),
+          fetchFromAPI("/summary").catch(() => null),
+          fetchFromAPI("/payments").catch(() => []),
         ]);
         if (!tutorResponse.ok || !parentResponse.ok) return;
         const tutors = await tutorResponse.json();
@@ -26,6 +28,13 @@ export function AdminDashboard({ onNavigate }) {
         if (cancelled) return;
         setPendingTutorRows(Array.isArray(tutors) ? tutors : []);
         setPendingParentRows(Array.isArray(parents) ? parents : []);
+        if (summaryData && typeof summaryData.tutors === "number") setSummary(summaryData);
+        if (Array.isArray(paymentRows)) {
+          setRecentPayments(paymentRows.slice(0, 5).map((row) => ({
+            ...row,
+            totalAmount: Number(row.totalAmount) || 0,
+          })));
+        }
       } catch {
         if (!cancelled) {
           setPendingTutorRows([]);
@@ -37,11 +46,11 @@ export function AdminDashboard({ onNavigate }) {
     return () => { cancelled = true; };
   }, []);
 
-  const totalTutors = TUTORS.length + pendingTutorRows.length;
-  const totalParents = HIRED_TUTORS.length + ADMIN_APPROVALS.parents.length + pendingParentRows.length + 10;
-  const pendingTutors = pendingTutorRows.length;
-  const pendingParents = pendingParentRows.length;
-  const totalPayments = PAYMENTS.filter(p => p.status === "paid").reduce((acc, p) => acc + p.totalAmount, 0);
+  const pendingTutors = summary ? summary.pendingTutors : pendingTutorRows.length;
+  const pendingParents = summary ? summary.pendingParents : pendingParentRows.length;
+  const totalTutors = summary ? summary.tutors : pendingTutorRows.length;
+  const totalParents = summary ? summary.parents : pendingParentRows.length;
+  const totalPayments = summary ? summary.paidRevenue : 0;
 
   return (
     <div className="flex min-h-screen bg-white">
@@ -60,7 +69,6 @@ export function AdminDashboard({ onNavigate }) {
                 label="Total Tutors"
                 value={totalTutors.toString()}
                 icon={Users}
-                trend={{ value: "+12", positive: true }}
               />
             </div>
             <div onClick={() => onNavigate("admin-users")} className="cursor-pointer transition-transform hover:scale-[1.02]">
@@ -68,7 +76,6 @@ export function AdminDashboard({ onNavigate }) {
                 label="Total Parents"
                 value={totalParents.toString()}
                 icon={Users}
-                trend={{ value: "+28", positive: true }}
               />
             </div>
             <div onClick={() => onNavigate("admin-tutor-approvals")} className="cursor-pointer transition-transform hover:scale-[1.02]">
@@ -83,7 +90,6 @@ export function AdminDashboard({ onNavigate }) {
                 label="Total Revenue"
                 value={`৳${totalPayments}`}
                 icon={DollarSign}
-                trend={{ value: "+15%", positive: true }}
               />
             </div>
           </div>
@@ -192,7 +198,7 @@ export function AdminDashboard({ onNavigate }) {
                     <Badge tone={status === "paid" ? "success" : "warning"}>{status}</Badge>
                   )},
                 ]}
-                data={PAYMENTS.slice(0, 5)}
+                data={recentPayments}
               />
             </div>
           </div>

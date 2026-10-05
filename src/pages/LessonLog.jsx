@@ -103,7 +103,7 @@ export function LessonLog({ onNavigate, role = "parent" }) {
                           {tutor.tutorName}
                         </p>
                         <p className="text-xs" style={{ color: C.textSecondary }}>
-                          {tutor.subjects.join(", ")} · ৳{tutor.fee}/hr
+                          {(Array.isArray(tutor.subjects) ? tutor.subjects : []).join(", ")} · ৳{tutor.fee}/hr
                         </p>
                       </div>
                     </button>

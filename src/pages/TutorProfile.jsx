@@ -6,8 +6,20 @@ import { PrimaryButton } from "../components/ui/PrimaryButton";
 import { SecondaryButton } from "../components/ui/SecondaryButton";
 import { TUTORS } from "../data/tutors";
 
+function subjectList(value) {
+  if (Array.isArray(value)) return value.filter(Boolean);
+  if (typeof value === "string" && value.trim()) {
+    return value.split(",").map((item) => item.trim()).filter(Boolean);
+  }
+  return [];
+}
+
 export function TutorProfile({ tutor, go, isDashboard = false }) {
-  const t = tutor || TUTORS[0];
+  const source = tutor || TUTORS[0];
+  const subjects = subjectList(source.subjects);
+  const certificates = Array.isArray(source.certificates) ? source.certificates : [];
+  const reviews = Array.isArray(source.revs) ? source.revs : [];
+  const t = source;
   return (
     <div className={`mx-auto max-w-[1200px] px-4 py-6 sm:px-6 sm:py-10 ${isDashboard ? "lg:ml-64" : ""}`}>
       <button onClick={() => go("tutors")} className="mb-6 text-sm font-semibold" style={{ color: C.primary }}>
@@ -25,7 +37,7 @@ export function TutorProfile({ tutor, go, isDashboard = false }) {
                   <h1 className="text-xl font-semibold" style={{ color: C.text }}>{t.name}</h1>
                   {t.verified && <Badge tone="accent"><CheckCircle2 size={12} /> Verified</Badge>}
                 </div>
-                <p className="mt-1 text-sm" style={{ color: C.textSecondary }}>{t.subjects.join(", ")} &middot; {t.location}</p>
+                <p className="mt-1 text-sm" style={{ color: C.textSecondary }}>{subjects.join(", ") || "Subjects not listed"} &middot; {t.location || "Location not listed"}</p>
                 <div className="mt-2 flex items-center gap-3">
                   <Stars rating={t.rating} />
                   <span className="text-xs" style={{ color: C.textSecondary }}>{t.reviews} reviews</span>
@@ -38,8 +50,8 @@ export function TutorProfile({ tutor, go, isDashboard = false }) {
           {/* Info grid */}
           <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-4">
             {[
-              { label: "Subjects", value: t.subjects.join(", ") },
-              { label: "Classes", value: t.classes },
+              { label: "Subjects", value: subjects.join(", ") || "Not listed" },
+              { label: "Classes", value: t.classes || "Not listed" },
               { label: "Experience", value: t.experience },
               { label: "Availability", value: t.availability },
             ].map((f) => (
@@ -54,7 +66,9 @@ export function TutorProfile({ tutor, go, isDashboard = false }) {
           <div className="mt-8">
             <h2 className="text-base font-semibold" style={{ color: C.text }}>Certificates</h2>
             <div className="mt-3 space-y-2">
-              {t.certificates.map((c) => (
+              {certificates.length === 0 ? (
+                <p className="text-sm" style={{ color: C.textSecondary }}>No certificates listed yet.</p>
+              ) : certificates.map((c) => (
                 <div key={c} className="flex items-center gap-2 rounded-lg border p-3" style={{ borderColor: C.border }}>
                   <Award size={16} color={C.accent} />
                   <span className="text-sm" style={{ color: C.text }}>{c}</span>
@@ -66,11 +80,11 @@ export function TutorProfile({ tutor, go, isDashboard = false }) {
           {/* Reviews */}
           <div className="mt-8">
             <h2 className="text-base font-semibold" style={{ color: C.text }}>Reviews</h2>
-            {t.revs.length === 0 ? (
+            {reviews.length === 0 ? (
               <p className="mt-3 text-sm" style={{ color: C.textSecondary }}>No reviews yet.</p>
             ) : (
               <div className="mt-3 space-y-4">
-                {t.revs.map((r, i) => (
+                {reviews.map((r, i) => (
                   <div key={i} className="border-b pb-4" style={{ borderColor: C.border }}>
                     <div className="flex items-center justify-between">
                       <span className="text-sm font-semibold" style={{ color: C.text }}>{r.name}</span>
