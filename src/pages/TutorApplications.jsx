@@ -1,8 +1,9 @@
 import { C } from "../constants/tokens";
 import { Badge, PrimaryButton, SecondaryButton, Stars } from "../components/ui";
 import { APPLICATIONS, REQUESTS } from "../data/mockData";
+import { fetchFromAPI } from "../api";
 import { CheckCircle2, Clock, MessageCircle, FileText, Sparkles } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 export function TutorApplications({ onNavigate, role = "parent" }) {
   const isTutor = role === "tutor";
@@ -12,6 +13,23 @@ export function TutorApplications({ onNavigate, role = "parent" }) {
   const [offerAmount, setOfferAmount] = useState("");
   const [coverLetter, setCoverLetter] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchFromAPI("/applications")
+      .then((data) => {
+        if (cancelled || !Array.isArray(data) || data.length === 0) return;
+        setApps(data.map((app) => ({
+          ...app,
+          subjects: Array.isArray(app.subjects) ? app.subjects : [],
+          rating: Number(app.rating) || 0,
+        })));
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const handleHire = (app) => {
     setApps(apps.map(a => a.id === app.id ? { ...a, status: "offer_sent" } : a));
@@ -179,7 +197,7 @@ export function TutorApplications({ onNavigate, role = "parent" }) {
                         <Stars rating={app.rating} />
                       </div>
                       <p className="mt-1 text-sm" style={{ color: C.textSecondary }}>
-                        {app.subjects.join(", ")} · {app.experience} experience
+                        {(Array.isArray(app.subjects) ? app.subjects : []).join(", ") || "Subjects not listed"} · {app.experience || "Experience not listed"} experience
                       </p>
                       <div className="mt-2 flex gap-4 text-sm font-semibold" style={{ color: C.text }}>
                         <p>Expected Salary: ৳{request.budget}</p>

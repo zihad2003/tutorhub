@@ -190,7 +190,7 @@ export function ParentDashboard({ onNavigate, account }) {
                           <img src={app.tutorImg} alt={app.tutorName} className="h-10 w-10 rounded-full object-cover" />
                           <div>
                             <p className="text-sm font-semibold" style={{ color: C.text }}>{app.tutorName}</p>
-                            <p className="text-xs" style={{ color: C.textSecondary }}>{app.subjects.join(", ")} · ৳{app.fee}/hr</p>
+                            <p className="text-xs" style={{ color: C.textSecondary }}>{(Array.isArray(app.subjects) ? app.subjects : []).join(", ")} · ৳{app.fee}/hr</p>
                           </div>
                         </div>
                         <PrimaryButton size="sm" onClick={() => onNavigate("applications")}>Review</PrimaryButton>

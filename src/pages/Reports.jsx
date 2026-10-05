@@ -1,16 +1,37 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { C } from "../constants/tokens";
 import { StatCard } from "../components/ui/StatCard";
 import { Table } from "../components/ui/Table";
 import { Badge } from "../components/ui/Badge";
 import { TrendingUp, Users, DollarSign, BookOpen } from "lucide-react";
 import { PAYMENTS } from "../data/mockData";
+import { fetchFromAPI } from "../api";
 
 export function Reports({ onNavigate }) {
   const [filterType, setFilterType] = useState("single");
   const [singleMonth, setSingleMonth] = useState("All");
   const [startMonth, setStartMonth] = useState("All");
   const [endMonth, setEndMonth] = useState("All");
+  const [payments, setPayments] = useState(PAYMENTS);
+  const [summary, setSummary] = useState(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    Promise.all([
+      fetchFromAPI("/payments").catch(() => null),
+      fetchFromAPI("/summary").catch(() => null),
+    ]).then(([paymentRows, summaryData]) => {
+      if (cancelled) return;
+      if (Array.isArray(paymentRows) && paymentRows.length > 0) {
+        setPayments(paymentRows.map((row) => ({
+          ...row,
+          totalAmount: Number(row.totalAmount) || 0,
+        })));
+      }
+      if (summaryData && typeof summaryData.activeUsers === "number") setSummary(summaryData);
+    });
+    return () => { cancelled = true; };
+  }, []);
 
   const monthNames = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"];
   
@@ -20,7 +41,7 @@ export function Reports({ onNavigate }) {
     return parseInt(y) * 12 + monthNames.indexOf(m);
   };
 
-  const filteredPayments = PAYMENTS.filter(p => {
+  const filteredPayments = payments.filter(p => {
     if (filterType === "single") {
       return singleMonth === "All" || p.month === singleMonth;
     } else {
@@ -34,8 +55,8 @@ export function Reports({ onNavigate }) {
     }
   });
 
-  const totalRevenue = filteredPayments.filter(p => p.status === "paid").reduce((acc, p) => acc + p.totalAmount, 0);
-  const uniqueMonths = ["All", ...new Set(PAYMENTS.map(p => p.month))];
+  const totalRevenue = filteredPayments.filter(p => p.status === "paid").reduce((acc, p) => acc + (Number(p.totalAmount) || 0), 0);
+  const uniqueMonths = ["All", ...new Set(payments.map(p => p.month).filter(Boolean))];
 
   return (
     <div className="flex min-h-screen bg-white">
@@ -59,25 +80,21 @@ export function Reports({ onNavigate }) {
               label="Gross Revenue"
               value={`৳${totalRevenue}`}
               icon={DollarSign}
-              trend={{ value: "+18%", positive: true }}
             />
             <StatCard
               label="Platform Commission (10%)"
               value={`৳${Math.round(totalRevenue * 0.1)}`}
               icon={TrendingUp}
-              trend={{ value: "+15%", positive: true }}
             />
             <StatCard
               label="Completed Lessons"
-              value="142"
+              value={String(summary ? summary.completedLessons : 0)}
               icon={BookOpen}
-              trend={{ value: "+24", positive: true }}
             />
             <StatCard
               label="Active Users"
-              value="498"
+              value={String(summary ? summary.activeUsers : 0)}
               icon={Users}
-              trend={{ value: "+40", positive: true }}
             />
           </div>
 
