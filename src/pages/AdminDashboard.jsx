@@ -11,17 +11,22 @@ export function AdminDashboard({ onNavigate }) {
   const [pendingParentRows, setPendingParentRows] = useState([]);
   const [summary, setSummary] = useState(null);
   const [recentPayments, setRecentPayments] = useState([]);
+  const [withdrawals, setWithdrawals] = useState([]);
 
   useEffect(() => {
     let cancelled = false;
     async function load() {
       try {
-        const [tutorResponse, parentResponse, summaryData, paymentRows] = await Promise.all([
+        const [tutorResponse, parentResponse, summaryData, paymentRows, withdrawalRows] = await Promise.all([
           fetch(authUrl("/api/auth/pending/tutors")),
           fetch(authUrl("/api/auth/pending/parents")),
           fetchFromAPI("/summary").catch(() => null),
           fetchFromAPI("/payments").catch(() => []),
+          fetchFromAPI("/withdrawal_requests").catch(() => []),
         ]);
+        if (!cancelled) {
+          setWithdrawals(Array.isArray(withdrawalRows) ? withdrawalRows.filter((row) => row.status === "pending") : []);
+        }
         if (!tutorResponse.ok || !parentResponse.ok) return;
         const tutors = await tutorResponse.json();
         const parents = await parentResponse.json();
@@ -174,6 +179,41 @@ export function AdminDashboard({ onNavigate }) {
                   </div>
                 )}
               </div>
+            </div>
+          </div>
+
+          <div className="mt-8 rounded-lg border p-6" style={{ borderColor: C.border }}>
+            <div className="flex items-center justify-between">
+              <h2 className="text-lg font-semibold" style={{ color: C.text }}>Withdrawal Requests</h2>
+              <button
+                onClick={() => onNavigate("admin-payments")}
+                className="text-sm font-semibold"
+                style={{ color: C.primary }}
+              >
+                View all <ChevronRight size={14} className="inline" />
+              </button>
+            </div>
+            <div className="mt-4">
+              {withdrawals.length === 0 ? (
+                <p className="py-8 text-center text-sm" style={{ color: C.textSecondary }}>
+                  No withdrawal requests
+                </p>
+              ) : (
+                <div className="space-y-3">
+                  {withdrawals.slice(0, 5).map((row) => (
+                    <div key={row.id} className="flex items-center justify-between rounded-lg border p-3" style={{ borderColor: C.border }}>
+                      <div>
+                        <p className="text-sm font-semibold" style={{ color: C.text }}>{row.tutorName}</p>
+                        <p className="text-xs" style={{ color: C.textSecondary }}>{row.method} · {row.accountNumber}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="text-sm font-semibold" style={{ color: C.text }}>৳{Number(row.amount || 0).toLocaleString("en-US")}</p>
+                        <Badge tone="warning">Pending</Badge>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           </div>
 
