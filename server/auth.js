@@ -87,6 +87,8 @@ async function ensureAccountColumns() {
   const statements = [
     'ALTER TABLE tutors ADD COLUMN password_hash VARCHAR(255) NULL',
     'ALTER TABLE parents ADD COLUMN password_hash VARCHAR(255) NULL',
+    'ALTER TABLE tutors ADD COLUMN max_students INT NULL',
+    'ALTER TABLE lessons ADD COLUMN parent_id INT NULL',
   ];
   for (const sql of statements) {
     try {

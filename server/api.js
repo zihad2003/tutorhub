@@ -48,7 +48,10 @@ function shapeLesson(row) {
   return {
     ...row,
     tutorId: row.tutor_id,
+    parentId: row.parent_id,
+    hiredTutorId: row.hired_tutor_id,
     tutorName: row.tutorName || 'Tutor',
+    parentName: row.parentName || '',
     date: dateOnly(row.date),
     fee: asNumber(row.fee),
   };
@@ -90,6 +93,7 @@ function shapeHired(row) {
     tutorId: row.tutor_id,
     parentId: row.parent_id,
     tutorName: row.tutorName || 'Tutor',
+    parentName: row.parentName || '',
     subjects,
     fee: asNumber(row.fee),
     hireDate: dateOnly(row.hireDate),
@@ -99,9 +103,10 @@ function shapeHired(row) {
 router.get('/lessons', async (req, res) => {
   try {
     const [rows] = await pool.query(
-      `SELECT l.*, t.name AS joinedTutorName
+      `SELECT l.*, t.name AS joinedTutorName, p.name AS parentName
        FROM lessons l
        LEFT JOIN tutors t ON t.id = l.tutor_id
+       LEFT JOIN parents p ON p.id = l.parent_id
        ORDER BY l.date DESC, l.id DESC`
     );
     res.json(rows.map((row) => shapeLesson({ ...row, tutorName: row.joinedTutorName || row.tutorName })));
@@ -118,11 +123,31 @@ router.post('/lessons', async (req, res) => {
     if (!subject || !topic || !date) {
       return res.status(400).json({ error: 'Subject, topic, and date are required.' });
     }
+    const tutorId = Number(req.body.tutorId) || null;
+    const parentId = Number(req.body.parentId) || null;
+    let hiredTutorId = Number(req.body.hiredTutorId) || null;
+    let fee = req.body.fee || null;
+    if (tutorId && parentId) {
+      const [hireRows] = await pool.query(
+        `SELECT id, fee FROM hired_tutors
+         WHERE tutor_id = ? AND parent_id = ? AND status = 'active'
+           AND (? IS NULL OR id = ?)
+         LIMIT 1`,
+        [tutorId, parentId, hiredTutorId, hiredTutorId]
+      );
+      if (!hireRows[0]) {
+        return res.status(403).json({ error: 'This student is not hired with you.' });
+      }
+      fee = asNumber(hireRows[0].fee);
+      hiredTutorId = hireRows[0].id;
+    }
     const [result] = await pool.query(
-      `INSERT INTO lessons (tutor_id, subject, topic, date, classLevel, duration, homework, notes, status, fee)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?)`,
+      `INSERT INTO lessons (hired_tutor_id, tutor_id, parent_id, subject, topic, date, classLevel, duration, homework, notes, status, fee)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?)`,
       [
-        req.body.tutorId || null,
+        hiredTutorId,
+        tutorId,
+        parentId,
         subject,
         topic,
         date,
@@ -130,9 +155,12 @@ router.post('/lessons', async (req, res) => {
         req.body.duration || null,
         req.body.homework || null,
         req.body.notes || null,
-        req.body.fee || null,
+        fee,
       ]
     );
+    if (hiredTutorId) {
+      await pool.query('UPDATE hired_tutors SET totalLessons = totalLessons + 1 WHERE id = ?', [hiredTutorId]);
+    }
     res.status(201).json({ id: result.insertId });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -286,7 +314,7 @@ router.post('/support-messages', async (req, res) => {
 router.get('/tutor-profile/:id', async (req, res) => {
   try {
     const [rows] = await pool.query(
-      `SELECT id, name, email, phone, location, experience, fee, rating, reviews, verified, img, bio, availability, status
+      `SELECT id, name, email, phone, location, experience, fee, rating, reviews, verified, img, bio, availability, max_students, status
        FROM tutors WHERE id = ? LIMIT 1`,
       [req.params.id]
     );
@@ -299,10 +327,59 @@ router.get('/tutor-profile/:id', async (req, res) => {
       ...rows[0],
       fee: asNumber(rows[0].fee),
       rating: asNumber(rows[0].rating),
+      maxStudents: rows[0].max_students,
       subjects: subjectRows.map((row) => row.subject_name),
       certificates: [],
       revs: [],
     });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+const TEACHING_DAYS = ['Saturday', 'Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday'];
+const TEACHING_TIMES = [
+  'Morning (8:00 AM - 12:00 PM)',
+  'Afternoon (12:00 PM - 4:00 PM)',
+  'Evening (4:00 PM - 8:00 PM)',
+  'Night (8:00 PM - 10:00 PM)',
+];
+
+router.patch('/tutors/:id/availability', async (req, res) => {
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: 'Choose a tutor account.' });
+  const days = Array.isArray(req.body.days)
+    ? [...new Set(req.body.days.map((day) => String(day).trim()).filter((day) => TEACHING_DAYS.includes(day)))]
+    : [];
+  const time = String(req.body.time || '').trim();
+  const maxStudents = Number(req.body.maxStudents);
+  const subjects = Array.isArray(req.body.subjects)
+    ? [...new Set(req.body.subjects.map((subject) => String(subject).trim()).filter(Boolean))]
+    : [];
+  const fee = moneyAmount(req.body.salary);
+  if (!days.length) return res.status(400).json({ error: 'Select at least one teaching day.' });
+  if (!TEACHING_TIMES.includes(time)) return res.status(400).json({ error: 'Select a teaching time.' });
+  if (![2, 4, 6, 8].includes(maxStudents)) return res.status(400).json({ error: 'Select how many students you can teach.' });
+  if (!subjects.length) return res.status(400).json({ error: 'Select at least one subject you can teach.' });
+  if (fee < 5000 || fee > 10000) return res.status(400).json({ error: 'Expected monthly salary must be between ৳5,000 and ৳10,000.' });
+  try {
+    const [tutors] = await pool.query('SELECT id FROM tutors WHERE id = ? LIMIT 1', [id]);
+    if (!tutors[0]) return res.status(404).json({ error: 'Tutor account not found.' });
+    const [known] = await pool.query('SELECT name FROM subjects');
+    const knownNames = new Set(known.map((row) => row.name));
+    if (subjects.some((subject) => !knownNames.has(subject))) {
+      return res.status(400).json({ error: 'Choose subjects from the TutorHub list.' });
+    }
+    const availability = `${days.join(', ')} | ${time} | ${maxStudents} students`;
+    await pool.query(
+      'UPDATE tutors SET fee = ?, availability = ?, max_students = ? WHERE id = ?',
+      [fee, availability, maxStudents, id]
+    );
+    await pool.query('DELETE FROM tutor_subjects WHERE tutor_id = ?', [id]);
+    for (const subject of subjects) {
+      await pool.query('INSERT INTO tutor_subjects (tutor_id, subject_name) VALUES (?, ?)', [id, subject]);
+    }
+    res.json({ id, fee, availability, maxStudents, subjects, days, time });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -448,9 +525,10 @@ router.get('/payments', async (req, res) => {
 router.get('/hired_tutors', async (req, res) => {
   try {
     const [rows] = await pool.query(
-      `SELECT h.*, t.name AS tutorName, t.img AS tutorImg
+      `SELECT h.*, t.name AS tutorName, t.img AS tutorImg, p.name AS parentName
        FROM hired_tutors h
        LEFT JOIN tutors t ON t.id = h.tutor_id
+       LEFT JOIN parents p ON p.id = h.parent_id
        ORDER BY h.id DESC`
     );
     res.json(rows.map(shapeHired));

@@ -1,19 +1,30 @@
 import { C } from "../constants/tokens";
 import { PrimaryButton, SecondaryButton, Badge } from "../components/ui";
 import { BookOpen, Calendar, Clock, CheckCircle, Save } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { fetchFromAPI, patchToAPI } from "../api";
 
-const TEACHING_SUBJECTS = ["Physics", "Math", "Chemistry", "Biology", "English", "Bangla", "ICT"];
+const FALLBACK_SUBJECTS = ["Physics", "Math", "Chemistry", "Biology", "English", "Bangla", "ICT"];
+
+function parseAvailability(value) {
+  const parts = String(value || "").split("|").map((part) => part.trim());
+  if (parts.length < 2) return { days: [], time: "" };
+  const days = parts[0].split(",").map((day) => day.trim()).filter(Boolean);
+  const time = parts[1] || "";
+  return { days, time };
+}
 
 export function Availability({ onNavigate, account = null }) {
-  const own = account && !account.demo;
+  const own = account && !account.demo && account.id;
+  const [subjectOptions, setSubjectOptions] = useState(FALLBACK_SUBJECTS);
   const [selectedDays, setSelectedDays] = useState(own ? [] : ["Sunday", "Tuesday", "Thursday"]);
   const [selectedTime, setSelectedTime] = useState(own ? "" : "Evening (4:00 PM - 8:00 PM)");
-  const [maxStudents, setMaxStudents] = useState(own ? "" : "4");
+  const [maxStudents, setMaxStudents] = useState(own ? "4" : "4");
   const [subjects, setSubjects] = useState(own ? [] : ["Physics", "Math"]);
   const [salary, setSalary] = useState(own ? "" : "8000");
   const [formError, setFormError] = useState("");
   const [saved, setSaved] = useState(false);
+  const [saving, setSaving] = useState(false);
 
   const daysOfWeek = ["Saturday", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
   const timeSlots = [
@@ -38,22 +49,78 @@ export function Availability({ onNavigate, account = null }) {
     setFormError("");
   };
 
-  const handleSave = (e) => {
+  useEffect(() => {
+    let cancelled = false;
+    fetchFromAPI("/subjects")
+      .then((rows) => {
+        if (cancelled || !Array.isArray(rows) || rows.length === 0) return;
+        setSubjectOptions(rows.map((row) => row.name).filter(Boolean));
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!own) return undefined;
+    let cancelled = false;
+    fetchFromAPI(`/tutor-profile/${account.id}`)
+      .then((profile) => {
+        if (cancelled || !profile) return;
+        const parsed = parseAvailability(profile.availability);
+        if (parsed.days.length) setSelectedDays(parsed.days);
+        if (parsed.time) setSelectedTime(parsed.time);
+        if (profile.maxStudents) setMaxStudents(String(profile.maxStudents));
+        if (Array.isArray(profile.subjects) && profile.subjects.length) setSubjects(profile.subjects);
+        const fee = Number(profile.fee);
+        if (fee >= 5000 && fee <= 10000) setSalary(String(fee));
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, [own, account?.id]);
+
+  const handleSave = async (e) => {
     e.preventDefault();
     if (subjects.length === 0) {
       setFormError("Select at least one subject you can teach.");
       setSaved(false);
       return;
     }
+    if (selectedDays.length === 0 || !selectedTime) {
+      setFormError("Select the days and time you can teach.");
+      setSaved(false);
+      return;
+    }
     const amount = Number(salary);
-    if (!salary.trim() || !Number.isFinite(amount) || amount < 5000 || amount > 10000) {
+    if (!String(salary).trim() || !Number.isFinite(amount) || amount < 5000 || amount > 10000) {
       setFormError("Expected monthly salary must be between ৳5,000 and ৳10,000.");
       setSaved(false);
       return;
     }
     setFormError("");
-    setSaved(true);
-    setTimeout(() => setSaved(false), 3000);
+    if (!own) {
+      setSaved(true);
+      return;
+    }
+    setSaving(true);
+    try {
+      await patchToAPI(`/tutors/${account.id}/availability`, {
+        days: selectedDays,
+        time: selectedTime,
+        maxStudents: Number(maxStudents),
+        subjects,
+        salary: amount,
+      });
+      setSaved(true);
+    } catch (error) {
+      setSaved(false);
+      setFormError(error.message || "Availability could not be saved.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   return (
@@ -91,7 +158,7 @@ export function Availability({ onNavigate, account = null }) {
                 Subjects you can teach
               </label>
               <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
-                {TEACHING_SUBJECTS.map((subject) => {
+                {subjectOptions.map((subject) => {
                   const active = subjects.includes(subject);
                   return (
                     <button
@@ -204,8 +271,8 @@ export function Availability({ onNavigate, account = null }) {
 
             <div className="flex justify-end gap-3">
               <SecondaryButton onClick={() => onNavigate("tutor-dashboard")}>Cancel</SecondaryButton>
-              <PrimaryButton type="submit">
-                <Save size={16} className="mr-1.5 inline" /> Save Preferences
+              <PrimaryButton type="submit" disabled={saving}>
+                <Save size={16} className="mr-1.5 inline" /> {saving ? "Saving..." : "Save Preferences"}
               </PrimaryButton>
             </div>
           </form>
