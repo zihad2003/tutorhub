@@ -1,12 +1,17 @@
 import { C } from "../constants/tokens";
 import { PrimaryButton, SecondaryButton, Badge } from "../components/ui";
-import { Calendar, Clock, CheckCircle, Save } from "lucide-react";
+import { BookOpen, Calendar, Clock, CheckCircle, Save } from "lucide-react";
 import { useState } from "react";
+
+const TEACHING_SUBJECTS = ["Physics", "Math", "Chemistry", "Biology", "English", "Bangla", "ICT"];
 
 export function Availability({ onNavigate }) {
   const [selectedDays, setSelectedDays] = useState(["Sunday", "Tuesday", "Thursday"]);
   const [selectedTime, setSelectedTime] = useState("Evening (4:00 PM - 8:00 PM)");
   const [maxStudents, setMaxStudents] = useState("4");
+  const [subjects, setSubjects] = useState(["Physics", "Math"]);
+  const [salary, setSalary] = useState("900");
+  const [formError, setFormError] = useState("");
   const [saved, setSaved] = useState(false);
 
   const daysOfWeek = ["Saturday", "Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday"];
@@ -24,8 +29,28 @@ export function Availability({ onNavigate }) {
     setSaved(false);
   };
 
+  const toggleSubject = (subject) => {
+    setSubjects((prev) =>
+      prev.includes(subject) ? prev.filter((item) => item !== subject) : [...prev, subject]
+    );
+    setSaved(false);
+    setFormError("");
+  };
+
   const handleSave = (e) => {
     e.preventDefault();
+    if (subjects.length === 0) {
+      setFormError("Select at least one subject you can teach.");
+      setSaved(false);
+      return;
+    }
+    const amount = Number(salary);
+    if (!salary.trim() || !Number.isFinite(amount) || amount <= 0) {
+      setFormError("Enter your expected salary in taka per hour.");
+      setSaved(false);
+      return;
+    }
+    setFormError("");
     setSaved(true);
     setTimeout(() => setSaved(false), 3000);
   };
@@ -44,7 +69,7 @@ export function Availability({ onNavigate }) {
 
           <h1 className="text-2xl font-semibold" style={{ color: C.text }}>Teaching Availability</h1>
           <p className="mt-1 text-sm" style={{ color: C.textSecondary }}>
-            Set your preferred days, working hours, and student capacity.
+            Set the subjects you teach, your expected salary, and when you are free.
           </p>
 
           {saved && (
@@ -54,7 +79,55 @@ export function Availability({ onNavigate }) {
             </div>
           )}
 
+          {formError && (
+            <p className="mt-4 text-sm font-semibold" style={{ color: C.error }}>{formError}</p>
+          )}
+
           <form onSubmit={handleSave} className="mt-6 space-y-6">
+            <div className="rounded-lg border p-6" style={{ borderColor: C.border }}>
+              <label className="mb-3 block text-sm font-semibold" style={{ color: C.text }}>
+                <BookOpen size={18} className="mr-2 inline" color={C.primary} />
+                Subjects you can teach
+              </label>
+              <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+                {TEACHING_SUBJECTS.map((subject) => {
+                  const active = subjects.includes(subject);
+                  return (
+                    <button
+                      key={subject}
+                      type="button"
+                      onClick={() => toggleSubject(subject)}
+                      className={`rounded-lg border py-2.5 px-3 text-sm font-semibold transition-all duration-150 ${
+                        active
+                          ? "border-blue-600 bg-blue-50 text-blue-600 shadow-sm"
+                          : "hover:bg-gray-50 text-gray-700"
+                      }`}
+                      style={{ borderColor: active ? C.primary : C.border }}
+                    >
+                      {subject}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <div className="rounded-lg border p-6" style={{ borderColor: C.border }}>
+              <label className="mb-2 block text-sm font-semibold" htmlFor="expected-salary" style={{ color: C.text }}>
+                Expected salary (৳ per hour)
+              </label>
+              <input
+                id="expected-salary"
+                type="number"
+                min="1"
+                required
+                value={salary}
+                placeholder="e.g. 900"
+                onChange={(e) => { setSalary(e.target.value); setSaved(false); setFormError(""); }}
+                className="w-full rounded-lg border px-3.5 py-2.5 text-sm outline-none"
+                style={{ borderColor: C.border, color: C.text }}
+              />
+            </div>
+
             <div className="rounded-lg border p-6" style={{ borderColor: C.border }}>
               <label className="mb-3 block text-sm font-semibold" style={{ color: C.text }}>
                 <Calendar size={18} className="mr-2 inline" color={C.primary} />
