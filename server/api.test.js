@@ -30,6 +30,26 @@ test('platform summary matches stored account and lesson counts', async () => {
   assert.ok(summary.parents > 0);
 });
 
+test('lessons and payments are numeric records the dashboards can render', async () => {
+  const [lessonResponse, paymentResponse, requestResponse] = await Promise.all([
+    fetch(`${API}/api/data/lessons`),
+    fetch(`${API}/api/data/payments`),
+    fetch(`${API}/api/data/requests`),
+  ]);
+  assert.equal(lessonResponse.status, 200);
+  assert.equal(paymentResponse.status, 200);
+  assert.equal(requestResponse.status, 200);
+  const lessons = await lessonResponse.json();
+  const payments = await paymentResponse.json();
+  const requests = await requestResponse.json();
+  assert.ok(lessons.length > 0);
+  assert.equal(typeof lessons[0].tutorName, 'string');
+  assert.equal(typeof lessons[0].fee, 'number');
+  assert.match(lessons[0].date, /^\d{4}-\d{2}-\d{2}$/);
+  assert.equal(typeof payments[0].totalAmount, 'number');
+  assert.ok(requests.some((request) => request.status === 'open'));
+});
+
 test('applications include the tutor name from the tutors table', async () => {
   const response = await fetch(`${API}/api/data/applications`);
   assert.equal(response.status, 200);

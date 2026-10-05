@@ -34,6 +34,18 @@ export async function fetchFromAPI(endpoint) {
   }
 }
 
+export async function patchToAPI(endpoint, data) {
+  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!response.ok) {
+    throw new Error(`API error! status: ${response.status}`);
+  }
+  return response.json();
+}
+
 export async function postToAPI(endpoint, data) {
   try {
     const response = await fetch(`${API_BASE_URL}${endpoint}`, {

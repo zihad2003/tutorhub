@@ -1,27 +1,65 @@
 import { C } from "../constants/tokens";
 import { Input, PrimaryButton, SecondaryButton } from "../components/ui";
 import { HIRED_TUTORS } from "../data/mockData";
-import { useState } from "react";
+import { postToAPI, fetchFromAPI } from "../api";
+import { useEffect, useState } from "react";
 
-export function LessonLog({ onNavigate, role = "parent" }) {
+export function LessonLog({ onNavigate, role = "parent", account }) {
   const isTutor = role === "tutor";
   const [selectedTutor, setSelectedTutor] = useState(HIRED_TUTORS[0]);
-  const [selectedStudent, setSelectedStudent] = useState("1");
-  const [submitted, setSubmitted] = useState(false);
-
-  const studentsList = [
+  const [selectedStudent, setSelectedStudent] = useState("");
+  const [studentsList, setStudentsList] = useState([
     { id: "1", name: "Abdul Rahman's Son", classLevel: "Class 10", subject: "Physics" },
     { id: "2", name: "Tanvir R.", classLevel: "Class 8", subject: "English" },
-  ];
+  ]);
+  const [submitted, setSubmitted] = useState(false);
+  const [saveError, setSaveError] = useState("");
+
+  useEffect(() => {
+    let cancelled = false;
+    fetchFromAPI("/parents")
+      .then((rows) => {
+        if (cancelled || !Array.isArray(rows) || rows.length === 0) return;
+        setStudentsList(rows.map((parent) => ({
+          id: String(parent.id),
+          name: parent.name,
+          classLevel: parent.location || "Student",
+          subject: "Tuition",
+        })));
+        setSelectedStudent(String(rows[0].id));
+      })
+      .catch(() => {});
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const backLink = isTutor ? "tutor-dashboard" : "lessons";
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setSubmitted(true);
-    setTimeout(() => {
-      onNavigate(backLink);
-    }, 1500);
+    const form = new FormData(e.currentTarget);
+    const student = studentsList.find((item) => item.id === selectedStudent);
+    setSaveError("");
+    try {
+      await postToAPI("/lessons", {
+        tutorId: account?.role === "tutor" ? account.id : selectedTutor?.tutorId,
+        subject: form.get("subject"),
+        topic: form.get("topic"),
+        date: form.get("date"),
+        classLevel: student?.classLevel || null,
+        duration: form.get("duration") || null,
+        homework: form.get("homework") || null,
+        notes: form.get("notes") || null,
+        fee: selectedTutor?.fee || null,
+      });
+      setSubmitted(true);
+      setTimeout(() => {
+        onNavigate(backLink);
+      }, 1500);
+    } catch {
+      setSaveError("The lesson could not be saved. Please try again.");
+    }
   };
 
   return (
@@ -44,6 +82,10 @@ export function LessonLog({ onNavigate, role = "parent" }) {
               ? "Record taught lesson details to request parent confirmation and payout."
               : "Record lesson details for tracking and payment."}
           </p>
+
+          {saveError && (
+            <p className="mt-4 text-sm font-semibold" style={{ color: C.error }}>{saveError}</p>
+          )}
 
           {submitted && (
             <div className="mt-4 rounded-lg border border-green-200 bg-green-50 p-4 text-sm font-semibold text-green-700">
@@ -113,16 +155,16 @@ export function LessonLog({ onNavigate, role = "parent" }) {
             )}
 
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-              <Input label="Subject" placeholder="e.g., Physics" required />
-              <Input label="Topic Covered" placeholder="e.g., Newton's Laws" required />
+              <Input name="subject" label="Subject" placeholder="e.g., Physics" required />
+              <Input name="topic" label="Topic Covered" placeholder="e.g., Newton's Laws" required />
             </div>
 
             {isTutor ? (
-              <Input label="Date" type="date" required />
+              <Input name="date" label="Date" type="date" required />
             ) : (
               <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-                <Input label="Date" type="date" required />
-                <Input label="Duration (hours)" placeholder="e.g., 1.5" required />
+                <Input name="date" label="Date" type="date" required />
+                <Input name="duration" label="Duration (hours)" placeholder="e.g., 1.5" required />
               </div>
             )}
 
@@ -131,6 +173,7 @@ export function LessonLog({ onNavigate, role = "parent" }) {
                 Homework Assigned
               </label>
               <textarea
+                name="homework"
                 placeholder="Describe the homework assignment..."
                 rows={3}
                 className="w-full rounded-lg border px-3.5 py-2.5 text-sm outline-none transition-shadow duration-150 focus:ring-2"
@@ -145,6 +188,7 @@ export function LessonLog({ onNavigate, role = "parent" }) {
                 Notes for Parent
               </label>
               <textarea
+                name="notes"
                 placeholder="Any additional notes about student's performance..."
                 rows={2}
                 className="w-full rounded-lg border px-3.5 py-2.5 text-sm outline-none transition-shadow duration-150 focus:ring-2"
