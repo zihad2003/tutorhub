@@ -112,8 +112,8 @@ export function TutorDashboard({ onNavigate, account, onReapply }) {
           tutorId: account.id,
           coverLetter: applyCoverLetter.trim(),
         });
-      } catch {
-        setApplyError("The application could not be saved. Please try again.");
+      } catch (error) {
+        setApplyError(error.message || "The application could not be saved. Please try again.");
         return;
       }
     }
@@ -236,7 +236,7 @@ export function TutorDashboard({ onNavigate, account, onReapply }) {
                             <Badge tone="neutral">Request #{req.id}</Badge>
                           </div>
                           <p className="mt-1 text-xs" style={{ color: C.textSecondary }}>
-                            {req.location} · Preferred: {req.preferredDays} · Budget: <span className="font-semibold text-blue-600">৳{req.budget}/mo</span>
+                            {req.location} · {req.preferredDays || "Any day"} · {req.preferredTime || "Any time"} · <span className="font-semibold text-blue-600">৳{req.budget}/mo</span>
                           </p>
                         </div>
 

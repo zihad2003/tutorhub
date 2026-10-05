@@ -1,7 +1,7 @@
 import { C } from "../constants/tokens";
 import { Badge, PrimaryButton, SecondaryButton, Stars } from "../components/ui";
 import { APPLICATIONS, REQUESTS } from "../data/mockData";
-import { fetchFromAPI } from "../api";
+import { fetchFromAPI, postToAPI } from "../api";
 import { CheckCircle2, Clock, MessageCircle, FileText, Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -9,8 +9,7 @@ export function TutorApplications({ onNavigate, role = "parent", account = null 
   const isTutor = role === "tutor";
   const backLink = isTutor ? "tutor-dashboard" : "parent-dashboard";
   const [apps, setApps] = useState(() => (account && !account.demo ? [] : APPLICATIONS));
-  const [hiringApp, setHiringApp] = useState(null);
-  const [offerAmount, setOfferAmount] = useState("");
+  const [hireError, setHireError] = useState("");
   const [coverLetter, setCoverLetter] = useState("");
   const [isGenerating, setIsGenerating] = useState(false);
 
@@ -35,8 +34,23 @@ export function TutorApplications({ onNavigate, role = "parent", account = null 
     };
   }, []);
 
-  const handleHire = (app) => {
-    setApps(apps.map(a => a.id === app.id ? { ...a, status: "offer_sent" } : a));
+  const monthlyLabel = (value) => {
+    const number = Number(String(value ?? "").replace(/[^\d.]/g, ""));
+    return Number.isFinite(number) && number > 0 ? `৳${number.toLocaleString("en-US")}/mo` : "Not set";
+  };
+
+  const handleHire = async (app) => {
+    setHireError("");
+    try {
+      await postToAPI(`/applications/${app.id}/hire`, { parentId: account?.id || app.parentId });
+      setApps((current) => current.map((item) => {
+        if (item.id === app.id) return { ...item, status: "hired" };
+        if (item.requestId === app.requestId && item.status === "pending") return { ...item, status: "rejected" };
+        return item;
+      }));
+    } catch (error) {
+      setHireError(error.message || "Could not hire this tutor.");
+    }
   };
 
   const generateAutoCoverLetter = (requestId) => {
@@ -95,12 +109,12 @@ export function TutorApplications({ onNavigate, role = "parent", account = null 
                         <h3 className="text-lg font-semibold" style={{ color: C.text }}>
                           Application for Request #{app.requestId}
                         </h3>
-                        <Badge tone={app.status === "accepted" ? "success" : "warning"}>
-                          {app.status === "accepted" ? "Accepted" : "Under Review"}
+                        <Badge tone={app.status === "hired" || app.status === "accepted" ? "success" : "warning"}>
+                          {app.status === "hired" || app.status === "accepted" ? "Hired" : "Under Review"}
                         </Badge>
                       </div>
                       <p className="mt-1 text-sm" style={{ color: C.textSecondary }}>
-                        Subjects: {(Array.isArray(app.subjects) ? app.subjects : []).join(", ")}
+                        {app.requestSubject || "Tuition"} · Salary {monthlyLabel(app.budget)} · Time {app.preferredTime || "Not set"}
                       </p>
                     </div>
 
@@ -148,7 +162,7 @@ export function TutorApplications({ onNavigate, role = "parent", account = null 
     );
   }
 
-  const pendingApps = apps.filter(a => a.status === "pending");
+  const pendingApps = apps.filter((item) => item.status === "pending" || item.status === "hired" || item.status === "accepted");
 
   return (
     <div className="flex min-h-screen bg-white">
@@ -179,8 +193,9 @@ export function TutorApplications({ onNavigate, role = "parent", account = null 
             </div>
           ) : (
             <div className="mt-8 space-y-6">
+              {hireError && <p className="mt-4 text-sm font-semibold" style={{ color: C.error }}>{hireError}</p>}
               {pendingApps.map((app) => {
-                const request = REQUESTS.find(r => r.id === app.requestId) || {};
+                const hired = app.status === "hired" || app.status === "accepted";
                 return (
                 <div
                   key={app.id}
@@ -201,11 +216,12 @@ export function TutorApplications({ onNavigate, role = "parent", account = null 
                         <Stars rating={app.rating} />
                       </div>
                       <p className="mt-1 text-sm" style={{ color: C.textSecondary }}>
-                        {(Array.isArray(app.subjects) ? app.subjects : []).join(", ") || "Subjects not listed"} · {app.experience || "Experience not listed"} experience
+                        {(Array.isArray(app.subjects) ? app.subjects : []).join(", ") || app.requestSubject || "Subjects not listed"}
+                        {app.experience ? ` · ${app.experience}` : ""}
                       </p>
-                      <div className="mt-2 flex gap-4 text-sm font-semibold" style={{ color: C.text }}>
-                        <p>Expected Salary: ৳{request.budget}</p>
-                        <p>Time: {request.preferredTime}</p>
+                      <div className="mt-2 flex flex-wrap gap-4 text-sm font-semibold" style={{ color: C.text }}>
+                        <p>Expected salary: {monthlyLabel(app.budget)}</p>
+                        <p>Time: {app.preferredTime || "Not set"}</p>
                       </div>
                     </div>
                     <div className="flex gap-2">
@@ -213,7 +229,11 @@ export function TutorApplications({ onNavigate, role = "parent", account = null 
                         <MessageCircle size={14} className="mr-1.5 inline" />
                         Message
                       </SecondaryButton>
-                      <PrimaryButton size="sm" onClick={() => { setHiringApp(app); setOfferAmount(""); }}>Hire</PrimaryButton>
+                      {hired ? (
+                        <span className="rounded-lg border border-green-200 bg-green-50 px-3 py-1.5 text-xs font-semibold text-green-700">Hired</span>
+                      ) : (
+                        <PrimaryButton size="sm" onClick={() => handleHire(app)}>Hire</PrimaryButton>
+                      )}
                     </div>
                   </div>
 
@@ -267,39 +287,6 @@ export function TutorApplications({ onNavigate, role = "parent", account = null 
         </div>
       </div>
 
-      {hiringApp && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-          <div className="w-full max-w-md rounded-lg bg-white p-6 shadow-xl">
-            <h2 className="text-xl font-bold" style={{ color: C.text }}>Send Offer to {hiringApp.tutorName}</h2>
-            <p className="mt-2 text-sm text-gray-600">
-              Please enter the salary you are willing to offer. The tutor will review this offer and decide whether to accept or reject it.
-            </p>
-            <div className="my-4">
-              <label className="block text-sm font-semibold mb-2" style={{ color: C.text }}>Offer amount (৳/month)</label>
-              <input 
-                type="number"
-                placeholder="e.g. 1000"
-                value={offerAmount}
-                onChange={(e) => setOfferAmount(e.target.value)}
-                className="w-full rounded-lg border p-3 text-lg outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500"
-                style={{ borderColor: C.border }}
-              />
-            </div>
-            <div className="mt-6 flex justify-end gap-3">
-              <SecondaryButton onClick={() => setHiringApp(null)}>Cancel</SecondaryButton>
-              <PrimaryButton 
-                onClick={() => {
-                  if(!offerAmount) return alert("Please enter an offer amount.");
-                  handleHire(hiringApp);
-                  setHiringApp(null);
-                }}
-              >
-                Send Offer
-              </PrimaryButton>
-            </div>
-          </div>
-        </div>
-      )}
     </div>
   );
 }

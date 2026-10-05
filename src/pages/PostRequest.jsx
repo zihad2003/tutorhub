@@ -78,8 +78,8 @@ export function PostRequest({ onNavigate, mode = "create", account }) {
           tutorId: account.id,
           coverLetter: applyCoverLetter.trim(),
         });
-      } catch {
-        setApplyError("The application could not be saved. Please try again.");
+      } catch (error) {
+        setApplyError(error.message || "The application could not be saved. Please try again.");
         return;
       }
     }
