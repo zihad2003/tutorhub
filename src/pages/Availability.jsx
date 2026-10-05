@@ -5,12 +5,13 @@ import { useState } from "react";
 
 const TEACHING_SUBJECTS = ["Physics", "Math", "Chemistry", "Biology", "English", "Bangla", "ICT"];
 
-export function Availability({ onNavigate }) {
-  const [selectedDays, setSelectedDays] = useState(["Sunday", "Tuesday", "Thursday"]);
-  const [selectedTime, setSelectedTime] = useState("Evening (4:00 PM - 8:00 PM)");
-  const [maxStudents, setMaxStudents] = useState("4");
-  const [subjects, setSubjects] = useState(["Physics", "Math"]);
-  const [salary, setSalary] = useState("900");
+export function Availability({ onNavigate, account = null }) {
+  const own = account && !account.demo;
+  const [selectedDays, setSelectedDays] = useState(own ? [] : ["Sunday", "Tuesday", "Thursday"]);
+  const [selectedTime, setSelectedTime] = useState(own ? "" : "Evening (4:00 PM - 8:00 PM)");
+  const [maxStudents, setMaxStudents] = useState(own ? "" : "4");
+  const [subjects, setSubjects] = useState(own ? [] : ["Physics", "Math"]);
+  const [salary, setSalary] = useState(own ? "" : "900");
   const [formError, setFormError] = useState("");
   const [saved, setSaved] = useState(false);
 

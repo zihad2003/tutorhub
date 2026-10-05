@@ -2,7 +2,7 @@ import { C } from "../constants/tokens";
 import { Input, PrimaryButton, SecondaryButton, Badge } from "../components/ui";
 import { MapPin, Calendar, DollarSign, Send, CheckCircle2, ChevronDown, Clock, Sparkles, Upload, X } from "lucide-react";
 import { REQUESTS } from "../data/mockData";
-import { postToAPI } from "../api";
+import { fetchFromAPI, postToAPI } from "../api";
 import { useLiveList } from "../lib/records";
 import { getStoredCategories } from "../data/categoriesData";
 import { useState, useEffect } from "react";
@@ -10,7 +10,14 @@ import { useState, useEffect } from "react";
 export function PostRequest({ onNavigate, mode = "create", account }) {
   const [appliedIds, setAppliedIds] = useState([]);
   const [categories, setCategories] = useState(() => getStoredCategories());
-  const [requests, setRequests] = useLiveList("/requests", REQUESTS);
+  const own = account && !account.demo && account.id;
+  const [requestRows, setRequests] = useLiveList("/requests", own ? [] : REQUESTS);
+  const [dbSubjects, setDbSubjects] = useState([]);
+  const requests = !own
+    ? requestRows
+    : mode === "browse"
+      ? requestRows.filter((row) => row.parentId)
+      : requestRows.filter((row) => Number(row.parentId) === Number(account.id));
   const [saveError, setSaveError] = useState("");
   
   // Form Fields
@@ -32,6 +39,17 @@ export function PostRequest({ onNavigate, mode = "create", account }) {
   const [applyFee, setApplyFee] = useState("");
   const [applyCoverLetter, setApplyCoverLetter] = useState("");
   const [applyError, setApplyError] = useState("");
+
+  useEffect(() => {
+    fetchFromAPI("/subjects")
+      .then((data) => {
+        if (!Array.isArray(data) || data.length === 0) return;
+        setDbSubjects(data);
+        setSelectedCategory(data[0].name);
+        setSubject(data[0].name);
+      })
+      .catch(() => {});
+  }, []);
 
   useEffect(() => {
     const handleUpdate = () => setCategories(getStoredCategories());
@@ -295,9 +313,9 @@ export function PostRequest({ onNavigate, mode = "create", account }) {
                     className="w-full appearance-none rounded-lg border px-3.5 py-2.5 text-sm font-semibold outline-none transition-shadow duration-150 focus:ring-2 bg-white"
                     style={{ borderColor: C.border, color: C.text }}
                   >
-                    {categories.filter(c => c.status === "active").map((c) => (
+                    {(dbSubjects.length ? dbSubjects.map((item) => ({ id: item.id, name: item.name, description: item.description })) : categories.filter((c) => c.status === "active")).map((c) => (
                       <option key={c.id} value={c.name}>
-                        {c.name} ({c.description || "Tuition Category"})
+                        {c.name}{c.description ? ` (${c.description})` : ""}
                       </option>
                     ))}
                   </select>

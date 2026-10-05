@@ -67,22 +67,22 @@ function LockedTutorDashboard({ account, onReapply }) {
 
 export function TutorDashboard({ onNavigate, account, onReapply }) {
   const [appliedIds, setAppliedIds] = useState([]);
-  const [lessons] = useLiveList("/lessons", LESSONS);
-  const [requests] = useLiveList("/requests", REQUESTS);
-  const [earnings] = useLiveList("/tutor_earnings", TUTOR_EARNINGS);
-  const [hired] = useLiveList("/hired_tutors", HIRED_TUTORS);
+  const isOwnAccount = account && !account.demo && account.role === "tutor";
+  const [lessons] = useLiveList("/lessons", isOwnAccount ? [] : LESSONS);
+  const [requests] = useLiveList("/requests", isOwnAccount ? [] : REQUESTS);
+  const [earnings] = useLiveList("/tutor_earnings", isOwnAccount ? [] : TUTOR_EARNINGS);
+  const [hired] = useLiveList("/hired_tutors", isOwnAccount ? [] : HIRED_TUTORS);
   const [applyModalOpen, setApplyModalOpen] = useState(false);
   const [applyRequestId, setApplyRequestId] = useState(null);
   const [applyFee, setApplyFee] = useState("");
   const [applyCoverLetter, setApplyCoverLetter] = useState("");
   const [applyError, setApplyError] = useState("");
 
-  const isOwnAccount = account && !account.demo && account.role === "tutor";
   const ownerId = isOwnAccount ? account.id : null;
   const myLessons = rowsForAccount(lessons, ownerId, "tutorId");
   const myEarnings = rowsForAccount(earnings, ownerId, "tutorId");
   const myStudents = rowsForAccount(hired, ownerId, "tutorId");
-  const requestRows = requests;
+  const requestRows = isOwnAccount ? requests.filter((request) => request.parentId) : requests;
   const monthPrefix = currentMonthPrefix();
   const activeStudents = myStudents.filter((tutor) => tutor.status === "active").length;
   const monthLessonsCount = myLessons.filter((lesson) => lesson.date && String(lesson.date).startsWith(monthPrefix)).length;

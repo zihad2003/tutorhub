@@ -61,12 +61,11 @@ function LockedParentDashboard({ account, onReapply }) {
 }
 
 export function ParentDashboard({ onNavigate, account, onReapply }) {
-  const [lessons] = useLiveList("/lessons", LESSONS);
-  const [payments] = useLiveList("/payments", PAYMENTS);
-  const [applications] = useLiveList("/applications", APPLICATIONS);
-  const [hired] = useLiveList("/hired_tutors", HIRED_TUTORS);
-
   const isOwnAccount = account && !account.demo && account.role === "parent";
+  const [lessons] = useLiveList("/lessons", isOwnAccount ? [] : LESSONS);
+  const [payments] = useLiveList("/payments", isOwnAccount ? [] : PAYMENTS);
+  const [applications] = useLiveList("/applications", isOwnAccount ? [] : APPLICATIONS);
+  const [hired] = useLiveList("/hired_tutors", isOwnAccount ? [] : HIRED_TUTORS);
   if (isOwnAccount && account.status !== "approved") return <LockedParentDashboard account={account} onReapply={onReapply} />;
 
   const ownerId = isOwnAccount ? account.id : null;

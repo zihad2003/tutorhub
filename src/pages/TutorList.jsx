@@ -3,42 +3,155 @@ import { ChevronDown } from "lucide-react";
 import { C } from "../constants/tokens";
 import { TutorCard } from "../components/ui/TutorCard";
 import { TUTORS as mockTutors } from "../data/tutors";
-import { getStoredCategories } from "../data/categoriesData";
 import { fetchFromAPI } from "../api";
 
-export function TutorList({ openTutor, hiredOnly = false, browse = { text: "", subject: "" } }) {
-  const [subject, setSubject] = useState("All subjects");
+const FEE_MIN = 0;
+const FEE_MAX = 5000;
+
+function formatFee(value) {
+  return Number(value || 0).toLocaleString("en-US");
+}
+
+function parseFee(value) {
+  const number = Number(String(value).replace(/,/g, ""));
+  if (!Number.isFinite(number)) return FEE_MIN;
+  return Math.min(FEE_MAX, Math.max(FEE_MIN, Math.round(number)));
+}
+
+function PriceRange({ minFee, maxFee, onChange }) {
+  const left = ((minFee - FEE_MIN) / (FEE_MAX - FEE_MIN)) * 100;
+  const width = ((maxFee - minFee) / (FEE_MAX - FEE_MIN)) * 100;
+  return (
+    <div className="w-full rounded-xl border bg-white p-4 sm:w-[340px]" style={{ borderColor: C.border }}>
+      <p className="text-lg font-semibold" style={{ color: C.text }}>Price Range</p>
+      <div className="relative mt-6 h-8">
+        <div className="absolute left-0 right-0 top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-gray-200" />
+        <div
+          className="absolute top-1/2 h-1.5 -translate-y-1/2 rounded-full"
+          style={{ left: `${left}%`, width: `${width}%`, background: "#f97316" }}
+        />
+        <input
+          type="range"
+          min={FEE_MIN}
+          max={FEE_MAX}
+          value={minFee}
+          onChange={(event) => onChange(Math.min(Number(event.target.value), maxFee), maxFee)}
+          className="price-range"
+          aria-label="Minimum price"
+        />
+        <input
+          type="range"
+          min={FEE_MIN}
+          max={FEE_MAX}
+          value={maxFee}
+          onChange={(event) => onChange(minFee, Math.max(Number(event.target.value), minFee))}
+          className="price-range"
+          aria-label="Maximum price"
+        />
+      </div>
+      <div className="mt-3 flex items-center justify-between gap-4">
+        <input
+          value={formatFee(minFee)}
+          onChange={(event) => onChange(Math.min(parseFee(event.target.value), maxFee), maxFee)}
+          className="w-28 rounded-md border px-3 py-2 text-center text-sm outline-none"
+          style={{ borderColor: C.border, color: C.text }}
+          aria-label="Minimum price amount"
+        />
+        <input
+          value={formatFee(maxFee)}
+          onChange={(event) => onChange(minFee, Math.max(parseFee(event.target.value), minFee))}
+          className="w-28 rounded-md border px-3 py-2 text-center text-sm outline-none"
+          style={{ borderColor: C.border, color: C.text }}
+          aria-label="Maximum price amount"
+        />
+      </div>
+      <style>{`
+        .price-range {
+          position: absolute;
+          left: 0;
+          top: 50%;
+          width: 100%;
+          height: 0;
+          margin: 0;
+          transform: translateY(-50%);
+          appearance: none;
+          background: transparent;
+          pointer-events: none;
+        }
+        .price-range::-webkit-slider-thumb {
+          appearance: none;
+          pointer-events: auto;
+          height: 22px;
+          width: 22px;
+          border-radius: 999px;
+          border: 3px solid #f97316;
+          background: #fff;
+          cursor: pointer;
+        }
+        .price-range::-moz-range-thumb {
+          pointer-events: auto;
+          height: 22px;
+          width: 22px;
+          border-radius: 999px;
+          border: 3px solid #f97316;
+          background: #fff;
+          cursor: pointer;
+        }
+      `}</style>
+    </div>
+  );
+}
+
+export function TutorList({ openTutor, hiredOnly = false, browse = { text: "", subject: "" }, account = null }) {
+  const [subject, setSubject] = useState(browse.subject || "All subjects");
   const [classLevel, setClassLevel] = useState("All classes");
-  const [minFee, setMinFee] = useState("");
-  const [maxFee, setMaxFee] = useState("");
+  const [minFee, setMinFee] = useState(FEE_MIN);
+  const [maxFee, setMaxFee] = useState(FEE_MAX);
   const [sort, setSort] = useState("Rating: High to Low");
-  const [storedCategories, setStoredCategories] = useState(() => getStoredCategories());
+  const [subjectNames, setSubjectNames] = useState([]);
   const [dbTutors, setDbTutors] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    const handleUpdate = () => setStoredCategories(getStoredCategories());
-    window.addEventListener("tutorhub_categories_updated", handleUpdate);
-    return () => window.removeEventListener("tutorhub_categories_updated", handleUpdate);
+    if (browse.subject) setSubject(browse.subject);
+  }, [browse.subject]);
+
+  useEffect(() => {
+    fetchFromAPI("/subjects")
+      .then((data) => setSubjectNames(Array.isArray(data) ? data.map((item) => item.name) : []))
+      .catch(() => setSubjectNames([]));
   }, []);
 
   useEffect(() => {
-    fetchFromAPI('/tutors')
-      .then(data => {
-        setDbTutors(data.length > 0 ? data : mockTutors);
+    const ownParent = hiredOnly && account && !account.demo && account.id;
+    const load = ownParent
+      ? fetchFromAPI("/hired_tutors").then((rows) => (Array.isArray(rows) ? rows : []).filter((row) => Number(row.parentId) === Number(account.id)).map((row) => ({
+          id: row.tutorId || row.id,
+          name: row.tutorName,
+          img: row.tutorImg,
+          subjects: row.subjects || [],
+          fee: Number(row.fee) || 0,
+          rating: 0,
+          reviews: 0,
+        })))
+      : fetchFromAPI("/tutors").then((data) => (data.length > 0 ? data : mockTutors));
+    load
+      .then((data) => {
+        setDbTutors(data);
         setIsLoading(false);
       })
-      .catch(err => {
+      .catch((err) => {
         console.error("Failed to fetch tutors:", err);
-        setDbTutors(mockTutors); // Fallback
+        setDbTutors(ownParent ? [] : mockTutors);
         setIsLoading(false);
       });
-  }, []);
+  }, [hiredOnly, account]);
 
-  const subjectOptions = ["All subjects", ...storedCategories.filter(c => c.status === "active").map(c => c.name)];
+  const subjectOptions = ["All subjects", ...subjectNames];
   const classOptions = ["All classes", "Class 1-5", "Class 6-8", "Class 9-10", "HSC", "University"];
 
-  let list = hiredOnly ? dbTutors.slice(0, 2) : dbTutors;
+  const ownHireList = hiredOnly && account && !account.demo;
+  let list = hiredOnly && !ownHireList ? dbTutors.slice(0, 2) : dbTutors;
   const wantedSubject = String(browse.subject || "").trim().toLowerCase();
   const wantedText = String(browse.text || "").trim().toLowerCase();
   if (wantedSubject) {
@@ -55,13 +168,8 @@ export function TutorList({ openTutor, hiredOnly = false, browse = { text: "", s
   }
   list = list.filter((t) => {
     if (subject === "All subjects") return true;
-    const cat = storedCategories.find(c => c.name === subject);
-    const tutorSubjects = Array.isArray(t.subjects) ? t.subjects : (t.subjects ? t.subjects.split(',') : []);
-    
-    if (cat && cat.subjects) {
-      return tutorSubjects.some(s => cat.subjects.includes(s) || s.toLowerCase().includes(subject.toLowerCase()));
-    }
-    return tutorSubjects.includes(subject) || tutorSubjects.some(s => subject.toLowerCase().includes(s.toLowerCase()));
+    const tutorSubjects = Array.isArray(t.subjects) ? t.subjects : (t.subjects ? String(t.subjects).split(",") : []);
+    return tutorSubjects.some((item) => String(item).trim().toLowerCase() === subject.toLowerCase());
   });
 
   if (classLevel !== "All classes") {
@@ -75,12 +183,10 @@ export function TutorList({ openTutor, hiredOnly = false, browse = { text: "", s
     });
   }
 
-  if (minFee !== "") list = list.filter((t) => Number(t.fee) >= Number(minFee));
-  if (maxFee !== "") list = list.filter((t) => Number(t.fee) <= Number(maxFee));
+  if (minFee > FEE_MIN) list = list.filter((t) => Number(t.fee) >= Number(minFee));
+  if (maxFee < FEE_MAX) list = list.filter((t) => Number(t.fee) <= Number(maxFee));
   if (sort === "Rating: High to Low") list = [...list].sort((a, b) => Number(b.rating) - Number(a.rating));
   if (sort === "Rating: Low to High") list = [...list].sort((a, b) => Number(a.rating) - Number(b.rating));
-  if (sort === "Fee: Low to High") list = [...list].sort((a, b) => Number(a.fee) - Number(b.fee));
-  if (sort === "Newest") list = [...list].sort((a, b) => b.id - a.id);
 
   if (isLoading) return <div className="p-10 text-center">Loading tutors...</div>;
 
@@ -120,24 +226,7 @@ export function TutorList({ openTutor, hiredOnly = false, browse = { text: "", s
             <ChevronDown size={14} className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2" color={C.textSecondary} />
           </div>
 
-          <input
-            type="number"
-            min="0"
-            value={minFee}
-            onChange={(e) => setMinFee(e.target.value)}
-            placeholder="Min fee"
-            className="w-28 rounded-lg border px-3 py-2 text-sm outline-none"
-            style={{ borderColor: C.border, color: C.text }}
-          />
-          <input
-            type="number"
-            min="0"
-            value={maxFee}
-            onChange={(e) => setMaxFee(e.target.value)}
-            placeholder="Max fee"
-            className="w-28 rounded-lg border px-3 py-2 text-sm outline-none"
-            style={{ borderColor: C.border, color: C.text }}
-          />
+          <PriceRange minFee={minFee} maxFee={maxFee} onChange={(nextMin, nextMax) => { setMinFee(nextMin); setMaxFee(nextMax); }} />
         </div>
 
         <div className="relative">
@@ -149,8 +238,6 @@ export function TutorList({ openTutor, hiredOnly = false, browse = { text: "", s
           >
             <option>Rating: High to Low</option>
             <option>Rating: Low to High</option>
-            <option>Fee: Low to High</option>
-            <option>Newest</option>
           </select>
           <ChevronDown size={14} className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2" color={C.textSecondary} />
         </div>

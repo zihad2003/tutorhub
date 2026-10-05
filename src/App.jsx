@@ -303,7 +303,7 @@ export default function App() {
       <main className="w-full">
         {/* Public Pages */}
         {page === "home" && <Home go={go} openTutor={openTutor} openAuth={openAuth} />}
-        {page === "tutors" && <TutorList openTutor={openTutor} browse={browse} />}
+        {page === "tutors" && <TutorList openTutor={openTutor} browse={browse} account={session} />}
         {page === "subjects" && <Subjects go={go} />}
         {page === "profile" && <TutorProfile tutor={selectedTutor} go={go} />}
         {page === "auth" && (
@@ -332,13 +332,13 @@ export default function App() {
         )}
         {page === "post-request" && !isOwnParentLocked(session) && <PostRequest onNavigate={go} mode="create" account={session} />}
         {page === "applications" && !isOwnParentLocked(session) && <TutorApplications onNavigate={go} account={session} />}
-        {page === "hired-tutors" && !isOwnParentLocked(session) && <TutorList openTutor={openTutor} hiredOnly={true} />}
-        {page === "lessons" && !isOwnParentLocked(session) && <LessonHistory onNavigate={go} />}
+        {page === "hired-tutors" && !isOwnParentLocked(session) && <TutorList openTutor={openTutor} hiredOnly={true} account={session} />}
+        {page === "lessons" && !isOwnParentLocked(session) && <LessonHistory onNavigate={go} account={session} />}
         {page === "lesson-log" && !isOwnTutorLocked(session) && <LessonLog onNavigate={go} account={session} />}
-        {page === "lesson-confirm" && !isOwnParentLocked(session) && <LessonConfirm onNavigate={go} />}
-        {page === "payments" && !isOwnParentLocked(session) && <Payment onNavigate={go} />}
-        {page === "chat" && !isOwnParentLocked(session) && <Chat onNavigate={go} />}
-        {["reviews", "summary", "rate-tutor", "review", "tutor-reviews", "summary-reviews"].includes(page) && !isOwnParentLocked(session) && <MonthlySummary onNavigate={go} role={activeRole} />}
+        {page === "lesson-confirm" && !isOwnParentLocked(session) && <LessonConfirm onNavigate={go} account={session} />}
+        {page === "payments" && !isOwnParentLocked(session) && <Payment onNavigate={go} account={session} />}
+        {page === "chat" && !isOwnParentLocked(session) && <Chat onNavigate={go} account={session} />}
+        {["reviews", "summary", "rate-tutor", "review", "tutor-reviews", "summary-reviews"].includes(page) && !isOwnParentLocked(session) && <MonthlySummary onNavigate={go} role={activeRole} account={session} />}
         {page === "settings" && !isOwnParentLocked(session) && <Settings role={activeRole} onNavigate={go} />}
         
         {/* Tutor Dashboard Pages */}
@@ -346,13 +346,13 @@ export default function App() {
           <TutorDashboard onNavigate={go} account={session} onReapply={startReapply} />
         )}
         {page === "tutor-profile" && !isOwnTutorLocked(session) && <TutorProfile tutor={selectedTutor} go={go} isDashboard={true} account={session} />}
-        {page === "certificates" && !isOwnTutorLocked(session) && <Certificates onNavigate={go} />}
-        {page === "availability" && !isOwnTutorLocked(session) && <Availability onNavigate={go} />}
+        {page === "certificates" && !isOwnTutorLocked(session) && <Certificates onNavigate={go} account={session} />}
+        {page === "availability" && !isOwnTutorLocked(session) && <Availability onNavigate={go} account={session} />}
         {page === "requests" && !isOwnTutorLocked(session) && <PostRequest onNavigate={go} mode="browse" account={session} />}
         {page === "tutor-applications" && !isOwnTutorLocked(session) && <TutorApplications onNavigate={go} role="tutor" account={session} />}
         {page === "tutor-lessons" && !isOwnTutorLocked(session) && <LessonLog onNavigate={go} role="tutor" account={session} />}
-        {page === "earnings" && !isOwnTutorLocked(session) && <MonthlySummary onNavigate={go} role="tutor" />}
-        {page === "tutor-chat" && !isOwnTutorLocked(session) && <Chat onNavigate={go} role="tutor" />}
+        {page === "earnings" && !isOwnTutorLocked(session) && <MonthlySummary onNavigate={go} role="tutor" account={session} />}
+        {page === "tutor-chat" && !isOwnTutorLocked(session) && <Chat onNavigate={go} role="tutor" account={session} />}
         {page === "tutor-settings" && !isOwnTutorLocked(session) && <Settings role="tutor" onNavigate={go} />}
 
         {/* Admin Dashboard Pages */}

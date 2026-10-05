@@ -8,14 +8,17 @@ import { CreditCard, Download, Calendar, DollarSign, TrendingUp, Users, Wallet, 
 
 import { PaymentGateway } from "../components/ui/PaymentGateway";
 
-export function Payment({ onNavigate, role = "parent" }) {
+export function Payment({ onNavigate, role = "parent", account = null }) {
   const [selectedMethod, setSelectedMethod] = useState("card");
   const [showGateway, setShowGateway] = useState(false);
   const isAdmin = role === "admin";
   const backLink = isAdmin ? "admin-dashboard" : "parent-dashboard";
 
-  const [payments] = useLiveList("/payments", PAYMENTS);
-  const [withdrawals, setWithdrawals] = useLiveList("/withdrawal_requests", WITHDRAWAL_REQUESTS);
+  const own = account && !account.demo && account.id && role !== "admin";
+  const [paymentRows] = useLiveList("/payments", own ? [] : PAYMENTS);
+  const [withdrawalRows, setWithdrawals] = useLiveList("/withdrawal_requests", own ? [] : WITHDRAWAL_REQUESTS);
+  const payments = own ? paymentRows.filter((payment) => Number(payment.parentId) === Number(account.id)) : paymentRows;
+  const withdrawals = own ? [] : withdrawalRows;
 
   const handleApprove = (id) => {
     setWithdrawals(prev => prev.map(w => 

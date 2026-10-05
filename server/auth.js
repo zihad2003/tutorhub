@@ -531,4 +531,20 @@ router.post('/admins', async (req, res) => {
   }
 });
 
+router.delete('/admins/:id', async (req, res) => {
+  if (!requireSuperadmin(req, res)) return;
+  const id = Number(req.params.id);
+  if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: 'Choose a valid admin.' });
+  try {
+    const [rows] = await pool.query('SELECT id, role, email FROM admins WHERE id = ? LIMIT 1', [id]);
+    if (!rows[0]) return res.status(404).json({ error: 'This admin no longer exists.' });
+    if (rows[0].role !== 'admin') return res.status(403).json({ error: 'The super admin account cannot be deleted.' });
+    await pool.query("DELETE FROM admins WHERE id = ? AND role = 'admin'", [id]);
+    return res.json({ id, email: rows[0].email, deleted: true });
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: 'Could not delete this admin.' });
+  }
+});
+
 module.exports = { router, ensureAccountColumns };
