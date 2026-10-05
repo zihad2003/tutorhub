@@ -2,7 +2,6 @@ import { C } from "../constants/tokens";
 import { Input, PrimaryButton, SecondaryButton } from "../components/ui";
 import { HIRED_TUTORS } from "../data/mockData";
 import { useState } from "react";
-import { UserCheck } from "lucide-react";
 
 export function LessonLog({ onNavigate, role = "parent" }) {
   const isTutor = role === "tutor";
@@ -55,36 +54,26 @@ export function LessonLog({ onNavigate, role = "parent" }) {
           <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
             {isTutor ? (
               <div>
-                <label className="mb-1.5 block text-sm font-semibold" style={{ color: C.text }}>
+                <label className="mb-1.5 block text-sm font-semibold" style={{ color: C.text }} htmlFor="lesson-student">
                   Select Student / Batch
                 </label>
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
+                <select
+                  id="lesson-student"
+                  required
+                  value={selectedStudent}
+                  onChange={(e) => setSelectedStudent(e.target.value)}
+                  className="w-full rounded-lg border bg-white px-3.5 py-2.5 text-sm outline-none transition-shadow duration-150 focus:ring-2"
+                  style={{ borderColor: C.border, color: C.text }}
+                  onFocus={(e) => (e.currentTarget.style.boxShadow = `0 0 0 3px ${C.primary}33`)}
+                  onBlur={(e) => (e.currentTarget.style.boxShadow = "none")}
+                >
+                  <option value="" disabled>Select a student</option>
                   {studentsList.map((student) => (
-                    <button
-                      key={student.id}
-                      type="button"
-                      onClick={() => setSelectedStudent(student.id)}
-                      className={`flex items-center gap-3 rounded-lg border p-3 text-left transition-colors duration-150 ${
-                        selectedStudent === student.id ? "border-blue-500 bg-blue-50" : "hover:bg-gray-50"
-                      }`}
-                      style={{
-                        borderColor: selectedStudent === student.id ? C.primary : C.border,
-                      }}
-                    >
-                      <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-100 text-blue-600">
-                        <UserCheck size={18} />
-                      </div>
-                      <div>
-                        <p className="text-sm font-semibold" style={{ color: C.text }}>
-                          {student.name}
-                        </p>
-                        <p className="text-xs" style={{ color: C.textSecondary }}>
-                          {student.classLevel} · {student.subject}
-                        </p>
-                      </div>
-                    </button>
+                    <option key={student.id} value={student.id}>
+                      {student.name} · {student.classLevel} · {student.subject}
+                    </option>
                   ))}
-                </div>
+                </select>
               </div>
             ) : (
               <div>
@@ -128,10 +117,14 @@ export function LessonLog({ onNavigate, role = "parent" }) {
               <Input label="Topic Covered" placeholder="e.g., Newton's Laws" required />
             </div>
 
-            <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+            {isTutor ? (
               <Input label="Date" type="date" required />
-              <Input label="Duration (hours)" placeholder="e.g., 1.5" required />
-            </div>
+            ) : (
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                <Input label="Date" type="date" required />
+                <Input label="Duration (hours)" placeholder="e.g., 1.5" required />
+              </div>
+            )}
 
             <div>
               <label className="mb-1.5 block text-sm font-semibold" style={{ color: C.text }}>
