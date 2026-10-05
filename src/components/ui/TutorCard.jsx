@@ -32,7 +32,7 @@ export function TutorCard({ t, onOpen }) {
       </div>
 
       <div className="mt-3 flex items-center justify-between">
-        <span className="text-sm font-semibold" style={{ color: C.text }}>৳{t.fee}<span className="font-normal" style={{ color: C.textSecondary }}>/hr</span></span>
+        <span className="text-sm font-semibold" style={{ color: C.text }}>৳{Number(t.fee).toLocaleString("en-US")}<span className="font-normal" style={{ color: C.textSecondary }}>/mo</span></span>
         <PrimaryButton size="sm" onClick={() => onOpen(t)}>View profile</PrimaryButton>
       </div>
     </div>

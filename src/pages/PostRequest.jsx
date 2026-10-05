@@ -120,7 +120,7 @@ export function PostRequest({ onNavigate, mode = "create", account }) {
       subject: subject || selectedCategory,
       classLevel: classLevel || "Class 9-10",
       location: location || "Dhanmondi, Dhaka",
-      budget: budget || "800",
+      budget: budget || "8000",
       preferredTime: preferredTime || "Evening 7:00 PM",
       preferredDays: selectedDay,
       status: "open",
@@ -186,7 +186,7 @@ export function PostRequest({ onNavigate, mode = "create", account }) {
                           <td className="px-4 py-3" style={{ color: C.text }}>{req.location}</td>
                           <td className="px-4 py-3" style={{ color: C.text }}>{req.preferredDays || "N/A"}</td>
                           <td className="px-4 py-3 font-semibold text-blue-600" style={{ color: C.text }}>{req.preferredTime || "Anytime"}</td>
-                          <td className="px-4 py-3 font-bold" style={{ color: C.text }}>৳{req.budget}/hr</td>
+                          <td className="px-4 py-3 font-bold" style={{ color: C.text }}>৳{req.budget}/mo</td>
                           <td className="px-4 py-3">
                             <Badge tone={req.status === "open" ? "accent" : "neutral"}>
                               {req.status === "open" ? "Active" : "Closed"}
@@ -230,7 +230,7 @@ export function PostRequest({ onNavigate, mode = "create", account }) {
                   </div>
                 )}
                 <div>
-                  <label className="mb-1 block text-sm font-semibold" style={{ color: C.text }}>Proposed Hourly Rate (৳)</label>
+                  <label className="mb-1 block text-sm font-semibold" style={{ color: C.text }}>Proposed monthly salary (৳5,000–৳10,000)</label>
                   <Input 
                     type="number" 
                     value={applyFee} 
@@ -349,7 +349,7 @@ export function PostRequest({ onNavigate, mode = "create", account }) {
                   required
                 />
                 <Input 
-                  label="Budget (per hour in ৳)" 
+                  label="Monthly budget (৳5,000–৳10,000)" 
                   placeholder="e.g., 1000" 
                   value={budget}
                   onChange={(e) => setBudget(e.target.value)}

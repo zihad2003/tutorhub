@@ -152,7 +152,7 @@ export function TutorProfile({ tutor, go, isDashboard = false, account = null })
               </div>
             ) : (
               <div>
-                <p className="text-2xl font-semibold" style={{ color: C.text }}>৳{t.fee}<span className="text-sm font-normal" style={{ color: C.textSecondary }}> /hour</span></p>
+                <p className="text-2xl font-semibold" style={{ color: C.text }}>৳{Number(t.fee || 0).toLocaleString("en-US")}<span className="text-sm font-normal" style={{ color: C.textSecondary }}> /month</span></p>
                 <div className="mt-4 flex flex-col gap-2">
                   <PrimaryButton full onClick={() => go("post-request")}>Hire tutor</PrimaryButton>
                   <SecondaryButton full onClick={() => go("chat")}><MessageCircle size={14} className="mr-1.5 inline" />Message tutor</SecondaryButton>

@@ -236,7 +236,7 @@ export function TutorDashboard({ onNavigate, account, onReapply }) {
                             <Badge tone="neutral">Request #{req.id}</Badge>
                           </div>
                           <p className="mt-1 text-xs" style={{ color: C.textSecondary }}>
-                            {req.location} · Preferred: {req.preferredDays} · Budget: <span className="font-semibold text-blue-600">৳{req.budget}/hr</span>
+                            {req.location} · Preferred: {req.preferredDays} · Budget: <span className="font-semibold text-blue-600">৳{req.budget}/mo</span>
                           </p>
                         </div>
 
@@ -279,7 +279,7 @@ export function TutorDashboard({ onNavigate, account, onReapply }) {
                 </div>
               )}
               <div>
-                <label className="mb-1 block text-sm font-semibold" style={{ color: C.text }}>Proposed Hourly Rate (৳)</label>
+                <label className="mb-1 block text-sm font-semibold" style={{ color: C.text }}>Proposed monthly salary (৳5,000–৳10,000)</label>
                 <Input 
                   type="number" 
                   value={applyFee} 

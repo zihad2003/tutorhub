@@ -1,7 +1,7 @@
 export const TUTORS = [
   {
     id: 1, name: "Rafiq Ahmed", subjects: ["Physics", "Math"], classes: "Class 9-10, HSC", classLevels: ["Class 9-10", "HSC"],
-    experience: "5 years", fee: 900, rating: 4.9, reviews: 42, verified: true,
+    experience: "5 years", fee: 9000, rating: 4.9, reviews: 42, verified: true,
     location: "Dhanmondi, Dhaka", img: "https://i.pravatar.cc/150?img=12",
     bio: "Physics and Math tutor focused on building strong fundamentals for board and admission exams.",
     availability: "Weekdays, Evening",
@@ -14,7 +14,7 @@ export const TUTORS = [
   },
   {
     id: 2, name: "Farhana Islam", subjects: ["English", "Bangla"], classes: "Class 6-8, Class 9-10", classLevels: ["Class 6-8", "Class 9-10"],
-    experience: "3 years", fee: 700, rating: 4.7, reviews: 28, verified: true,
+    experience: "3 years", fee: 7000, rating: 4.7, reviews: 28, verified: true,
     location: "Bashundhara, Dhaka", img: "https://i.pravatar.cc/150?img=32",
     bio: "Language tutor helping students build strong reading, writing, and grammar skills.",
     availability: "Weekends",
@@ -25,7 +25,7 @@ export const TUTORS = [
   },
   {
     id: 3, name: "Shakil Hasan", subjects: ["Chemistry", "Biology"], classes: "HSC", classLevels: ["HSC"],
-    experience: "6 years", fee: 1100, rating: 4.8, reviews: 65, verified: true,
+    experience: "6 years", fee: 10000, rating: 4.8, reviews: 65, verified: true,
     location: "Uttara, Dhaka", img: "https://i.pravatar.cc/150?img=51",
     bio: "HSC Chemistry and Biology specialist with a focus on admission test preparation.",
     availability: "Weekdays",
@@ -34,7 +34,7 @@ export const TUTORS = [
   },
   {
     id: 4, name: "Nadia Karim", subjects: ["Math"], classes: "Class 6-8", classLevels: ["Class 6-8"],
-    experience: "2 years", fee: 500, rating: 4.6, reviews: 15, verified: false,
+    experience: "2 years", fee: 5000, rating: 4.6, reviews: 15, verified: false,
     location: "Mirpur, Dhaka", img: "https://i.pravatar.cc/150?img=45",
     bio: "Patient and encouraging math tutor for younger students.",
     availability: "Weekends, Evening",
@@ -43,7 +43,7 @@ export const TUTORS = [
   },
   {
     id: 5, name: "Imran Chowdhury", subjects: ["Physics", "Chemistry"], classes: "A-Level", classLevels: ["HSC", "University"],
-    experience: "8 years", fee: 1800, rating: 5.0, reviews: 90, verified: true,
+    experience: "8 years", fee: 10000, rating: 5.0, reviews: 90, verified: true,
     location: "Gulshan, Dhaka", img: "https://i.pravatar.cc/150?img=60",
     bio: "A-Level Physics and Chemistry tutor with a track record of top grades.",
     availability: "Weekdays, Weekends",
@@ -52,7 +52,7 @@ export const TUTORS = [
   },
   {
     id: 6, name: "Sumaiya Rahman", subjects: ["Bangla", "English"], classes: "Class 9-10, HSC", classLevels: ["Class 9-10", "HSC"],
-    experience: "4 years", fee: 800, rating: 4.5, reviews: 21, verified: false,
+    experience: "4 years", fee: 7000, rating: 4.5, reviews: 21, verified: false,
     location: "Mohammadpur, Dhaka", img: "https://i.pravatar.cc/150?img=25",
     bio: "Focused on board exam preparation for Bangla and English.",
     availability: "Evening",

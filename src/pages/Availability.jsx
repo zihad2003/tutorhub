@@ -11,7 +11,7 @@ export function Availability({ onNavigate, account = null }) {
   const [selectedTime, setSelectedTime] = useState(own ? "" : "Evening (4:00 PM - 8:00 PM)");
   const [maxStudents, setMaxStudents] = useState(own ? "" : "4");
   const [subjects, setSubjects] = useState(own ? [] : ["Physics", "Math"]);
-  const [salary, setSalary] = useState(own ? "" : "900");
+  const [salary, setSalary] = useState(own ? "" : "8000");
   const [formError, setFormError] = useState("");
   const [saved, setSaved] = useState(false);
 
@@ -46,8 +46,8 @@ export function Availability({ onNavigate, account = null }) {
       return;
     }
     const amount = Number(salary);
-    if (!salary.trim() || !Number.isFinite(amount) || amount <= 0) {
-      setFormError("Enter your expected salary in taka per hour.");
+    if (!salary.trim() || !Number.isFinite(amount) || amount < 5000 || amount > 10000) {
+      setFormError("Expected monthly salary must be between ৳5,000 and ৳10,000.");
       setSaved(false);
       return;
     }
@@ -114,15 +114,16 @@ export function Availability({ onNavigate, account = null }) {
 
             <div className="rounded-lg border p-6" style={{ borderColor: C.border }}>
               <label className="mb-2 block text-sm font-semibold" htmlFor="expected-salary" style={{ color: C.text }}>
-                Expected salary (৳ per hour)
+                Expected salary (৳ per month)
               </label>
               <input
                 id="expected-salary"
                 type="number"
-                min="1"
+                min="5000"
+                max="10000"
                 required
                 value={salary}
-                placeholder="e.g. 900"
+                placeholder="5,000 to 10,000"
                 onChange={(e) => { setSalary(e.target.value); setSaved(false); setFormError(""); }}
                 className="w-full rounded-lg border px-3.5 py-2.5 text-sm outline-none"
                 style={{ borderColor: C.border, color: C.text }}

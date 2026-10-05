@@ -53,7 +53,7 @@ export function TutorApplications({ onNavigate, role = "parent", account = null 
       
       `I would like to apply for the ${request.subject} tutor position. As an experienced educator specializing in ${request.classLevel}, I have successfully helped numerous students improve their academic performance. I understand you are looking for someone available ${request.preferredDays} in ${request.location}, and I am well-suited to meet these requirements. My teaching methodology emphasizes conceptual clarity and practical application, ensuring students not only understand the material but also develop problem-solving skills.`,
       
-      `I am excited to apply for the ${request.subject} tutoring opportunity. With extensive experience teaching ${request.classLevel} students, I have developed effective strategies to help students excel in ${request.subject}. I am available during ${request.preferredDays} and can work within your budget range of ৳${request.budget}/hr. My goal is to create a supportive learning environment where students feel confident to ask questions and explore concepts deeply.`
+      `I am excited to apply for the ${request.subject} tutoring opportunity. With extensive experience teaching ${request.classLevel} students, I have developed effective strategies to help students excel in ${request.subject}. I am available during ${request.preferredDays} and can work within your monthly budget of ৳${request.budget}. My goal is to create a supportive learning environment where students feel confident to ask questions and explore concepts deeply.`
     ];
 
     // Select a template based on request subject (simple hash)
@@ -275,7 +275,7 @@ export function TutorApplications({ onNavigate, role = "parent", account = null 
               Please enter the salary you are willing to offer. The tutor will review this offer and decide whether to accept or reject it.
             </p>
             <div className="my-4">
-              <label className="block text-sm font-semibold mb-2" style={{ color: C.text }}>Offer Amount (৳/hour)</label>
+              <label className="block text-sm font-semibold mb-2" style={{ color: C.text }}>Offer amount (৳/month)</label>
               <input 
                 type="number"
                 placeholder="e.g. 1000"
