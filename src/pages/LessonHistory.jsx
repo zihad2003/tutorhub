@@ -6,11 +6,14 @@ import { useLiveList } from "../lib/records";
 import { Calendar, Clock, DollarSign, BookOpen, FileText, ChevronRight, X, Eye, Check } from "lucide-react";
 import { useState } from "react";
 
-export function LessonHistory({ onNavigate, role = "parent" }) {
+export function LessonHistory({ onNavigate, role = "parent", account = null }) {
   const isTutor = role === "tutor";
+  const own = account && !account.demo && account.id;
   const backLink = isTutor ? "tutor-dashboard" : "parent-dashboard";
   const [selectedLesson, setSelectedLesson] = useState(null);
-  const [lessons, setLessons] = useLiveList("/lessons", LESSONS);
+  const [lessonRows, setLessons] = useLiveList("/lessons", own ? [] : LESSONS);
+  const ownerKey = isTutor ? "tutorId" : "parentId";
+  const lessons = own ? lessonRows.filter((lesson) => Number(lesson[ownerKey]) === Number(account.id)) : lessonRows;
   const [filterSubject, setFilterSubject] = useState("");
   const [filterMonth, setFilterMonth] = useState("");
 

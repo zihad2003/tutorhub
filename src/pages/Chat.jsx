@@ -45,11 +45,17 @@ const ADMIN_SUPPORT_CHATS = [
   },
 ];
 
-export function Chat({ onNavigate, role = "parent" }) {
+export function Chat({ onNavigate, role = "parent", account = null }) {
   const isAdmin = role === "admin";
   const isTutor = role === "tutor";
-  const [dbChats] = useLiveList("/chats", isAdmin ? [] : CHATS);
-  const activeChats = isAdmin ? ADMIN_SUPPORT_CHATS : dbChats;
+  const own = account && !account.demo && account.id;
+  const [dbChats] = useLiveList("/chats", own || isAdmin ? [] : CHATS);
+  const ownerKey = isTutor ? "tutorId" : "parentId";
+  const activeChats = isAdmin
+    ? ADMIN_SUPPORT_CHATS
+    : own
+      ? dbChats.filter((chat) => Number(chat[ownerKey]) === Number(account.id))
+      : dbChats;
   const [selectedChat, setSelectedChat] = useState(null);
   const [message, setMessage] = useState("");
   const [showMobileChat, setShowMobileChat] = useState(false);

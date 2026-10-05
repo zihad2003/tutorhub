@@ -42,19 +42,25 @@ const DEFAULT_REVIEWS = [
   }
 ];
 
-export function MonthlySummary({ onNavigate, role = "parent" }) {
+export function MonthlySummary({ onNavigate, role = "parent", account = null }) {
   const isTutor = role === "tutor";
+  const own = account && !account.demo && account.id;
+  const ownerKey = isTutor ? "tutorId" : "parentId";
   const backLink = isTutor ? "tutor-dashboard" : "parent-dashboard";
 
-  const [liveLessons] = useLiveList("/lessons", LESSONS);
-  const [liveEarnings] = useLiveList("/tutor_earnings", TUTOR_EARNINGS);
-  const [liveHired] = useLiveList("/hired_tutors", HIRED_TUTORS);
-  const [reviewsList, setReviewsList] = useState(DEFAULT_REVIEWS);
+  const [lessonRows] = useLiveList("/lessons", own ? [] : LESSONS);
+  const [earningRows] = useLiveList("/tutor_earnings", own ? [] : TUTOR_EARNINGS);
+  const [hiredRows] = useLiveList("/hired_tutors", own ? [] : HIRED_TUTORS);
+  const liveLessons = own ? lessonRows.filter((row) => Number(row[ownerKey]) === Number(account.id)) : lessonRows;
+  const liveEarnings = own ? earningRows.filter((row) => Number(row.tutorId) === Number(account.id)) : earningRows;
+  const liveHired = own ? hiredRows.filter((row) => Number(row[ownerKey]) === Number(account.id)) : hiredRows;
+  const [reviewsList, setReviewsList] = useState(own ? [] : DEFAULT_REVIEWS);
 
-  // Safe tutor list fallback
   const tutorOptions = liveHired.length > 0
     ? liveHired
-    : [
+    : own
+      ? []
+      : [
         { id: 1, tutorId: 1, tutorName: "Rafiq Ahmed", tutorImg: "https://i.pravatar.cc/150?img=12", subjects: ["Physics", "Math"], fee: 900, totalLessons: 18 },
         { id: 2, tutorId: 2, tutorName: "Farhana Islam", tutorImg: "https://i.pravatar.cc/150?img=32", subjects: ["English", "Bangla"], fee: 700, totalLessons: 8 }
       ];
@@ -71,7 +77,7 @@ export function MonthlySummary({ onNavigate, role = "parent" }) {
   const [showSuccessToast, setShowSuccessToast] = useState(false);
 
   // Withdrawal logic merged
-  const [withdrawals, setWithdrawals] = useState(WITHDRAWAL_REQUESTS);
+  const [withdrawals, setWithdrawals] = useState(own ? [] : WITHDRAWAL_REQUESTS);
   const [amount, setAmount] = useState("");
   const [method, setMethod] = useState("bKash");
   const [accountNumber, setAccountNumber] = useState("");

@@ -54,11 +54,6 @@ export function Footer({ go, userRole }) {
                   Contact Support
                 </button>
               </li>
-              <li>
-                <button onClick={() => handleNav("careers")} className="transition-colors hover:text-blue-600" style={{ color: C.textSecondary }}>
-                  Careers
-                </button>
-              </li>
             </ul>
           </div>
 

@@ -8,7 +8,8 @@ export function LessonLog({ onNavigate, role = "parent", account }) {
   const isTutor = role === "tutor";
   const [selectedTutor, setSelectedTutor] = useState(HIRED_TUTORS[0]);
   const [selectedStudent, setSelectedStudent] = useState("");
-  const [studentsList, setStudentsList] = useState([
+  const ownTutor = account && !account.demo && account.role === "tutor" && account.id;
+  const [studentsList, setStudentsList] = useState(ownTutor ? [] : [
     { id: "1", name: "Abdul Rahman's Son", classLevel: "Class 10", subject: "Physics" },
     { id: "2", name: "Tanvir R.", classLevel: "Class 8", subject: "English" },
   ]);
@@ -17,15 +18,25 @@ export function LessonLog({ onNavigate, role = "parent", account }) {
 
   useEffect(() => {
     let cancelled = false;
-    fetchFromAPI("/parents")
-      .then((rows) => {
-        if (cancelled || !Array.isArray(rows) || rows.length === 0) return;
-        setStudentsList(rows.map((parent) => ({
+    const load = ownTutor
+      ? fetchFromAPI("/hired_tutors").then((rows) => (Array.isArray(rows) ? rows : [])
+          .filter((row) => Number(row.tutorId) === Number(account.id))
+          .map((row) => ({
+            id: String(row.parentId || row.id),
+            name: row.parentName || "Student",
+            classLevel: "Student",
+            subject: "Tuition",
+          })))
+      : fetchFromAPI("/parents").then((rows) => (Array.isArray(rows) ? rows : []).map((parent) => ({
           id: String(parent.id),
           name: parent.name,
           classLevel: parent.location || "Student",
           subject: "Tuition",
         })));
+    load
+      .then((rows) => {
+        if (cancelled || !Array.isArray(rows) || rows.length === 0) return;
+        setStudentsList(rows);
         setSelectedStudent(String(rows[0].id));
       })
       .catch(() => {});

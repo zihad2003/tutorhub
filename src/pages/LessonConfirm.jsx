@@ -1,11 +1,18 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { C } from "../constants/tokens";
 import { Badge, PrimaryButton, SecondaryButton } from "../components/ui";
 import { LESSONS } from "../data/mockData";
+import { useLiveList } from "../lib/records";
 import { CheckCircle2, XCircle, Clock, BookOpen } from "lucide-react";
 
-export function LessonConfirm({ onNavigate }) {
-  const [lessonsList, setLessonsList] = useState(LESSONS);
+export function LessonConfirm({ onNavigate, account = null }) {
+  const own = account && !account.demo && account.id;
+  const [liveLessons] = useLiveList("/lessons", own ? [] : LESSONS);
+  const [lessonsList, setLessonsList] = useState(own ? [] : LESSONS);
+  useEffect(() => {
+    if (!own) return;
+    setLessonsList(liveLessons.filter((lesson) => Number(lesson.parentId) === Number(account.id)));
+  }, [own, account?.id, liveLessons]);
 
   const handleConfirm = (id) => {
     setLessonsList(prev => prev.map(l => l.id === id ? { ...l, status: "confirmed" } : l));

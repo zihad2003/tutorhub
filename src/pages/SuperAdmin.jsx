@@ -43,6 +43,22 @@ export function SuperAdmin() {
     loadAdmins();
   };
 
+  const deleteAdmin = async (admin) => {
+    setError("");
+    setNotice("");
+    const response = await fetch(authUrl(`/api/auth/admins/${admin.id}`), {
+      method: "DELETE",
+      headers: { "x-actor-role": "superadmin" },
+    });
+    const data = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      setError(data.error || "Could not delete the admin.");
+      return;
+    }
+    setNotice(`${admin.email} was removed.`);
+    loadAdmins();
+  };
+
   return (
     <div className="flex-1 p-4 sm:p-6 lg:ml-64">
       <div className="mx-auto max-w-[900px]">
@@ -60,9 +76,19 @@ export function SuperAdmin() {
 
         <div className="mt-8 space-y-3">
           {admins.map((admin) => (
-            <div key={admin.id} className="rounded-xl border bg-white p-4" style={{ borderColor: C.border }}>
-              <p className="font-semibold" style={{ color: C.text }}>{admin.name}</p>
-              <p className="text-sm" style={{ color: C.textSecondary }}>{admin.email}</p>
+            <div key={admin.id} className="flex items-center justify-between gap-4 rounded-xl border bg-white p-4" style={{ borderColor: C.border }}>
+              <div>
+                <p className="font-semibold" style={{ color: C.text }}>{admin.name}</p>
+                <p className="text-sm" style={{ color: C.textSecondary }}>{admin.email}</p>
+              </div>
+              <button
+                type="button"
+                onClick={() => deleteAdmin(admin)}
+                className="rounded-lg border px-3 py-1.5 text-sm font-semibold"
+                style={{ borderColor: "#FECACA", color: C.error }}
+              >
+                Delete
+              </button>
             </div>
           ))}
           {admins.length === 0 && <p className="text-sm" style={{ color: C.textSecondary }}>No admins yet.</p>}

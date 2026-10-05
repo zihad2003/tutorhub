@@ -8,7 +8,7 @@ import { useEffect, useState } from "react";
 export function TutorApplications({ onNavigate, role = "parent", account = null }) {
   const isTutor = role === "tutor";
   const backLink = isTutor ? "tutor-dashboard" : "parent-dashboard";
-  const [apps, setApps] = useState(APPLICATIONS);
+  const [apps, setApps] = useState(() => (account && !account.demo ? [] : APPLICATIONS));
   const [hiringApp, setHiringApp] = useState(null);
   const [offerAmount, setOfferAmount] = useState("");
   const [coverLetter, setCoverLetter] = useState("");

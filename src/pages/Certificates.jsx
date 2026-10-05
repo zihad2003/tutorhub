@@ -3,8 +3,9 @@ import { PrimaryButton, SecondaryButton, Badge } from "../components/ui";
 import { Award, Upload, CheckCircle2, Trash2, Plus, ExternalLink, XCircle } from "lucide-react";
 import { useState } from "react";
 
-export function Certificates({ onNavigate }) {
-  const [certs, setCerts] = useState([
+export function Certificates({ onNavigate, account = null }) {
+  const own = account && !account.demo;
+  const [certs, setCerts] = useState(own ? [] : [
     { id: 1, title: "BSc in Mathematics, University of Dhaka", status: "verified", date: "2024-05-15", url: "/certificate-karim.html" },
     { id: 3, title: "HSC Academic Excellence Certificate", status: "pending", date: "2026-07-01", url: "/certificate-karim.html" },
   ]);
