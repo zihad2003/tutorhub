@@ -7,7 +7,7 @@ import {
   Wallet, ArrowRight, CheckCircle2, XCircle
 } from "lucide-react";
 import { useState } from "react";
-import { useLiveList } from "../lib/records";
+import { currentMonthPrefix, useLiveList } from "../lib/records";
 
 const DEFAULT_REVIEWS = [
   {
@@ -112,9 +112,17 @@ export function MonthlySummary({ onNavigate, role = "parent", account = null }) 
   };
 
   const rawLessons = liveLessons;
-  const monthLessons = rawLessons.filter(l => l && l.date && String(l.date).startsWith("2026-07"));
-
-  const monthTotal = monthLessons.reduce((acc, l) => acc + (l.fee || 0), 0);
+  const statementMonth = own
+    ? new Date().toLocaleString("en-US", { month: "long", year: "numeric" })
+    : "July 2026";
+  const monthKey = own ? currentMonthPrefix() : "2026-07";
+  const monthLessons = rawLessons.filter(l => l && l.date && String(l.date).startsWith(monthKey));
+  const lessonTotal = monthLessons.reduce((acc, l) => acc + (Number(l.fee) || 0), 0);
+  const hiredTuition = liveHired.reduce((sum, tutor) => sum + (Number(tutor.fee) || 0), 0);
+  const earningTotal = liveEarnings
+    .filter((row) => row.status !== "paid")
+    .reduce((sum, row) => sum + (Number(row.totalEarnings) || 0), 0);
+  const monthTotal = isTutor ? (earningTotal || hiredTuition || lessonTotal) : (hiredTuition || lessonTotal);
   const totalHours = monthLessons.reduce((sum, lesson) => {
     const match = String(lesson.duration ?? "").match(/[\d.]+/);
     const hours = match ? Number(match[0]) : 0;
@@ -234,10 +242,10 @@ export function MonthlySummary({ onNavigate, role = "parent", account = null }) 
                   Monthly Lesson Summary Report
                 </h2>
                 <p className="text-xs mt-0.5" style={{ color: C.textSecondary }}>
-                  July 2026 · {isTutor ? "Tutor Earnings Statement" : "Parent Lesson Statement"}
+                  {statementMonth} · {isTutor ? "Tutor Earnings Statement" : "Parent Lesson Statement"}
                 </p>
               </div>
-              <Badge tone="info">July 2026</Badge>
+              <Badge tone="info">{statementMonth}</Badge>
             </div>
 
             {/* Summary Totals Cards */}

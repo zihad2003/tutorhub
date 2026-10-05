@@ -547,4 +547,41 @@ router.delete('/admins/:id', async (req, res) => {
   }
 });
 
+router.patch('/profile', async (req, res) => {
+  try {
+    const role = req.body?.role === 'tutor' ? 'tutor' : req.body?.role === 'parent' ? 'parent' : '';
+    const id = Number(req.body?.id);
+    const name = cleanName(req.body?.name);
+    const phone = String(req.body?.phone || '').trim();
+    const currentPassword = String(req.body?.currentPassword || '');
+    const newPassword = String(req.body?.newPassword || '');
+    if (!role || !Number.isInteger(id) || id <= 0) {
+      return res.status(400).json({ error: 'A valid account is required.' });
+    }
+    const nameError = validateName(name);
+    if (nameError) return res.status(400).json({ error: nameError, fields: { name: nameError } });
+    const table = role === 'tutor' ? 'tutors' : 'parents';
+    const [rows] = await pool.query(`SELECT * FROM ${table} WHERE id = ? LIMIT 1`, [id]);
+    if (!rows[0]) return res.status(404).json({ error: 'Account not found.' });
+    let passwordHash = rows[0].password_hash;
+    if (newPassword) {
+      if (!verifyPassword(currentPassword, rows[0].password_hash)) {
+        return res.status(401).json({ error: 'Current password is incorrect.', fields: { currentPassword: 'Current password is incorrect.' } });
+      }
+      const passwordError = validatePassword(newPassword, rows[0].email, name);
+      if (passwordError) return res.status(400).json({ error: passwordError, fields: { newPassword: passwordError } });
+      passwordHash = hashPassword(newPassword);
+    }
+    await pool.query(
+      `UPDATE ${table} SET name = ?, phone = ?, password_hash = ? WHERE id = ?`,
+      [name, phone, passwordHash, id]
+    );
+    const [updated] = await pool.query(`SELECT * FROM ${table} WHERE id = ? LIMIT 1`, [id]);
+    return res.json(accountPayload(updated[0], role));
+  } catch (error) {
+    console.error(error);
+    return res.status(500).json({ error: 'Could not update the account.' });
+  }
+});
+
 module.exports = { router, ensureAccountColumns };

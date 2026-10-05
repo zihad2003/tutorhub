@@ -308,6 +308,33 @@ router.get('/tutor-profile/:id', async (req, res) => {
   }
 });
 
+async function recordHireBilling(parentId, tutorId, subject, fee) {
+  const month = new Date().toLocaleString('en-US', { month: 'long', year: 'numeric' });
+  const label = `${month} · ${subject || 'Tuition'}`;
+  const [existingPay] = await pool.query(
+    "SELECT id FROM payments WHERE parent_id = ? AND month = ? LIMIT 1",
+    [parentId, label]
+  );
+  if (!existingPay[0]) {
+    await pool.query(
+      `INSERT INTO payments (parent_id, month, totalLessons, totalAmount, status, dueDate)
+       VALUES (?, ?, 0, ?, 'pending', LAST_DAY(CURDATE()))`,
+      [parentId, label, fee]
+    );
+  }
+  const [existingEarn] = await pool.query(
+    "SELECT id FROM tutor_earnings WHERE tutor_id = ? AND month = ? LIMIT 1",
+    [tutorId, label]
+  );
+  if (!existingEarn[0]) {
+    await pool.query(
+      `INSERT INTO tutor_earnings (tutor_id, month, totalLessons, totalEarnings, status)
+       VALUES (?, ?, 0, ?, 'pending')`,
+      [tutorId, label, fee]
+    );
+  }
+}
+
 function moneyAmount(value) {
   const number = Number(String(value ?? '').replace(/[^\d.]/g, ''));
   return Number.isFinite(number) ? number : 0;
@@ -395,6 +422,7 @@ router.post('/applications/:id/hire', async (req, res) => {
          VALUES (?, ?, ?, ?, CURDATE(), 0, 'active')`,
         [application.tutor_id, application.parent_id, application.subject || '', fee]
       );
+      await recordHireBilling(application.parent_id, application.tutor_id, application.subject, fee);
       await pool.query("UPDATE applications SET status = 'hired' WHERE id = ?", [id]);
       await pool.query(
         "UPDATE applications SET status = 'rejected' WHERE request_id = ? AND id <> ? AND status = 'pending'",
@@ -492,4 +520,15 @@ router.get('/withdrawal_requests', async (req, res) => {
   }
 });
 
+async function backfillHireBilling() {
+  const [rows] = await pool.query(
+    "SELECT parent_id, tutor_id, subjects, fee FROM hired_tutors WHERE status = 'active'"
+  );
+  for (const row of rows) {
+    const subject = String(row.subjects || '').split(',')[0].trim();
+    await recordHireBilling(row.parent_id, row.tutor_id, subject, asNumber(row.fee));
+  }
+}
+
+router.backfillHireBilling = backfillHireBilling;
 module.exports = router;

@@ -10,7 +10,13 @@ export function TutorCard({ t, onOpen }) {
       style={{ borderColor: C.border }}
     >
       <div className="flex items-start gap-3">
-        <img src={t.img} alt={t.name} className="h-14 w-14 rounded-full object-cover" />
+        {t.img ? (
+          <img src={t.img} alt={t.name} className="h-14 w-14 rounded-full object-cover" />
+        ) : (
+          <div className="flex h-14 w-14 items-center justify-center rounded-full bg-blue-50 text-sm font-semibold" style={{ color: C.primary }}>
+            {String(t.name || "T").slice(0, 2).toUpperCase()}
+          </div>
+        )}
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-1.5">
             <h3 className="truncate text-sm font-semibold" style={{ color: C.text }}>{t.name}</h3>

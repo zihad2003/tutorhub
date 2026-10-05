@@ -16,7 +16,8 @@ app.use('/api/uploads', express.static(path.join(__dirname, 'uploads')));
 
 app.use('/api/bkash', bkashRoutes);
 app.use('/api/auth', authRoutes);
-app.use('/api/data', require('./api'));
+const dataRoutes = require('./api');
+app.use('/api/data', dataRoutes);
 
 app.get('/', (req, res) => {
   res.send('TutorHub Backend API');
@@ -37,6 +38,7 @@ app.use((err, req, res, next) => {
 });
 
 ensureAccountColumns()
+  .then(() => dataRoutes.backfillHireBilling())
   .then(() => {
     app.listen(PORT, () => {
       console.log(`Server is running on port ${PORT}`);

@@ -86,9 +86,13 @@ export function TutorDashboard({ onNavigate, account, onReapply }) {
   const monthPrefix = currentMonthPrefix();
   const activeStudents = myStudents.filter((tutor) => tutor.status === "active").length;
   const monthLessonsCount = myLessons.filter((lesson) => lesson.date && String(lesson.date).startsWith(monthPrefix)).length;
-  const pendingEarnings = myLessons
+  const earningPending = myEarnings
+    .filter((row) => row.status === "pending")
+    .reduce((total, row) => total + (Number(row.totalEarnings) || 0), 0);
+  const lessonPending = myLessons
     .filter((lesson) => lesson.status === "pending")
     .reduce((total, lesson) => total + (Number(lesson.fee) || 0), 0);
+  const pendingEarnings = earningPending || lessonPending;
   const openRequests = requestRows.filter((request) => request.status === "open");
 
   const handleQuickApply = (req) => {
@@ -133,7 +137,9 @@ export function TutorDashboard({ onNavigate, account, onReapply }) {
           <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h1 className="text-2xl font-semibold" style={{ color: C.text }}>Tutor Dashboard</h1>
-              <p className="mt-1 text-sm" style={{ color: C.textSecondary }}>Welcome back! Here's your teaching overview.</p>
+              <p className="mt-1 text-sm" style={{ color: C.textSecondary }}>
+                Welcome back{isOwnAccount && account.name ? `, ${account.name}` : ""}. Here is your teaching overview.
+              </p>
             </div>
             <div className="flex flex-wrap items-center gap-3">
               <SecondaryButton onClick={() => onNavigate("tutor-profile")}>Edit Profile</SecondaryButton>

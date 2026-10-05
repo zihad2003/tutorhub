@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { C } from "../constants/tokens";
 import { Badge, PrimaryButton, SecondaryButton } from "../components/ui";
 import { Table } from "../components/ui/Table";
@@ -19,6 +19,12 @@ export function Payment({ onNavigate, role = "parent", account = null }) {
   const [withdrawalRows, setWithdrawals] = useLiveList("/withdrawal_requests", own ? [] : WITHDRAWAL_REQUESTS);
   const payments = own ? paymentRows.filter((payment) => Number(payment.parentId) === Number(account.id)) : paymentRows;
   const withdrawals = own ? [] : withdrawalRows;
+  const pendingPayment = payments.find((payment) => payment.status === "pending");
+  const [customAmount, setCustomAmount] = useState(0);
+
+  useEffect(() => {
+    if (pendingPayment) setCustomAmount(Number(pendingPayment.totalAmount) || 0);
+  }, [pendingPayment?.id, pendingPayment?.totalAmount]);
 
   const handleApprove = (id) => {
     setWithdrawals(prev => prev.map(w => 
@@ -203,9 +209,6 @@ export function Payment({ onNavigate, role = "parent", account = null }) {
       </div>
     );
   }
-
-  const pendingPayment = payments.find(p => p.status === "pending");
-  const [customAmount, setCustomAmount] = useState(pendingPayment ? pendingPayment.totalAmount + 250 : 0);
 
   const handlePayment = async () => {
     setShowGateway(true);

@@ -88,7 +88,9 @@ export function ParentDashboard({ onNavigate, account, onReapply }) {
           <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h1 className="text-2xl font-semibold" style={{ color: C.text }}>Dashboard</h1>
-              <p className="mt-1 text-sm" style={{ color: C.textSecondary }}>Welcome back! Here's your overview.</p>
+              <p className="mt-1 text-sm" style={{ color: C.textSecondary }}>
+                Welcome back{isOwnAccount && account.name ? `, ${account.name}` : ""}. Here is your overview.
+              </p>
             </div>
             <PrimaryButton onClick={() => onNavigate("post-request")}>Post Request</PrimaryButton>
           </div>
