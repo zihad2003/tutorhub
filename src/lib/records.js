@@ -23,9 +23,7 @@ export function useLiveList(endpoint, fallback = []) {
 
 export function rowsForAccount(rows, accountId, key) {
   if (!accountId) return rows;
-  const mine = rows.filter((row) => Number(row[key]) === Number(accountId));
-  if (mine.length > 0) return mine;
-  return rows.filter((row) => row[key] === null || row[key] === undefined);
+  return rows.filter((row) => Number(row[key]) === Number(accountId));
 }
 
 export function currentMonthPrefix(date = new Date()) {

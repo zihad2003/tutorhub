@@ -1,10 +1,11 @@
+import { useEffect, useState } from "react";
 import { CheckCircle2, Award, Calendar, MapPin, MessageCircle } from "lucide-react";
 import { C } from "../constants/tokens";
 import { Badge } from "../components/ui/Badge";
 import { Stars } from "../components/ui/Stars";
 import { PrimaryButton } from "../components/ui/PrimaryButton";
 import { SecondaryButton } from "../components/ui/SecondaryButton";
-import { TUTORS } from "../data/tutors";
+import { fetchFromAPI } from "../api";
 
 function subjectList(value) {
   if (Array.isArray(value)) return value.filter(Boolean);
@@ -14,8 +15,46 @@ function subjectList(value) {
   return [];
 }
 
-export function TutorProfile({ tutor, go, isDashboard = false }) {
-  const source = tutor || TUTORS[0];
+export function TutorProfile({ tutor, go, isDashboard = false, account = null }) {
+  const ownAccount = isDashboard && account?.role === "tutor" && account?.id && !account.demo;
+  const [source, setSource] = useState(ownAccount ? null : tutor || null);
+
+  useEffect(() => {
+    if (!ownAccount) {
+      setSource(tutor || null);
+      return undefined;
+    }
+    let cancelled = false;
+    fetchFromAPI(`/tutor-profile/${account.id}`)
+      .then((data) => {
+        if (!cancelled) setSource(data);
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setSource({
+            name: account.name,
+            email: account.email,
+            subjects: [],
+            certificates: [],
+            revs: [],
+            fee: 0,
+            rating: 0,
+            reviews: 0,
+          });
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [ownAccount, account?.id, account?.name, account?.email, tutor]);
+
+  if (!source) {
+    return (
+      <div className="mx-auto max-w-[900px] px-4 py-16">
+        <p style={{ color: C.textSecondary }}>{ownAccount ? "Loading your profile..." : "Choose a tutor to view their profile."}</p>
+      </div>
+    );
+  }
   const subjects = subjectList(source.subjects);
   const certificates = Array.isArray(source.certificates) ? source.certificates : [];
   const reviews = Array.isArray(source.revs) ? source.revs : [];

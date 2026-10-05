@@ -15,6 +15,7 @@ export function Header({ page, activeNav, go, openAuth, isAuthenticated, userRol
 
   const getDashboardPage = () => {
     if (userRole === "tutor") return "tutor-dashboard";
+    if (userRole === "superadmin") return "superadmin-dashboard";
     if (userRole === "admin") return "admin-dashboard";
     return "parent-dashboard";
   };
@@ -26,7 +27,7 @@ export function Header({ page, activeNav, go, openAuth, isAuthenticated, userRol
     } else if (key === "tutors") {
       go("tutors");
     } else if (key === "subjects") {
-      go("home", "subjects");
+      go("subjects");
     } else if (key === "how") {
       go("home", "how");
     }

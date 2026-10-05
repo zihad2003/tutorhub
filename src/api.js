@@ -1,4 +1,4 @@
-const TUNNEL_API_ORIGIN = 'https://obviously-saving-weights-garage.trycloudflare.com';
+const TUNNEL_API_ORIGIN = 'https://fee-fascinating-zope-beast.trycloudflare.com';
 
 function resolveApiOrigin() {
   if (import.meta.env.VITE_API_ORIGIN) return import.meta.env.VITE_API_ORIGIN;

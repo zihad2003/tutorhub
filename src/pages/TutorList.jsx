@@ -6,11 +6,12 @@ import { TUTORS as mockTutors } from "../data/tutors";
 import { getStoredCategories } from "../data/categoriesData";
 import { fetchFromAPI } from "../api";
 
-export function TutorList({ openTutor, hiredOnly = false }) {
+export function TutorList({ openTutor, hiredOnly = false, browse = { text: "", subject: "" } }) {
   const [subject, setSubject] = useState("All subjects");
   const [classLevel, setClassLevel] = useState("All classes");
-  const [budgets, setBudgets] = useState([]);
-  const [sort, setSort] = useState("Rating");
+  const [minFee, setMinFee] = useState("");
+  const [maxFee, setMaxFee] = useState("");
+  const [sort, setSort] = useState("Rating: High to Low");
   const [storedCategories, setStoredCategories] = useState(() => getStoredCategories());
   const [dbTutors, setDbTutors] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -34,21 +35,24 @@ export function TutorList({ openTutor, hiredOnly = false }) {
       });
   }, []);
 
-  const toggleBudget = (b) =>
-    setBudgets((prev) => (prev.includes(b) ? prev.filter((x) => x !== b) : [...prev, b]));
-
-  const inBudget = (fee, label) => {
-    if (label === "Under ৳600") return fee < 600;
-    if (label === "৳600 - ৳1000") return fee >= 600 && fee <= 1000;
-    if (label === "৳1000 - ৳1800") return fee > 1000 && fee <= 1800;
-    if (label === "৳1800+") return fee > 1800;
-    return true;
-  };
-
   const subjectOptions = ["All subjects", ...storedCategories.filter(c => c.status === "active").map(c => c.name)];
   const classOptions = ["All classes", "Class 1-5", "Class 6-8", "Class 9-10", "HSC", "University"];
 
   let list = hiredOnly ? dbTutors.slice(0, 2) : dbTutors;
+  const wantedSubject = String(browse.subject || "").trim().toLowerCase();
+  const wantedText = String(browse.text || "").trim().toLowerCase();
+  if (wantedSubject) {
+    list = list.filter((t) => {
+      const tutorSubjects = Array.isArray(t.subjects) ? t.subjects : (t.subjects ? String(t.subjects).split(",") : []);
+      return tutorSubjects.some((item) => String(item).trim().toLowerCase() === wantedSubject);
+    });
+  }
+  if (wantedText) {
+    list = list.filter((t) => {
+      const tutorSubjects = Array.isArray(t.subjects) ? t.subjects : [];
+      return `${t.name || ""} ${tutorSubjects.join(" ")}`.toLowerCase().includes(wantedText);
+    });
+  }
   list = list.filter((t) => {
     if (subject === "All subjects") return true;
     const cat = storedCategories.find(c => c.name === subject);
@@ -71,12 +75,12 @@ export function TutorList({ openTutor, hiredOnly = false }) {
     });
   }
 
-  if (budgets.length) list = list.filter((t) => budgets.some((b) => inBudget(t.fee, b)));
-  if (sort === "Rating") list = [...list].sort((a, b) => b.rating - a.rating);
-  if (sort === "Fee: Low to High") list = [...list].sort((a, b) => a.fee - b.fee);
+  if (minFee !== "") list = list.filter((t) => Number(t.fee) >= Number(minFee));
+  if (maxFee !== "") list = list.filter((t) => Number(t.fee) <= Number(maxFee));
+  if (sort === "Rating: High to Low") list = [...list].sort((a, b) => Number(b.rating) - Number(a.rating));
+  if (sort === "Rating: Low to High") list = [...list].sort((a, b) => Number(a.rating) - Number(b.rating));
+  if (sort === "Fee: Low to High") list = [...list].sort((a, b) => Number(a.fee) - Number(b.fee));
   if (sort === "Newest") list = [...list].sort((a, b) => b.id - a.id);
-
-  const budgetChips = ["Under ৳600", "৳600 - ৳1000", "৳1000 - ৳1800", "৳1800+"];
 
   if (isLoading) return <div className="p-10 text-center">Loading tutors...</div>;
 
@@ -116,23 +120,24 @@ export function TutorList({ openTutor, hiredOnly = false }) {
             <ChevronDown size={14} className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2" color={C.textSecondary} />
           </div>
 
-          {budgetChips.map((b) => {
-            const active = budgets.includes(b);
-            return (
-              <button
-                key={b}
-                onClick={() => toggleBudget(b)}
-                className="rounded-full border px-3 py-1.5 text-xs font-semibold transition-colors duration-150"
-                style={{
-                  borderColor: active ? C.primary : C.border,
-                  background: active ? "#EFF6FF" : C.bg,
-                  color: active ? C.primary : C.textSecondary,
-                }}
-              >
-                {b}
-              </button>
-            );
-          })}
+          <input
+            type="number"
+            min="0"
+            value={minFee}
+            onChange={(e) => setMinFee(e.target.value)}
+            placeholder="Min fee"
+            className="w-28 rounded-lg border px-3 py-2 text-sm outline-none"
+            style={{ borderColor: C.border, color: C.text }}
+          />
+          <input
+            type="number"
+            min="0"
+            value={maxFee}
+            onChange={(e) => setMaxFee(e.target.value)}
+            placeholder="Max fee"
+            className="w-28 rounded-lg border px-3 py-2 text-sm outline-none"
+            style={{ borderColor: C.border, color: C.text }}
+          />
         </div>
 
         <div className="relative">
@@ -142,7 +147,8 @@ export function TutorList({ openTutor, hiredOnly = false }) {
             className="appearance-none rounded-lg border py-2 pl-3 pr-8 text-sm font-semibold outline-none bg-white"
             style={{ borderColor: C.border, color: C.text }}
           >
-            <option>Rating</option>
+            <option>Rating: High to Low</option>
+            <option>Rating: Low to High</option>
             <option>Fee: Low to High</option>
             <option>Newest</option>
           </select>

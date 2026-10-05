@@ -241,14 +241,82 @@ router.get('/summary', async (req, res) => {
   }
 });
 
+router.get('/subjects', async (req, res) => {
+  try {
+    const [subjects] = await pool.query('SELECT id, name, icon, description FROM subjects ORDER BY name');
+    const [links] = await pool.query('SELECT subject_name, COUNT(*) AS tutors FROM tutor_subjects GROUP BY subject_name');
+    const counts = {};
+    for (const link of links) counts[link.subject_name] = Number(link.tutors) || 0;
+    res.json(subjects.map((subject) => ({
+      ...subject,
+      tutors: counts[subject.name] || 0,
+    })));
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.get('/support-messages', async (req, res) => {
+  try {
+    const [rows] = await pool.query('SELECT id, name, email, message, created_at FROM support_messages ORDER BY id DESC');
+    res.json(rows);
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.post('/support-messages', async (req, res) => {
+  try {
+    const name = String(req.body.name || '').trim();
+    const email = String(req.body.email || '').trim().toLowerCase();
+    const message = String(req.body.message || '').trim();
+    if (!name || !email.endsWith('@gmail.com') || message.length < 5) {
+      return res.status(400).json({ error: 'Enter your name, a Gmail address, and a message.' });
+    }
+    const [result] = await pool.query(
+      'INSERT INTO support_messages (name, email, message) VALUES (?, ?, ?)',
+      [name, email, message]
+    );
+    res.status(201).json({ id: result.insertId });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.get('/tutor-profile/:id', async (req, res) => {
+  try {
+    const [rows] = await pool.query(
+      `SELECT id, name, email, phone, location, experience, fee, rating, reviews, verified, img, bio, availability, status
+       FROM tutors WHERE id = ? LIMIT 1`,
+      [req.params.id]
+    );
+    if (!rows[0]) return res.status(404).json({ error: 'Tutor not found.' });
+    const [subjectRows] = await pool.query(
+      'SELECT subject_name FROM tutor_subjects WHERE tutor_id = ?',
+      [req.params.id]
+    );
+    res.json({
+      ...rows[0],
+      fee: asNumber(rows[0].fee),
+      rating: asNumber(rows[0].rating),
+      subjects: subjectRows.map((row) => row.subject_name),
+      certificates: [],
+      revs: [],
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 router.get('/applications', async (req, res) => {
   try {
     const [rows] = await pool.query(
-      `SELECT a.id, a.request_id AS requestId, a.tutor_id AS tutorId,
+      `SELECT a.id, a.request_id AS requestId, a.tutor_id AS tutorId, r.parent_id AS parentId,
               t.name AS tutorName, t.img AS tutorImg, t.experience, t.fee, t.rating,
               a.coverLetter, a.cvUrl, a.certificateUrl, a.status, a.appliedDate
        FROM applications a
        LEFT JOIN tutors t ON t.id = a.tutor_id
+       LEFT JOIN requests r ON r.id = a.request_id
        ORDER BY a.id`
     );
     res.json(rows.map((row) => ({

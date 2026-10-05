@@ -9,7 +9,7 @@ import { Input } from "../components/ui";
 import { postToAPI } from "../api";
 import { currentMonthPrefix, rowsForAccount, useLiveList } from "../lib/records";
 
-function LockedTutorDashboard({ account }) {
+function LockedTutorDashboard({ account, onReapply }) {
   const rejected = account.status === "rejected";
   return (
     <div className="flex min-h-screen bg-white">
@@ -34,7 +34,7 @@ function LockedTutorDashboard({ account }) {
                 </p>
                 <p className="mt-1 text-sm" style={{ color: C.textSecondary }}>
                   {rejected
-                    ? "An admin rejected this application. Lessons, requests, earnings, chat, and profile tools stay locked."
+                    ? "An admin rejected this application. You can submit it again."
                     : "An admin still needs to approve your account. You can wait here. Lessons, requests, earnings, chat, and profile tools stay locked until then."}
                 </p>
                 <p className="mt-3 text-sm font-semibold" style={{ color: C.text }}>{account.email}</p>
@@ -48,6 +48,11 @@ function LockedTutorDashboard({ account }) {
             <StatCard label="Pending Earnings" value="৳0" icon={DollarSign} />
           </div>
 
+          {rejected && (
+            <div className="mt-6">
+              <PrimaryButton onClick={onReapply}>Reapply</PrimaryButton>
+            </div>
+          )}
           <div className="mt-8 rounded-lg border p-8 text-center" style={{ borderColor: C.border }}>
             <p className="text-sm font-semibold" style={{ color: C.text }}>No teaching activity yet</p>
             <p className="mt-1 text-sm" style={{ color: C.textSecondary }}>
@@ -60,7 +65,7 @@ function LockedTutorDashboard({ account }) {
   );
 }
 
-export function TutorDashboard({ onNavigate, account }) {
+export function TutorDashboard({ onNavigate, account, onReapply }) {
   const [appliedIds, setAppliedIds] = useState([]);
   const [lessons] = useLiveList("/lessons", LESSONS);
   const [requests] = useLiveList("/requests", REQUESTS);
@@ -118,7 +123,7 @@ export function TutorDashboard({ onNavigate, account }) {
     setApplyModalOpen(false);
   };
 
-  if (isOwnAccount && account.status !== "approved") return <LockedTutorDashboard account={account} />;
+  if (isOwnAccount && account.status !== "approved") return <LockedTutorDashboard account={account} onReapply={onReapply} />;
 
   return (
     <div className="flex min-h-screen bg-white">
