@@ -1,38 +1,9 @@
 import { C } from "../constants/tokens";
 import { PrimaryButton, Input } from "../components/ui";
 import { CHATS } from "../data/mockData";
+import { useLiveList } from "../lib/records";
 import { Send, MoreVertical, ArrowLeft } from "lucide-react";
-import { useState } from "react";
-
-const TUTOR_SIDE_CHATS = [
-  {
-    id: 101,
-    name: "Abdul Rahman (Parent)",
-    img: "https://i.pravatar.cc/150?img=33",
-    lastMessage: "See you tomorrow at 4 PM for the Physics lesson.",
-    lastMessageTime: "2 hours ago",
-    unread: 0,
-    messages: [
-      { id: 1, sender: "tutor", text: "Hello! I'm available for the lesson tomorrow.", time: "Yesterday, 6:00 PM" },
-      { id: 2, sender: "parent", text: "Great, 4 PM works for us.", time: "Yesterday, 6:15 PM" },
-      { id: 3, sender: "tutor", text: "Perfect. I'll bring the practice problems.", time: "Yesterday, 6:20 PM" },
-      { id: 4, sender: "tutor", text: "See you tomorrow at 4 PM for the Physics lesson.", time: "Today, 10:00 AM" },
-    ],
-  },
-  {
-    id: 102,
-    name: "Tanvir R. (Parent)",
-    img: "https://i.pravatar.cc/150?img=47",
-    lastMessage: "The essay assignment looks great!",
-    lastMessageTime: "1 day ago",
-    unread: 1,
-    messages: [
-      { id: 1, sender: "parent", text: "How is the essay coming along?", time: "2 days ago, 3:00 PM" },
-      { id: 2, sender: "tutor", text: "Working on it. Should be done by tomorrow.", time: "2 days ago, 5:00 PM" },
-      { id: 3, sender: "parent", text: "The essay assignment looks great!", time: "1 day ago, 2:00 PM" },
-    ],
-  },
-];
+import { useEffect, useState } from "react";
 
 const ADMIN_SUPPORT_CHATS = [
   {
@@ -77,10 +48,15 @@ const ADMIN_SUPPORT_CHATS = [
 export function Chat({ onNavigate, role = "parent" }) {
   const isAdmin = role === "admin";
   const isTutor = role === "tutor";
-  const activeChats = isAdmin ? ADMIN_SUPPORT_CHATS : isTutor ? TUTOR_SIDE_CHATS : CHATS;
-  const [selectedChat, setSelectedChat] = useState(activeChats[0]);
+  const [dbChats] = useLiveList("/chats", isAdmin ? [] : CHATS);
+  const activeChats = isAdmin ? ADMIN_SUPPORT_CHATS : dbChats;
+  const [selectedChat, setSelectedChat] = useState(null);
   const [message, setMessage] = useState("");
   const [showMobileChat, setShowMobileChat] = useState(false);
+
+  useEffect(() => {
+    if (!selectedChat && activeChats[0]) setSelectedChat(activeChats[0]);
+  }, [activeChats, selectedChat]);
 
   const handleSelectChat = (chat) => {
     setSelectedChat(chat);
@@ -89,21 +65,20 @@ export function Chat({ onNavigate, role = "parent" }) {
 
   const handleSend = (e) => {
     e.preventDefault();
-    if (message.trim()) {
-      setSelectedChat(prev => ({
-        ...prev,
-        messages: [
-          ...prev.messages,
-          {
-            id: Date.now(),
-            sender: isAdmin ? "admin" : isTutor ? "tutor" : "parent",
-            text: message,
-            time: "Just now"
-          }
-        ]
-      }));
-      setMessage("");
-    }
+    if (!selectedChat || !message.trim()) return;
+    setSelectedChat(prev => ({
+      ...prev,
+      messages: [
+        ...(prev.messages || []),
+        {
+          id: Date.now(),
+          sender: isAdmin ? "admin" : isTutor ? "tutor" : "parent",
+          text: message,
+          time: "Just now"
+        }
+      ]
+    }));
+    setMessage("");
   };
 
   return (
@@ -128,7 +103,11 @@ export function Chat({ onNavigate, role = "parent" }) {
                 <Input placeholder={isAdmin ? "Search support tickets..." : "Search conversations..."} />
               </div>
               <div className="space-y-1 overflow-y-auto max-h-[calc(100vh-140px)]">
-                {activeChats.map((chat) => (
+                {activeChats.length === 0 ? (
+                  <p className="px-4 py-8 text-center text-sm" style={{ color: C.textSecondary }}>
+                    No conversations yet.
+                  </p>
+                ) : activeChats.map((chat) => (
                   <button
                     key={chat.id}
                     onClick={() => handleSelectChat(chat)}
@@ -203,7 +182,7 @@ export function Chat({ onNavigate, role = "parent" }) {
 
                   <div className="flex-1 overflow-y-auto p-4 sm:p-6">
                     <div className="space-y-4">
-                      {selectedChat.messages.map((msg) => {
+                      {(selectedChat.messages || []).map((msg) => {
                         const isSelf = isAdmin ? msg.sender === "admin" : isTutor ? msg.sender === "tutor" : msg.sender === "parent";
                         return (
                           <div

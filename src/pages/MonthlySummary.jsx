@@ -7,6 +7,7 @@ import {
   Wallet, ArrowRight, CheckCircle2, XCircle
 } from "lucide-react";
 import { useState } from "react";
+import { useLiveList } from "../lib/records";
 
 const DEFAULT_REVIEWS = [
   {
@@ -45,11 +46,14 @@ export function MonthlySummary({ onNavigate, role = "parent" }) {
   const isTutor = role === "tutor";
   const backLink = isTutor ? "tutor-dashboard" : "parent-dashboard";
 
+  const [liveLessons] = useLiveList("/lessons", LESSONS);
+  const [liveEarnings] = useLiveList("/tutor_earnings", TUTOR_EARNINGS);
+  const [liveHired] = useLiveList("/hired_tutors", HIRED_TUTORS);
   const [reviewsList, setReviewsList] = useState(DEFAULT_REVIEWS);
 
   // Safe tutor list fallback
-  const tutorOptions = Array.isArray(HIRED_TUTORS) && HIRED_TUTORS.length > 0 
-    ? HIRED_TUTORS 
+  const tutorOptions = liveHired.length > 0
+    ? liveHired
     : [
         { id: 1, tutorId: 1, tutorName: "Rafiq Ahmed", tutorImg: "https://i.pravatar.cc/150?img=12", subjects: ["Physics", "Math"], fee: 900, totalLessons: 18 },
         { id: 2, tutorId: 2, tutorName: "Farhana Islam", tutorImg: "https://i.pravatar.cc/150?img=32", subjects: ["English", "Bangla"], fee: 700, totalLessons: 8 }
@@ -76,9 +80,9 @@ export function MonthlySummary({ onNavigate, role = "parent" }) {
   const [notes, setNotes] = useState("");
   const [submitted, setSubmitted] = useState(false);
 
-  const availableBalance = TUTOR_EARNINGS
+  const availableBalance = liveEarnings
     .filter(e => e.status === "pending")
-    .reduce((acc, e) => acc + e.totalEarnings, 0);
+    .reduce((acc, e) => acc + (Number(e.totalEarnings) || 0), 0);
 
   const handleWithdrawSubmit = (e) => {
     e.preventDefault();
@@ -101,12 +105,8 @@ export function MonthlySummary({ onNavigate, role = "parent" }) {
     setSubmitted(true);
   };
 
-  const rawLessons = Array.isArray(LESSONS) ? LESSONS : [];
-  const monthLessons = isTutor ? [
-    { id: 1, date: "2026-07-02", studentName: "Abdul Rahman (Class 10)", tutorName: "Rafiq Ahmed", subject: "Physics", topic: "Kinematics & Motion", duration: "1.5 hrs", fee: 1000 },
-    { id: 2, date: "2026-07-05", studentName: "Abdul Rahman (Class 10)", tutorName: "Rafiq Ahmed", subject: "Physics", topic: "Newton's Laws", duration: "1.5 hrs", fee: 1000 },
-    { id: 3, date: "2026-07-10", studentName: "Tanvir R. (Class 8)", tutorName: "Farhana Islam", subject: "English", topic: "Grammar & Composition", duration: "1.0 hrs", fee: 500 },
-  ] : rawLessons.filter(l => l && l.date && l.date.startsWith("2026-07"));
+  const rawLessons = liveLessons;
+  const monthLessons = rawLessons.filter(l => l && l.date && String(l.date).startsWith("2026-07"));
 
   const monthTotal = monthLessons.reduce((acc, l) => acc + (l.fee || 0), 0);
 

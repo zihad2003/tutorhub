@@ -6,6 +6,8 @@ import { Users, Calendar, DollarSign, ChevronRight, Plus, Send, CheckCircle2, X,
 import { LESSONS, TUTOR_EARNINGS, REQUESTS, HIRED_TUTORS } from "../data/mockData";
 import { useState } from "react";
 import { Input } from "../components/ui";
+import { postToAPI } from "../api";
+import { currentMonthPrefix, rowsForAccount, useLiveList } from "../lib/records";
 
 function LockedTutorDashboard({ account }) {
   const rejected = account.status === "rejected";
@@ -58,64 +60,31 @@ function LockedTutorDashboard({ account }) {
   );
 }
 
-function ApprovedTutorDashboard({ account, onNavigate }) {
-  return (
-    <div className="flex min-h-screen bg-white">
-      <div className="flex-1 p-4 sm:p-6 lg:ml-64">
-        <div className="mx-auto max-w-[1200px]">
-          <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h1 className="text-2xl font-semibold" style={{ color: C.text }}>Tutor Dashboard</h1>
-              <p className="mt-1 text-sm" style={{ color: C.textSecondary }}>
-                Welcome, {account.name}. Your account is approved.
-              </p>
-            </div>
-            <div className="flex flex-wrap items-center gap-3">
-              <SecondaryButton onClick={() => onNavigate("tutor-profile")}>Edit Profile</SecondaryButton>
-              <PrimaryButton onClick={() => onNavigate("tutor-lessons")}>
-                <Plus size={16} className="mr-1.5 inline" /> Log Lesson
-              </PrimaryButton>
-            </div>
-          </div>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
-            <div onClick={() => onNavigate("tutor-applications")} className="cursor-pointer">
-              <StatCard label="Active Students" value="0" icon={Users} />
-            </div>
-            <div onClick={() => onNavigate("tutor-lessons")} className="cursor-pointer">
-              <StatCard label="Lessons Taught This Month" value="0" icon={Calendar} />
-            </div>
-            <div onClick={() => onNavigate("earnings")} className="cursor-pointer">
-              <StatCard label="Pending Earnings" value="৳0" icon={DollarSign} />
-            </div>
-          </div>
-          <div className="mt-8 rounded-lg border p-8 text-center" style={{ borderColor: C.border }}>
-            <p className="text-sm font-semibold" style={{ color: C.text }}>You are ready to teach</p>
-            <p className="mt-1 text-sm" style={{ color: C.textSecondary }}>
-              Browse requests, log lessons, and manage your own students from the menu.
-            </p>
-            <div className="mt-4 flex justify-center">
-              <PrimaryButton onClick={() => onNavigate("requests")}>Browse requests</PrimaryButton>
-            </div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export function TutorDashboard({ onNavigate, account }) {
   const [appliedIds, setAppliedIds] = useState([]);
-
-  const activeStudents = HIRED_TUTORS.filter(t => t.status === "active").length;
-  const monthLessonsCount = LESSONS.filter(l => l.date && l.date.startsWith("2026-07")).length;
-  const pendingEarnings = LESSONS.filter(l => l.status === "pending").reduce((acc, l) => acc + l.fee, 0);
-  const openRequests = REQUESTS.filter(r => r.status === "open");
-
+  const [lessons] = useLiveList("/lessons", LESSONS);
+  const [requests] = useLiveList("/requests", REQUESTS);
+  const [earnings] = useLiveList("/tutor_earnings", TUTOR_EARNINGS);
+  const [hired] = useLiveList("/hired_tutors", HIRED_TUTORS);
   const [applyModalOpen, setApplyModalOpen] = useState(false);
   const [applyRequestId, setApplyRequestId] = useState(null);
   const [applyFee, setApplyFee] = useState("");
   const [applyCoverLetter, setApplyCoverLetter] = useState("");
   const [applyError, setApplyError] = useState("");
+
+  const isOwnAccount = account && !account.demo && account.role === "tutor";
+  const ownerId = isOwnAccount ? account.id : null;
+  const myLessons = rowsForAccount(lessons, ownerId, "tutorId");
+  const myEarnings = rowsForAccount(earnings, ownerId, "tutorId");
+  const myStudents = rowsForAccount(hired, ownerId, "tutorId");
+  const requestRows = requests;
+  const monthPrefix = currentMonthPrefix();
+  const activeStudents = myStudents.filter((tutor) => tutor.status === "active").length;
+  const monthLessonsCount = myLessons.filter((lesson) => lesson.date && String(lesson.date).startsWith(monthPrefix)).length;
+  const pendingEarnings = myLessons
+    .filter((lesson) => lesson.status === "pending")
+    .reduce((total, lesson) => total + (Number(lesson.fee) || 0), 0);
+  const openRequests = requestRows.filter((request) => request.status === "open");
 
   const handleQuickApply = (req) => {
     setApplyRequestId(req.id);
@@ -125,11 +94,23 @@ export function TutorDashboard({ onNavigate, account }) {
     setApplyModalOpen(true);
   };
 
-  const submitApplication = (e) => {
+  const submitApplication = async (e) => {
     e.preventDefault();
     if (!applyFee || !applyCoverLetter.trim()) {
       setApplyError("Please fill in all required fields.");
       return;
+    }
+    if (account?.id && account.role === "tutor") {
+      try {
+        await postToAPI("/applications", {
+          requestId: applyRequestId,
+          tutorId: account.id,
+          coverLetter: applyCoverLetter.trim(),
+        });
+      } catch {
+        setApplyError("The application could not be saved. Please try again.");
+        return;
+      }
     }
     if (!appliedIds.includes(applyRequestId)) {
       setAppliedIds([...appliedIds, applyRequestId]);
@@ -137,9 +118,7 @@ export function TutorDashboard({ onNavigate, account }) {
     setApplyModalOpen(false);
   };
 
-  const isOwnAccount = account && !account.demo && account.role === "tutor";
   if (isOwnAccount && account.status !== "approved") return <LockedTutorDashboard account={account} />;
-  if (isOwnAccount) return <ApprovedTutorDashboard account={account} onNavigate={onNavigate} />;
 
   return (
     <div className="flex min-h-screen bg-white">
@@ -166,7 +145,6 @@ export function TutorDashboard({ onNavigate, account }) {
                 label="Active Students"
                 value={activeStudents.toString()}
                 icon={Users}
-                trend={{ value: "+1", positive: true }}
               />
             </div>
             <div onClick={() => onNavigate("tutor-lessons")} className="cursor-pointer transition-transform hover:scale-[1.02]">
@@ -174,7 +152,6 @@ export function TutorDashboard({ onNavigate, account }) {
                 label="Lessons Taught This Month"
                 value={monthLessonsCount.toString()}
                 icon={Calendar}
-                trend={{ value: "+3", positive: true }}
               />
             </div>
             <div onClick={() => onNavigate("earnings")} className="cursor-pointer transition-transform hover:scale-[1.02]">
@@ -211,7 +188,7 @@ export function TutorDashboard({ onNavigate, account }) {
                     <Badge tone={status === "paid" ? "success" : "warning"}>{status}</Badge>
                   )},
                 ]}
-                data={TUTOR_EARNINGS.slice(0, 3)}
+                data={myEarnings.slice(0, 3)}
               />
             </div>
           </div>

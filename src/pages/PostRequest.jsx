@@ -2,12 +2,16 @@ import { C } from "../constants/tokens";
 import { Input, PrimaryButton, SecondaryButton, Badge } from "../components/ui";
 import { MapPin, Calendar, DollarSign, Send, CheckCircle2, ChevronDown, Clock, Sparkles, Upload, X } from "lucide-react";
 import { REQUESTS } from "../data/mockData";
+import { postToAPI } from "../api";
+import { useLiveList } from "../lib/records";
 import { getStoredCategories } from "../data/categoriesData";
 import { useState, useEffect } from "react";
 
-export function PostRequest({ onNavigate, mode = "create" }) {
+export function PostRequest({ onNavigate, mode = "create", account }) {
   const [appliedIds, setAppliedIds] = useState([]);
   const [categories, setCategories] = useState(() => getStoredCategories());
+  const [requests, setRequests] = useLiveList("/requests", REQUESTS);
+  const [saveError, setSaveError] = useState("");
   
   // Form Fields
   const [selectedCategory, setSelectedCategory] = useState(categories[0]?.name || "Science & Math");
@@ -43,11 +47,23 @@ export function PostRequest({ onNavigate, mode = "create" }) {
     setApplyModalOpen(true);
   };
 
-  const submitApplication = (e) => {
+  const submitApplication = async (e) => {
     e.preventDefault();
     if (!applyFee || !applyCoverLetter.trim()) {
       setApplyError("Please fill in all required fields.");
       return;
+    }
+    if (account?.id && account.role === "tutor") {
+      try {
+        await postToAPI("/applications", {
+          requestId: applyRequestId,
+          tutorId: account.id,
+          coverLetter: applyCoverLetter.trim(),
+        });
+      } catch {
+        setApplyError("The application could not be saved. Please try again.");
+        return;
+      }
     }
     if (!appliedIds.includes(applyRequestId)) {
       setAppliedIds([...appliedIds, applyRequestId]);
@@ -80,10 +96,9 @@ export function PostRequest({ onNavigate, mode = "create" }) {
     setImagePreview(null);
   };
 
-  const handleSubmitRequest = (e) => {
+  const handleSubmitRequest = async (e) => {
     e.preventDefault();
     const newReq = {
-      id: Date.now(),
       subject: subject || selectedCategory,
       classLevel: classLevel || "Class 9-10",
       location: location || "Dhanmondi, Dhaka",
@@ -92,12 +107,20 @@ export function PostRequest({ onNavigate, mode = "create" }) {
       preferredDays: selectedDay,
       status: "open",
       description: description || `Looking for an experienced tutor for ${selectedCategory} (${subject || "General"}).`,
-      postedDate: "Just now",
-      image: imagePreview
+      postedDate: new Date().toISOString().slice(0, 10),
     };
 
-    REQUESTS.unshift(newReq);
-    setSubmitted(true);
+    setSaveError("");
+    try {
+      const saved = await postToAPI("/requests", {
+        ...newReq,
+        parentId: account?.role === "parent" ? account.id : null,
+      });
+      setRequests((current) => [{ ...newReq, id: saved.id }, ...current]);
+      setSubmitted(true);
+    } catch {
+      setSaveError("The request could not be saved. Please try again.");
+    }
   };
 
   const backLink = mode === "browse" ? "tutor-dashboard" : "parent-dashboard";
@@ -136,7 +159,7 @@ export function PostRequest({ onNavigate, mode = "create" }) {
                     </tr>
                   </thead>
                   <tbody>
-                    {REQUESTS.map((req) => {
+                    {requests.map((req) => {
                       const isApplied = appliedIds.includes(req.id);
                       return (
                         <tr key={req.id} className="border-b hover:bg-gray-50/50" style={{ borderColor: C.border }}>
@@ -238,6 +261,10 @@ export function PostRequest({ onNavigate, mode = "create" }) {
           <p className="mt-2 text-sm" style={{ color: C.textSecondary }}>
             Fill in the details below to find the right tutor for your child.
           </p>
+
+          {saveError && (
+            <p className="mt-4 text-sm font-semibold" style={{ color: C.error }}>{saveError}</p>
+          )}
 
           {submitted ? (
             <div className="mt-8 rounded-2xl border p-8 text-center bg-blue-50/50 shadow-sm" style={{ borderColor: C.border }}>

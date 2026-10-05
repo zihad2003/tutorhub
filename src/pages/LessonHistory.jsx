@@ -1,6 +1,8 @@
 import { C } from "../constants/tokens";
 import { Badge, PrimaryButton, SecondaryButton } from "../components/ui";
-import { LESSONS, HIRED_TUTORS } from "../data/mockData";
+import { LESSONS } from "../data/mockData";
+import { patchToAPI } from "../api";
+import { useLiveList } from "../lib/records";
 import { Calendar, Clock, DollarSign, BookOpen, FileText, ChevronRight, X, Eye, Check } from "lucide-react";
 import { useState } from "react";
 
@@ -8,7 +10,7 @@ export function LessonHistory({ onNavigate, role = "parent" }) {
   const isTutor = role === "tutor";
   const backLink = isTutor ? "tutor-dashboard" : "parent-dashboard";
   const [selectedLesson, setSelectedLesson] = useState(null);
-  const [lessons, setLessons] = useState(LESSONS);
+  const [lessons, setLessons] = useLiveList("/lessons", LESSONS);
   const [filterSubject, setFilterSubject] = useState("");
   const [filterMonth, setFilterMonth] = useState("");
 
@@ -18,7 +20,12 @@ export function LessonHistory({ onNavigate, role = "parent" }) {
     return matchSubject && matchMonth;
   });
 
-  const handleConfirmLesson = (lessonId) => {
+  const handleConfirmLesson = async (lessonId) => {
+    try {
+      await patchToAPI(`/lessons/${lessonId}`, { status: "confirmed" });
+    } catch {
+      return;
+    }
     setLessons(lessons.map(l => 
       l.id === lessonId ? { ...l, status: "confirmed" } : l
     ));
@@ -122,7 +129,7 @@ export function LessonHistory({ onNavigate, role = "parent" }) {
             <div className="flex items-center justify-between border-b p-6" style={{ borderColor: C.border }}>
               <div>
                 <h2 className="text-xl font-semibold" style={{ color: C.text }}>
-                  Lesson {LESSONS.findIndex(l => l.id === selectedLesson.id) + 1} Details
+                  Lesson {Math.max(lessons.findIndex(l => l.id === selectedLesson.id), 0) + 1} Details
                 </h2>
                 <p className="mt-1 text-sm" style={{ color: C.textSecondary }}>
                   {selectedLesson.topic}

@@ -4,6 +4,7 @@ import { Table } from "../components/ui/Table";
 import { PrimaryButton, Badge } from "../components/ui";
 import { Users, Calendar, DollarSign, FileText, ChevronRight, Star, Clock, XCircle } from "lucide-react";
 import { LESSONS, PAYMENTS, APPLICATIONS, HIRED_TUTORS } from "../data/mockData";
+import { rowsForAccount, currentMonthPrefix, useLiveList } from "../lib/records";
 
 function LockedParentDashboard({ account }) {
   const rejected = account.status === "rejected";
@@ -54,49 +55,26 @@ function LockedParentDashboard({ account }) {
   );
 }
 
-function ApprovedParentDashboard({ account, onNavigate }) {
-  return (
-    <div className="flex min-h-screen bg-white">
-      <div className="flex-1 p-4 sm:p-6 lg:ml-64">
-        <div className="mx-auto max-w-[1200px]">
-          <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div>
-              <h1 className="text-2xl font-semibold" style={{ color: C.text }}>Dashboard</h1>
-              <p className="mt-1 text-sm" style={{ color: C.textSecondary }}>
-                Welcome, {account.name}. Your account is approved.
-              </p>
-            </div>
-            <PrimaryButton onClick={() => onNavigate("post-request")}>Post Request</PrimaryButton>
-          </div>
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <StatCard label="Active Tutors" value="0" icon={Users} />
-            <StatCard label="Lessons This Month" value="0" icon={Calendar} />
-            <StatCard label="Pending Lessons" value="0" icon={FileText} />
-            <StatCard label="Pending Payments" value="0" icon={DollarSign} />
-          </div>
-          <div className="mt-8 rounded-lg border p-8 text-center" style={{ borderColor: C.border }}>
-            <p className="text-sm font-semibold" style={{ color: C.text }}>You can start hiring tutors</p>
-            <p className="mt-1 text-sm" style={{ color: C.textSecondary }}>
-              Post a request, review applications, and manage lessons from the menu.
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-}
-
 export function ParentDashboard({ onNavigate, account }) {
+  const [lessons] = useLiveList("/lessons", LESSONS);
+  const [payments] = useLiveList("/payments", PAYMENTS);
+  const [applications] = useLiveList("/applications", APPLICATIONS);
+  const [hired] = useLiveList("/hired_tutors", HIRED_TUTORS);
+
   const isOwnAccount = account && !account.demo && account.role === "parent";
   if (isOwnAccount && account.status !== "approved") return <LockedParentDashboard account={account} />;
-  if (isOwnAccount) return <ApprovedParentDashboard account={account} onNavigate={onNavigate} />;
 
-  const activeTutorsCount = HIRED_TUTORS.filter(t => t.status === "active").length;
-  const monthLessonsCount = LESSONS.filter(l => l.date && l.date.startsWith("2026-07")).length;
-  const pendingLessons = LESSONS.filter(l => l.status === "pending").length;
-  const pendingPayments = PAYMENTS.filter(p => p.status === "pending").length;
-
-  const recentLessons = LESSONS.slice(0, 5);
+  const ownerId = isOwnAccount ? account.id : null;
+  const myTutors = rowsForAccount(hired, ownerId, "parentId");
+  const myLessons = lessons;
+  const myPayments = rowsForAccount(payments, ownerId, "parentId");
+  const monthPrefix = currentMonthPrefix();
+  const activeTutorsCount = myTutors.filter((tutor) => tutor.status === "active").length;
+  const monthLessonsCount = myLessons.filter((lesson) => lesson.date && String(lesson.date).startsWith(monthPrefix)).length;
+  const pendingLessons = myLessons.filter((lesson) => lesson.status === "pending").length;
+  const pendingPayments = myPayments.filter((payment) => payment.status === "pending").length;
+  const recentLessons = myLessons.slice(0, 5);
+  const pendingApplications = applications.filter((app) => app.status === "pending");
 
   return (
     <div className="flex min-h-screen bg-white">
@@ -114,15 +92,13 @@ export function ParentDashboard({ onNavigate, account }) {
             <StatCard
               label="Active Tutors"
               value={activeTutorsCount.toString()}
-              icon={Users}
-              trend={{ value: "+1", positive: true }}
-            />
+                icon={Users}
+              />
             <StatCard
               label="Lessons This Month"
               value={monthLessonsCount.toString()}
-              icon={Calendar}
-              trend={{ value: "+2", positive: true }}
-            />
+                icon={Calendar}
+              />
             <StatCard
               label="Pending Lessons"
               value={pendingLessons.toString()}
@@ -174,13 +150,13 @@ export function ParentDashboard({ onNavigate, account }) {
                 </button>
               </div>
               <div className="mt-4">
-                {APPLICATIONS.filter(a => a.status === "pending").length === 0 ? (
+                {pendingApplications.length === 0 ? (
                   <p className="py-8 text-center text-sm" style={{ color: C.textSecondary }}>
                     No pending applications
                   </p>
                 ) : (
                   <div className="space-y-3">
-                    {APPLICATIONS.filter(a => a.status === "pending").slice(0, 3).map((app) => (
+                    {pendingApplications.slice(0, 3).map((app) => (
                       <div
                         key={app.id}
                         className="flex items-center justify-between rounded-lg border p-3"
@@ -224,7 +200,7 @@ export function ParentDashboard({ onNavigate, account }) {
                       <Badge tone={status === "paid" ? "success" : "warning"}>{status}</Badge>
                     )},
                   ]}
-                  data={PAYMENTS.slice(0, 3)}
+                  data={myPayments.slice(0, 3)}
                 />
               </div>
             </div>
@@ -247,7 +223,7 @@ export function ParentDashboard({ onNavigate, account }) {
                 <p className="mt-2 text-sm" style={{ color: C.textSecondary }}>
                   Have you completed lessons recently? Evaluate your tutors' performance, punctuality, and teaching quality.
                 </p>
-                  {(HIRED_TUTORS || []).slice(0, 2).map((tutor) => {
+                  {(myTutors || []).slice(0, 2).map((tutor) => {
                     if (!tutor) return null;
                     const subjectsText = Array.isArray(tutor.subjects) ? tutor.subjects.join(", ") : (tutor.subjects || "Subjects");
                     return (

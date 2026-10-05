@@ -3,6 +3,7 @@ import { C } from "../constants/tokens";
 import { Badge, PrimaryButton, SecondaryButton } from "../components/ui";
 import { Table } from "../components/ui/Table";
 import { PAYMENTS, WITHDRAWAL_REQUESTS } from "../data/mockData";
+import { useLiveList } from "../lib/records";
 import { CreditCard, Download, Calendar, DollarSign, TrendingUp, Users, Wallet, CheckCircle2, XCircle, Clock } from "lucide-react";
 
 import { PaymentGateway } from "../components/ui/PaymentGateway";
@@ -13,30 +14,23 @@ export function Payment({ onNavigate, role = "parent" }) {
   const isAdmin = role === "admin";
   const backLink = isAdmin ? "admin-dashboard" : "parent-dashboard";
 
-  const [withdrawals, setWithdrawals] = useState(WITHDRAWAL_REQUESTS);
+  const [payments] = useLiveList("/payments", PAYMENTS);
+  const [withdrawals, setWithdrawals] = useLiveList("/withdrawal_requests", WITHDRAWAL_REQUESTS);
 
   const handleApprove = (id) => {
     setWithdrawals(prev => prev.map(w => 
       w.id === id ? { ...w, status: "approved", processedDate: new Date().toISOString().split("T")[0] } : w
     ));
-    const idx = WITHDRAWAL_REQUESTS.findIndex(w => w.id === id);
-    if (idx !== -1) {
-      WITHDRAWAL_REQUESTS[idx] = { ...WITHDRAWAL_REQUESTS[idx], status: "approved", processedDate: new Date().toISOString().split("T")[0] };
-    }
   };
 
   const handleReject = (id) => {
     setWithdrawals(prev => prev.map(w => 
       w.id === id ? { ...w, status: "rejected" } : w
     ));
-    const idx = WITHDRAWAL_REQUESTS.findIndex(w => w.id === id);
-    if (idx !== -1) {
-      WITHDRAWAL_REQUESTS[idx] = { ...WITHDRAWAL_REQUESTS[idx], status: "rejected" };
-    }
   };
 
   if (isAdmin) {
-    const totalVolume = PAYMENTS.reduce((acc, p) => acc + p.totalAmount, 0) + 35000;
+    const totalVolume = payments.reduce((acc, p) => acc + (Number(p.totalAmount) || 0), 0);
     const commission = Math.round(totalVolume * 0.1);
     const tutorPayouts = totalVolume - commission;
 
@@ -92,7 +86,7 @@ export function Payment({ onNavigate, role = "parent" }) {
                       <Badge tone={status === "paid" ? "success" : "warning"}>{status}</Badge>
                     )},
                   ]}
-                  data={PAYMENTS}
+                  data={payments}
                 />
               </div>
             </div>
@@ -207,7 +201,7 @@ export function Payment({ onNavigate, role = "parent" }) {
     );
   }
 
-  const pendingPayment = PAYMENTS.find(p => p.status === "pending");
+  const pendingPayment = payments.find(p => p.status === "pending");
   const [customAmount, setCustomAmount] = useState(pendingPayment ? pendingPayment.totalAmount + 250 : 0);
 
   const handlePayment = async () => {
@@ -327,7 +321,7 @@ export function Payment({ onNavigate, role = "parent" }) {
           <div className="mt-8">
             <h2 className="text-lg font-semibold" style={{ color: C.text }}>Payment History</h2>
             <div className="mt-4 space-y-3">
-              {PAYMENTS.filter(p => p.status === "paid").map((payment) => (
+              {payments.filter(p => p.status === "paid").map((payment) => (
                 <div
                   key={payment.id}
                   className="flex items-center justify-between rounded-lg border p-4"
