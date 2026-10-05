@@ -8,42 +8,54 @@ export function LessonLog({ onNavigate, role = "parent", account }) {
   const isTutor = role === "tutor";
   const [selectedTutor, setSelectedTutor] = useState(HIRED_TUTORS[0]);
   const [selectedStudent, setSelectedStudent] = useState("");
+  const [subject, setSubject] = useState("");
   const ownTutor = account && !account.demo && account.role === "tutor" && account.id;
   const [studentsList, setStudentsList] = useState(ownTutor ? [] : [
     { id: "1", name: "Abdul Rahman's Son", classLevel: "Class 10", subject: "Physics" },
     { id: "2", name: "Tanvir R.", classLevel: "Class 8", subject: "English" },
   ]);
+  const [studentsReady, setStudentsReady] = useState(!ownTutor);
   const [submitted, setSubmitted] = useState(false);
   const [saveError, setSaveError] = useState("");
 
   useEffect(() => {
+    if (!isTutor) return undefined;
     let cancelled = false;
     const load = ownTutor
       ? fetchFromAPI("/hired_tutors").then((rows) => (Array.isArray(rows) ? rows : [])
-          .filter((row) => Number(row.tutorId) === Number(account.id))
-          .map((row) => ({
-            id: String(row.parentId || row.id),
-            name: row.parentName || "Student",
-            classLevel: "Student",
-            subject: "Tuition",
-          })))
-      : fetchFromAPI("/parents").then((rows) => (Array.isArray(rows) ? rows : []).map((parent) => ({
-          id: String(parent.id),
-          name: parent.name,
-          classLevel: parent.location || "Student",
-          subject: "Tuition",
-        })));
+          .filter((row) => Number(row.tutorId) === Number(account.id) && row.status === "active")
+          .map((row) => {
+            const subjects = Array.isArray(row.subjects) ? row.subjects : [];
+            return {
+              id: String(row.parentId),
+              hiredId: row.id,
+              parentId: row.parentId,
+              name: row.parentName || "Student",
+              classLevel: "Hired student",
+              subject: subjects[0] || "Tuition",
+              fee: Number(row.fee) || 0,
+            };
+          }))
+      : Promise.resolve(studentsList);
     load
       .then((rows) => {
-        if (cancelled || !Array.isArray(rows) || rows.length === 0) return;
+        if (cancelled || !Array.isArray(rows)) return;
         setStudentsList(rows);
-        setSelectedStudent(String(rows[0].id));
+        if (rows[0]) {
+          setSelectedStudent(String(rows[0].id));
+          setSubject(rows[0].subject || "");
+        }
       })
-      .catch(() => {});
+      .catch(() => {
+        if (!cancelled) setSaveError("Hired students could not be loaded.");
+      })
+      .finally(() => {
+        if (!cancelled) setStudentsReady(true);
+      });
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [isTutor, ownTutor, account?.id]);
 
   const backLink = isTutor ? "tutor-dashboard" : "lessons";
 
@@ -51,18 +63,24 @@ export function LessonLog({ onNavigate, role = "parent", account }) {
     e.preventDefault();
     const form = new FormData(e.currentTarget);
     const student = studentsList.find((item) => item.id === selectedStudent);
+    if (isTutor && ownTutor && !student) {
+      setSaveError("Select the hired student for this lesson.");
+      return;
+    }
     setSaveError("");
     try {
       await postToAPI("/lessons", {
         tutorId: account?.role === "tutor" ? account.id : selectedTutor?.tutorId,
-        subject: form.get("subject"),
+        parentId: student?.parentId || null,
+        hiredTutorId: student?.hiredId || null,
+        subject: isTutor ? subject : form.get("subject"),
         topic: form.get("topic"),
         date: form.get("date"),
-        classLevel: student?.classLevel || null,
+        classLevel: student?.subject || student?.classLevel || null,
         duration: form.get("duration") || null,
         homework: form.get("homework") || null,
         notes: form.get("notes") || null,
-        fee: selectedTutor?.fee || null,
+        fee: student?.fee || selectedTutor?.fee || null,
       });
       setSubmitted(true);
       setTimeout(() => {
@@ -114,7 +132,12 @@ export function LessonLog({ onNavigate, role = "parent", account }) {
                   id="lesson-student"
                   required
                   value={selectedStudent}
-                  onChange={(e) => setSelectedStudent(e.target.value)}
+                  onChange={(e) => {
+                    const nextId = e.target.value;
+                    setSelectedStudent(nextId);
+                    const nextStudent = studentsList.find((item) => item.id === nextId);
+                    if (nextStudent?.subject) setSubject(nextStudent.subject);
+                  }}
                   className="w-full rounded-lg border bg-white px-3.5 py-2.5 text-sm outline-none transition-shadow duration-150 focus:ring-2"
                   style={{ borderColor: C.border, color: C.text }}
                   onFocus={(e) => (e.currentTarget.style.boxShadow = `0 0 0 3px ${C.primary}33`)}
@@ -123,10 +146,15 @@ export function LessonLog({ onNavigate, role = "parent", account }) {
                   <option value="" disabled>Select a student</option>
                   {studentsList.map((student) => (
                     <option key={student.id} value={student.id}>
-                      {student.name} · {student.classLevel} · {student.subject}
+                      {student.name} · {student.subject}{student.fee ? ` · ৳${Number(student.fee).toLocaleString("en-US")}/mo` : ""}
                     </option>
                   ))}
                 </select>
+                {studentsReady && studentsList.length === 0 && (
+                  <p className="mt-2 text-sm" style={{ color: C.textSecondary }}>
+                    No hired student yet. A parent has to hire you before a lesson can be logged.
+                  </p>
+                )}
               </div>
             ) : (
               <div>
@@ -166,7 +194,7 @@ export function LessonLog({ onNavigate, role = "parent", account }) {
             )}
 
             <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
-              <Input name="subject" label="Subject" placeholder="e.g., Physics" required />
+              <Input name="subject" label="Subject" placeholder="e.g., Physics" required value={isTutor ? subject : undefined} onChange={isTutor ? (e) => setSubject(e.target.value) : undefined} />
               <Input name="topic" label="Topic Covered" placeholder="e.g., Newton's Laws" required />
             </div>
 
@@ -211,7 +239,7 @@ export function LessonLog({ onNavigate, role = "parent", account }) {
 
             <div className="flex gap-3">
               <SecondaryButton type="button" onClick={() => onNavigate(backLink)}>Cancel</SecondaryButton>
-              <PrimaryButton type="submit" full>Submit Lesson</PrimaryButton>
+              <PrimaryButton type="submit" full disabled={isTutor && ownTutor && studentsList.length === 0}>Submit Lesson</PrimaryButton>
             </div>
           </form>
         </div>

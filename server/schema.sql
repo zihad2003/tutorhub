@@ -13,6 +13,7 @@ CREATE TABLE IF NOT EXISTS tutors (
     img VARCHAR(500),
     bio TEXT,
     availability VARCHAR(255),
+    max_students INT,
     cvUrl VARCHAR(500),
     password_hash VARCHAR(255),
     status VARCHAR(50) DEFAULT 'approved',
@@ -114,7 +115,8 @@ CREATE TABLE IF NOT EXISTS hired_tutors (
 CREATE TABLE IF NOT EXISTS lessons (
     id INT PRIMARY KEY AUTO_INCREMENT,
     hired_tutor_id INT,
-    tutor_id INT, 
+    tutor_id INT,
+    parent_id INT,
     subject VARCHAR(255),
     topic VARCHAR(255),
     date DATE,

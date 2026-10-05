@@ -41,7 +41,8 @@ export async function patchToAPI(endpoint, data) {
     body: JSON.stringify(data),
   });
   if (!response.ok) {
-    throw new Error(`API error! status: ${response.status}`);
+    const body = await response.json().catch(() => ({}));
+    throw new Error(body.error || `API error! status: ${response.status}`);
   }
   return response.json();
 }
