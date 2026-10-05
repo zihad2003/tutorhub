@@ -13,20 +13,25 @@ export function Reports({ onNavigate }) {
   const [startMonth, setStartMonth] = useState("All");
   const [endMonth, setEndMonth] = useState("All");
   const [payments, setPayments] = useState(PAYMENTS);
+  const [payouts, setPayouts] = useState([]);
   const [summary, setSummary] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
     Promise.all([
       fetchFromAPI("/payments").catch(() => null),
+      fetchFromAPI("/withdrawal_requests").catch(() => null),
       fetchFromAPI("/summary").catch(() => null),
-    ]).then(([paymentRows, summaryData]) => {
+    ]).then(([paymentRows, withdrawalRows, summaryData]) => {
       if (cancelled) return;
-      if (Array.isArray(paymentRows) && paymentRows.length > 0) {
+      if (Array.isArray(paymentRows)) {
         setPayments(paymentRows.map((row) => ({
           ...row,
           totalAmount: Number(row.totalAmount) || 0,
         })));
+      }
+      if (Array.isArray(withdrawalRows)) {
+        setPayouts(withdrawalRows.filter((row) => row.status === "approved"));
       }
       if (summaryData && typeof summaryData.activeUsers === "number") setSummary(summaryData);
     });
@@ -56,6 +61,8 @@ export function Reports({ onNavigate }) {
   });
 
   const totalRevenue = filteredPayments.filter(p => p.status === "paid").reduce((acc, p) => acc + (Number(p.totalAmount) || 0), 0);
+  const tutorPayouts = payouts.reduce((sum, row) => sum + (Number(row.amount) || 0), 0);
+  const platformBalance = totalRevenue - tutorPayouts;
   const uniqueMonths = ["All", ...new Set(payments.map(p => p.month).filter(Boolean))];
 
   return (
@@ -82,9 +89,14 @@ export function Reports({ onNavigate }) {
               icon={DollarSign}
             />
             <StatCard
-              label="Platform Commission (10%)"
-              value={`৳${Math.round(totalRevenue * 0.1)}`}
+              label="Tutor Payouts"
+              value={`৳${tutorPayouts}`}
               icon={TrendingUp}
+            />
+            <StatCard
+              label="Platform Balance"
+              value={`৳${platformBalance}`}
+              icon={DollarSign}
             />
             <StatCard
               label="Completed Lessons"

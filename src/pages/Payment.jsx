@@ -16,7 +16,7 @@ export function Payment({ onNavigate, role = "parent", account = null }) {
   const backLink = isAdmin ? "admin-dashboard" : "parent-dashboard";
 
   const own = account && !account.demo && account.id && role !== "admin";
-  const [paymentRows] = useLiveList("/payments", own ? [] : PAYMENTS);
+  const [paymentRows, setPaymentRows] = useLiveList("/payments", own ? [] : PAYMENTS);
   const [withdrawalRows, setWithdrawals] = useLiveList("/withdrawal_requests", own ? [] : WITHDRAWAL_REQUESTS);
   const payments = own ? paymentRows.filter((payment) => Number(payment.parentId) === Number(account.id)) : paymentRows;
   const withdrawals = own ? [] : withdrawalRows;
@@ -29,10 +29,19 @@ export function Payment({ onNavigate, role = "parent", account = null }) {
 
   const updateWithdrawal = async (id, status) => {
     const processedDate = new Date().toISOString().split("T")[0];
-    await patchToAPI(`/withdrawal_requests/${id}`, { status });
+    const result = await patchToAPI(`/withdrawal_requests/${id}`, { status });
     setWithdrawals((prev) => prev.map((row) => (
       row.id === id ? { ...row, status, processedDate } : row
     )));
+    if (Array.isArray(result.payments) && result.payments.length) {
+      setPaymentRows((prev) => {
+        const next = prev.map((row) => result.payments.find((item) => item.id === row.id) || row);
+        for (const payment of result.payments) {
+          if (!next.some((row) => row.id === payment.id)) next.unshift(payment);
+        }
+        return next;
+      });
+    }
   };
 
   const handleApprove = (id) => {
@@ -44,9 +53,13 @@ export function Payment({ onNavigate, role = "parent", account = null }) {
   };
 
   if (isAdmin) {
-    const totalVolume = payments.reduce((acc, p) => acc + (Number(p.totalAmount) || 0), 0);
-    const commission = Math.round(totalVolume * 0.1);
-    const tutorPayouts = totalVolume - commission;
+    const totalVolume = payments
+      .filter((payment) => payment.status === "paid")
+      .reduce((acc, payment) => acc + (Number(payment.totalAmount) || 0), 0);
+    const tutorPayouts = withdrawals
+      .filter((row) => row.status === "approved")
+      .reduce((acc, row) => acc + (Number(row.amount) || 0), 0);
+    const commission = totalVolume - tutorPayouts;
 
     return (
       <div className="flex min-h-screen bg-white">
@@ -67,15 +80,15 @@ export function Payment({ onNavigate, role = "parent", account = null }) {
 
             <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-3">
               <div className="rounded-lg border p-5 shadow-sm" style={{ borderColor: C.border }}>
-                <p className="text-xs uppercase font-semibold" style={{ color: C.textSecondary }}>Total Volume</p>
+                <p className="text-xs uppercase font-semibold" style={{ color: C.textSecondary }}>Total received</p>
                 <p className="mt-2 text-2xl font-semibold" style={{ color: C.text }}>৳{totalVolume}</p>
               </div>
               <div className="rounded-lg border p-5 shadow-sm" style={{ borderColor: C.border }}>
-                <p className="text-xs uppercase font-semibold" style={{ color: C.textSecondary }}>Tutor Payouts (90%)</p>
+                <p className="text-xs uppercase font-semibold" style={{ color: C.textSecondary }}>Tutor payouts</p>
                 <p className="mt-2 text-2xl font-semibold text-green-600">৳{tutorPayouts}</p>
               </div>
               <div className="rounded-lg border p-5 shadow-sm" style={{ borderColor: C.border }}>
-                <p className="text-xs uppercase font-semibold" style={{ color: C.textSecondary }}>Platform Profit (10%)</p>
+                <p className="text-xs uppercase font-semibold" style={{ color: C.textSecondary }}>Platform balance</p>
                 <p className="mt-2 text-2xl font-semibold text-blue-600">৳{commission}</p>
               </div>
             </div>
