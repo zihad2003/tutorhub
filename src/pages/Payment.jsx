@@ -3,6 +3,7 @@ import { C } from "../constants/tokens";
 import { Badge, PrimaryButton, SecondaryButton } from "../components/ui";
 import { Table } from "../components/ui/Table";
 import { PAYMENTS, WITHDRAWAL_REQUESTS } from "../data/mockData";
+import { patchToAPI } from "../api";
 import { useLiveList } from "../lib/records";
 import { CreditCard, Download, Calendar, DollarSign, TrendingUp, Users, Wallet, CheckCircle2, XCircle, Clock } from "lucide-react";
 
@@ -26,16 +27,20 @@ export function Payment({ onNavigate, role = "parent", account = null }) {
     if (pendingPayment) setCustomAmount(Number(pendingPayment.totalAmount) || 0);
   }, [pendingPayment?.id, pendingPayment?.totalAmount]);
 
+  const updateWithdrawal = async (id, status) => {
+    const processedDate = new Date().toISOString().split("T")[0];
+    await patchToAPI(`/withdrawal_requests/${id}`, { status });
+    setWithdrawals((prev) => prev.map((row) => (
+      row.id === id ? { ...row, status, processedDate } : row
+    )));
+  };
+
   const handleApprove = (id) => {
-    setWithdrawals(prev => prev.map(w => 
-      w.id === id ? { ...w, status: "approved", processedDate: new Date().toISOString().split("T")[0] } : w
-    ));
+    updateWithdrawal(id, "approved").catch(() => {});
   };
 
   const handleReject = (id) => {
-    setWithdrawals(prev => prev.map(w => 
-      w.id === id ? { ...w, status: "rejected" } : w
-    ));
+    updateWithdrawal(id, "rejected").catch(() => {});
   };
 
   if (isAdmin) {
@@ -128,11 +133,17 @@ export function Payment({ onNavigate, role = "parent", account = null }) {
                     >
                       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                         <div className="flex items-start gap-4">
-                          <img
-                            src={withdrawal.tutorImg}
-                            alt={withdrawal.tutorName}
-                            className="h-14 w-14 rounded-full object-cover border"
-                          />
+                          {withdrawal.tutorImg ? (
+                            <img
+                              src={withdrawal.tutorImg}
+                              alt={withdrawal.tutorName}
+                              className="h-14 w-14 rounded-full object-cover border"
+                            />
+                          ) : (
+                            <div className="flex h-14 w-14 items-center justify-center rounded-full bg-blue-50 text-sm font-semibold" style={{ color: C.primary }}>
+                              {String(withdrawal.tutorName || "T").slice(0, 2).toUpperCase()}
+                            </div>
+                          )}
                           <div>
                             <div className="flex flex-wrap items-center gap-2">
                               <h3 className="text-lg font-semibold" style={{ color: C.text }}>

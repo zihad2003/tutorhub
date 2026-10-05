@@ -7,6 +7,7 @@ import {
   Wallet, ArrowRight, CheckCircle2, XCircle
 } from "lucide-react";
 import { useState } from "react";
+import { postToAPI } from "../api";
 import { currentMonthPrefix, useLiveList } from "../lib/records";
 
 const DEFAULT_REVIEWS = [
@@ -77,7 +78,7 @@ export function MonthlySummary({ onNavigate, role = "parent", account = null }) 
   const [showSuccessToast, setShowSuccessToast] = useState(false);
 
   // Withdrawal logic merged
-  const [withdrawals, setWithdrawals] = useState(own ? [] : WITHDRAWAL_REQUESTS);
+  const [withdrawalRows, setWithdrawals] = useLiveList("/withdrawal_requests", own ? [] : WITHDRAWAL_REQUESTS);
   const [amount, setAmount] = useState("");
   const [method, setMethod] = useState("bKash");
   const [accountNumber, setAccountNumber] = useState("");
@@ -85,19 +86,49 @@ export function MonthlySummary({ onNavigate, role = "parent", account = null }) 
   const [branch, setBranch] = useState("");
   const [notes, setNotes] = useState("");
   const [submitted, setSubmitted] = useState(false);
-
-  const availableBalance = liveEarnings
+  const [withdrawError, setWithdrawError] = useState("");
+  const withdrawals = own
+    ? withdrawalRows.filter((row) => Number(row.tutorId) === Number(account.id))
+    : withdrawalRows.filter((row) => Number(row.tutorId) === 1);
+  const reservedBalance = withdrawals
+    .filter((row) => row.status === "pending")
+    .reduce((sum, row) => sum + (Number(row.amount) || 0), 0);
+  const availableBalance = Math.max(0, liveEarnings
     .filter(e => e.status === "pending")
-    .reduce((acc, e) => acc + (Number(e.totalEarnings) || 0), 0);
+    .reduce((acc, e) => acc + (Number(e.totalEarnings) || 0), 0) - reservedBalance);
 
-  const handleWithdrawSubmit = (e) => {
+  const handleWithdrawSubmit = async (e) => {
     e.preventDefault();
+    setWithdrawError("");
+    const value = Number(amount);
+    if (!Number.isFinite(value) || value <= 0 || value > availableBalance) {
+      setWithdrawError("Enter an amount within the available balance.");
+      return;
+    }
+    if (own && account.role === "tutor") {
+      try {
+        const created = await postToAPI("/withdrawal_requests", {
+          tutorId: account.id,
+          amount: value,
+          method,
+          accountNumber,
+          bankName,
+          branch,
+          notes,
+        });
+        setWithdrawals((rows) => [created, ...rows]);
+        setSubmitted(true);
+      } catch (error) {
+        setWithdrawError(error.message || "The withdrawal request could not be saved.");
+      }
+      return;
+    }
     const newWithdrawal = {
       id: Date.now(),
       tutorId: 1,
       tutorName: "Rafiq Ahmed",
       tutorImg: "https://i.pravatar.cc/150?img=12",
-      amount: parseInt(amount),
+      amount: value,
       method,
       accountNumber,
       bankName: method === "Bank Transfer" ? bankName : null,
@@ -106,8 +137,7 @@ export function MonthlySummary({ onNavigate, role = "parent", account = null }) 
       status: "pending",
       notes,
     };
-    WITHDRAWAL_REQUESTS.unshift(newWithdrawal);
-    setWithdrawals([newWithdrawal, ...withdrawals]);
+    setWithdrawals([newWithdrawal, ...withdrawalRows]);
     setSubmitted(true);
   };
 
@@ -665,6 +695,7 @@ export function MonthlySummary({ onNavigate, role = "parent", account = null }) 
                   </div>
 
                   <form className="rounded-xl border bg-white p-5 sm:p-8 shadow-sm space-y-6" style={{ borderColor: C.border }} onSubmit={handleWithdrawSubmit}>
+                    {withdrawError && <p className="text-sm font-semibold" style={{ color: C.error }}>{withdrawError}</p>}
                     <Input
                       label="Withdrawal Amount (৳)"
                       type="number"
@@ -750,7 +781,10 @@ export function MonthlySummary({ onNavigate, role = "parent", account = null }) 
                   <div className="rounded-xl border bg-white p-5 sm:p-8 shadow-sm" style={{ borderColor: C.border }}>
                     <h3 className="mb-4 text-sm font-semibold" style={{ color: C.text }}>Recent Withdrawal History</h3>
                     <div className="space-y-3">
-                      {withdrawals.filter(w => w.tutorId === 1).map((w) => (
+                      {withdrawals.length === 0 && (
+                        <p className="text-sm" style={{ color: C.textSecondary }}>No withdrawal requests yet.</p>
+                      )}
+                      {withdrawals.map((w) => (
                         <div key={w.id} className="flex items-center justify-between rounded-lg border p-4 hover:bg-gray-50/50 transition-colors" style={{ borderColor: C.border }}>
                           <div>
                             <p className="text-sm font-bold" style={{ color: C.text }}>৳{w.amount.toLocaleString()}</p>

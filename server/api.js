@@ -578,6 +578,16 @@ router.get('/chats', async (req, res) => {
   }
 });
 
+function shapeWithdrawal(row) {
+  return {
+    ...row,
+    tutorId: row.tutor_id,
+    amount: asNumber(row.amount),
+    requestedDate: dateOnly(row.requestedDate),
+    processedDate: dateOnly(row.processedDate),
+  };
+}
+
 router.get('/withdrawal_requests', async (req, res) => {
   try {
     const [rows] = await pool.query(
@@ -586,13 +596,95 @@ router.get('/withdrawal_requests', async (req, res) => {
        LEFT JOIN tutors t ON t.id = w.tutor_id
        ORDER BY w.id DESC`
     );
-    res.json(rows.map((row) => ({
-      ...row,
-      tutorId: row.tutor_id,
-      amount: asNumber(row.amount),
-      requestedDate: dateOnly(row.requestedDate),
-      processedDate: dateOnly(row.processedDate),
-    })));
+    res.json(rows.map(shapeWithdrawal));
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.post('/withdrawal_requests', async (req, res) => {
+  const tutorId = Number(req.body.tutorId);
+  const amount = moneyAmount(req.body.amount);
+  const method = req.body.method === 'Bank Transfer' ? 'Bank Transfer' : req.body.method === 'bKash' ? 'bKash' : '';
+  const accountNumber = String(req.body.accountNumber || '').trim();
+  const bankName = method === 'Bank Transfer' ? String(req.body.bankName || '').trim() : null;
+  const branch = method === 'Bank Transfer' ? String(req.body.branch || '').trim() : null;
+  const notes = String(req.body.notes || '').trim();
+  if (!Number.isInteger(tutorId) || tutorId <= 0) return res.status(400).json({ error: 'Choose a tutor account.' });
+  if (!method) return res.status(400).json({ error: 'Choose bKash or a bank transfer.' });
+  if (!accountNumber) return res.status(400).json({ error: 'Enter the account number.' });
+  if (method === 'Bank Transfer' && (!bankName || !branch)) {
+    return res.status(400).json({ error: 'Enter the bank name and branch.' });
+  }
+  if (amount <= 0) return res.status(400).json({ error: 'Enter a withdrawal amount.' });
+  try {
+    const [tutors] = await pool.query('SELECT id, name, img FROM tutors WHERE id = ? LIMIT 1', [tutorId]);
+    if (!tutors[0]) return res.status(404).json({ error: 'Tutor account not found.' });
+    const [earnings] = await pool.query(
+      "SELECT COALESCE(SUM(totalEarnings), 0) AS total FROM tutor_earnings WHERE tutor_id = ? AND status = 'pending'",
+      [tutorId]
+    );
+    const [openRequests] = await pool.query(
+      "SELECT COALESCE(SUM(amount), 0) AS total FROM withdrawal_requests WHERE tutor_id = ? AND status = 'pending'",
+      [tutorId]
+    );
+    const available = asNumber(earnings[0].total) - asNumber(openRequests[0].total);
+    if (amount > available) {
+      return res.status(400).json({ error: 'The amount is higher than the available balance.' });
+    }
+    const [result] = await pool.query(
+      `INSERT INTO withdrawal_requests (tutor_id, amount, method, accountNumber, bankName, branch, requestedDate, status, notes)
+       VALUES (?, ?, ?, ?, ?, ?, CURDATE(), 'pending', ?)`,
+      [tutorId, amount, method, accountNumber, bankName, branch, notes || null]
+    );
+    const [rows] = await pool.query(
+      `SELECT w.*, t.name AS tutorName, t.img AS tutorImg
+       FROM withdrawal_requests w
+       LEFT JOIN tutors t ON t.id = w.tutor_id
+       WHERE w.id = ? LIMIT 1`,
+      [result.insertId]
+    );
+    res.status(201).json(shapeWithdrawal(rows[0]));
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.patch('/withdrawal_requests/:id', async (req, res) => {
+  const id = Number(req.params.id);
+  const status = req.body.status === 'approved' ? 'approved' : req.body.status === 'rejected' ? 'rejected' : '';
+  if (!Number.isInteger(id) || id <= 0 || !status) {
+    return res.status(400).json({ error: 'Choose a withdrawal request.' });
+  }
+  try {
+    const [rows] = await pool.query('SELECT * FROM withdrawal_requests WHERE id = ? LIMIT 1', [id]);
+    if (!rows[0]) return res.status(404).json({ error: 'Withdrawal request not found.' });
+    if (rows[0].status !== 'pending') {
+      return res.status(409).json({ error: 'This request has already been processed.' });
+    }
+    await pool.query(
+      'UPDATE withdrawal_requests SET status = ?, processedDate = CURDATE() WHERE id = ?',
+      [status, id]
+    );
+    if (status === 'approved') {
+      let remaining = asNumber(rows[0].amount);
+      const [earnings] = await pool.query(
+        "SELECT id, totalEarnings FROM tutor_earnings WHERE tutor_id = ? AND status = 'pending' ORDER BY id",
+        [rows[0].tutor_id]
+      );
+      for (const earning of earnings) {
+        if (remaining <= 0) break;
+        const value = asNumber(earning.totalEarnings);
+        if (value <= remaining) {
+          await pool.query("UPDATE tutor_earnings SET status = 'paid', paidDate = CURDATE() WHERE id = ?", [earning.id]);
+          remaining -= value;
+        } else {
+          await pool.query('UPDATE tutor_earnings SET totalEarnings = ? WHERE id = ?', [value - remaining, earning.id]);
+          remaining = 0;
+        }
+      }
+    }
+    res.json({ id, status });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
