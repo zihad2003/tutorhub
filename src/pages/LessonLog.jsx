@@ -156,7 +156,7 @@ export function LessonLog({ onNavigate, role = "parent", account }) {
                           {tutor.tutorName}
                         </p>
                         <p className="text-xs" style={{ color: C.textSecondary }}>
-                          {(Array.isArray(tutor.subjects) ? tutor.subjects : []).join(", ")} · ৳{tutor.fee}/hr
+                          {(Array.isArray(tutor.subjects) ? tutor.subjects : []).join(", ")} · ৳{Number(tutor.fee || 0).toLocaleString("en-US")}/mo
                         </p>
                       </div>
                     </button>

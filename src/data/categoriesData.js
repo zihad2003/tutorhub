@@ -10,7 +10,7 @@ export const INITIAL_CATEGORIES = [
     color: "#2563eb",
     subjects: ["Physics", "Chemistry", "Higher Mathematics", "Biology", "General Science"],
     activeJobs: 28,
-    avgSalary: "৳8,000 - ৳15,000/mo"
+    avgSalary: "৳5,000 - ৳10,000/mo"
   },
   {
     id: 2,
@@ -23,7 +23,7 @@ export const INITIAL_CATEGORIES = [
     color: "#7c3aed",
     subjects: ["English Language", "English Literature", "Bangla 1st & 2nd", "IELTS", "Spoken English"],
     activeJobs: 19,
-    avgSalary: "৳6,000 - ৳12,000/mo"
+    avgSalary: "৳5,000 - ৳10,000/mo"
   },
   {
     id: 3,
@@ -36,7 +36,7 @@ export const INITIAL_CATEGORIES = [
     color: "#059669",
     subjects: ["Financial Accounting", "Finance & Banking", "Economics", "Business Organization"],
     activeJobs: 14,
-    avgSalary: "৳7,500 - ৳14,000/mo"
+    avgSalary: "৳5,000 - ৳10,000/mo"
   },
   {
     id: 4,
@@ -49,7 +49,7 @@ export const INITIAL_CATEGORIES = [
     color: "#ea580c",
     subjects: ["Bangladesh & Global Studies", "Islamic History", "Sociology", "Civics", "Psychology"],
     activeJobs: 9,
-    avgSalary: "৳5,500 - ৳10,000/mo"
+    avgSalary: "৳5,000 - ৳10,000/mo"
   },
   {
     id: 5,
@@ -62,7 +62,7 @@ export const INITIAL_CATEGORIES = [
     color: "#0284c7",
     subjects: ["HSC ICT", "Python Programming", "Web Development (HTML/CSS/JS)", "C++ Data Structures"],
     activeJobs: 22,
-    avgSalary: "৳10,000 - ৳20,000/mo"
+    avgSalary: "৳5,000 - ৳10,000/mo"
   },
   {
     id: 6,
@@ -75,7 +75,7 @@ export const INITIAL_CATEGORIES = [
     color: "#dc2626",
     subjects: ["Engineering Admission", "Medical Admission", "DU A/B Unit", "IBA BBA", "SAT General"],
     activeJobs: 35,
-    avgSalary: "৳12,000 - ৳25,000/mo"
+    avgSalary: "৳5,000 - ৳10,000/mo"
   },
 ];
 

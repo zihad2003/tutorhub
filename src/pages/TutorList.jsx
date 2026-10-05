@@ -5,8 +5,8 @@ import { TutorCard } from "../components/ui/TutorCard";
 import { TUTORS as mockTutors } from "../data/tutors";
 import { fetchFromAPI } from "../api";
 
-const FEE_MIN = 0;
-const FEE_MAX = 5000;
+const FEE_MIN = 5000;
+const FEE_MAX = 10000;
 
 function formatFee(value) {
   return Number(value || 0).toLocaleString("en-US");
@@ -22,13 +22,13 @@ function PriceRange({ minFee, maxFee, onChange }) {
   const left = ((minFee - FEE_MIN) / (FEE_MAX - FEE_MIN)) * 100;
   const width = ((maxFee - minFee) / (FEE_MAX - FEE_MIN)) * 100;
   return (
-    <div className="w-full rounded-xl border bg-white p-4 sm:w-[340px]" style={{ borderColor: C.border }}>
-      <p className="text-lg font-semibold" style={{ color: C.text }}>Price Range</p>
-      <div className="relative mt-6 h-8">
-        <div className="absolute left-0 right-0 top-1/2 h-1.5 -translate-y-1/2 rounded-full bg-gray-200" />
+    <div className="w-full rounded-lg border bg-white px-3 py-2 sm:w-[220px]" style={{ borderColor: C.border }}>
+      <p className="text-xs font-semibold" style={{ color: C.text }}>Price range <span style={{ color: C.textSecondary }}>/month</span></p>
+      <div className="relative mt-2 h-5">
+        <div className="absolute left-0 right-0 top-1/2 h-1 -translate-y-1/2 rounded-full bg-blue-100" />
         <div
-          className="absolute top-1/2 h-1.5 -translate-y-1/2 rounded-full"
-          style={{ left: `${left}%`, width: `${width}%`, background: "#f97316" }}
+          className="absolute top-1/2 h-1 -translate-y-1/2 rounded-full"
+          style={{ left: `${left}%`, width: `${width}%`, background: C.primary }}
         />
         <input
           type="range"
@@ -49,18 +49,18 @@ function PriceRange({ minFee, maxFee, onChange }) {
           aria-label="Maximum price"
         />
       </div>
-      <div className="mt-3 flex items-center justify-between gap-4">
+      <div className="mt-1.5 flex items-center justify-between gap-2">
         <input
           value={formatFee(minFee)}
           onChange={(event) => onChange(Math.min(parseFee(event.target.value), maxFee), maxFee)}
-          className="w-28 rounded-md border px-3 py-2 text-center text-sm outline-none"
+          className="w-[4.5rem] rounded border px-1.5 py-1 text-center text-xs outline-none"
           style={{ borderColor: C.border, color: C.text }}
           aria-label="Minimum price amount"
         />
         <input
           value={formatFee(maxFee)}
           onChange={(event) => onChange(minFee, Math.max(parseFee(event.target.value), minFee))}
-          className="w-28 rounded-md border px-3 py-2 text-center text-sm outline-none"
+          className="w-[4.5rem] rounded border px-1.5 py-1 text-center text-xs outline-none"
           style={{ borderColor: C.border, color: C.text }}
           aria-label="Maximum price amount"
         />
@@ -81,19 +81,19 @@ function PriceRange({ minFee, maxFee, onChange }) {
         .price-range::-webkit-slider-thumb {
           appearance: none;
           pointer-events: auto;
-          height: 22px;
-          width: 22px;
+          height: 14px;
+          width: 14px;
           border-radius: 999px;
-          border: 3px solid #f97316;
+          border: 2px solid #2563EB;
           background: #fff;
           cursor: pointer;
         }
         .price-range::-moz-range-thumb {
           pointer-events: auto;
-          height: 22px;
-          width: 22px;
+          height: 14px;
+          width: 14px;
           border-radius: 999px;
-          border: 3px solid #f97316;
+          border: 2px solid #2563EB;
           background: #fff;
           cursor: pointer;
         }
@@ -183,8 +183,7 @@ export function TutorList({ openTutor, hiredOnly = false, browse = { text: "", s
     });
   }
 
-  if (minFee > FEE_MIN) list = list.filter((t) => Number(t.fee) >= Number(minFee));
-  if (maxFee < FEE_MAX) list = list.filter((t) => Number(t.fee) <= Number(maxFee));
+  list = list.filter((t) => Number(t.fee) >= Number(minFee) && Number(t.fee) <= Number(maxFee));
   if (sort === "Rating: High to Low") list = [...list].sort((a, b) => Number(b.rating) - Number(a.rating));
   if (sort === "Rating: Low to High") list = [...list].sort((a, b) => Number(a.rating) - Number(b.rating));
 

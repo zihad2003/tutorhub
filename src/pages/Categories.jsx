@@ -84,7 +84,7 @@ export function Categories({ onNavigate }) {
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [subjectsInput, setSubjectsInput] = useState("");
-  const [salaryRange, setSalaryRange] = useState("৳8,000 - ৳15,000/mo");
+  const [salaryRange, setSalaryRange] = useState("৳5,000 - ৳10,000/mo");
   const [selectedPhoto, setSelectedPhoto] = useState(PRESET_PHOTOS[0].url);
   const [customPhotoUrl, setCustomPhotoUrl] = useState("");
   const [status, setStatus] = useState("active");
@@ -132,7 +132,7 @@ export function Categories({ onNavigate }) {
       color: "#2563eb",
       subjects: subjectsList,
       activeJobs: 0,
-      avgSalary: salaryRange || "৳6,000 - ৳12,000/mo"
+      avgSalary: salaryRange || "৳5,000 - ৳10,000/mo"
     };
 
     updateCategories([newCat, ...categories]);
@@ -524,7 +524,7 @@ export function Categories({ onNavigate }) {
                   Estimated Monthly Salary Range
                 </label>
                 <Input
-                  placeholder="e.g. ৳8,000 - ৳15,000/mo"
+                  placeholder="e.g. ৳5,000 - ৳10,000/mo"
                   value={salaryRange}
                   onChange={(e) => setSalaryRange(e.target.value)}
                 />
@@ -650,7 +650,7 @@ export function Categories({ onNavigate }) {
                 </div>
                 <div className="flex items-center gap-1.5">
                   <Sparkles size={14} className="text-amber-300" />
-                  <span>Avg Rate: <strong>{selectedCategory.avgSalary || "৳8,000/mo"}</strong></span>
+                  <span>Avg Rate: <strong>{selectedCategory.avgSalary || "৳5,000 - ৳10,000/mo"}</strong></span>
                 </div>
               </div>
             </div>
@@ -726,7 +726,7 @@ export function Categories({ onNavigate }) {
                       </div>
 
                       <div className="text-right">
-                        <span className="text-sm font-bold text-gray-900">৳{tutor.fee}/hr</span>
+                        <span className="text-sm font-bold text-gray-900">৳{Number(tutor.fee || 0).toLocaleString("en-US")}/mo</span>
                         <div className="mt-1">
                           <SecondaryButton
                             onClick={() => {
@@ -752,7 +752,7 @@ export function Categories({ onNavigate }) {
                   <div className="rounded-xl border bg-white p-3.5 shadow-sm">
                     <div className="flex justify-between text-xs font-semibold text-blue-600 mb-1">
                       <span>Class 9-10 Student</span>
-                      <span>৳8,000/mo</span>
+                      <span>৳5,000/mo</span>
                     </div>
                     <p className="text-xs font-medium text-gray-800">Need experienced tutor for 4 days/week</p>
                     <p className="text-[11px] text-gray-400 mt-1 flex items-center gap-1">
@@ -762,7 +762,7 @@ export function Categories({ onNavigate }) {
                   <div className="rounded-xl border bg-white p-3.5 shadow-sm">
                     <div className="flex justify-between text-xs font-semibold text-blue-600 mb-1">
                       <span>HSC Candidate</span>
-                      <span>৳12,000/mo</span>
+                      <span>৳10,000/mo</span>
                     </div>
                     <p className="text-xs font-medium text-gray-800">Special focus on board exam preparation</p>
                     <p className="text-[11px] text-gray-400 mt-1 flex items-center gap-1">

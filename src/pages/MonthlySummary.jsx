@@ -61,8 +61,8 @@ export function MonthlySummary({ onNavigate, role = "parent", account = null }) 
     : own
       ? []
       : [
-        { id: 1, tutorId: 1, tutorName: "Rafiq Ahmed", tutorImg: "https://i.pravatar.cc/150?img=12", subjects: ["Physics", "Math"], fee: 900, totalLessons: 18 },
-        { id: 2, tutorId: 2, tutorName: "Farhana Islam", tutorImg: "https://i.pravatar.cc/150?img=32", subjects: ["English", "Bangla"], fee: 700, totalLessons: 8 }
+        { id: 1, tutorId: 1, tutorName: "Rafiq Ahmed", tutorImg: "https://i.pravatar.cc/150?img=12", subjects: ["Physics", "Math"], fee: 8000, totalLessons: 18 },
+        { id: 2, tutorId: 2, tutorName: "Farhana Islam", tutorImg: "https://i.pravatar.cc/150?img=32", subjects: ["English", "Bangla"], fee: 6000, totalLessons: 8 }
       ];
 
   // Form State for Rating a Tutor
@@ -368,7 +368,7 @@ export function MonthlySummary({ onNavigate, role = "parent", account = null }) 
                           <div className="flex-1 min-w-0">
                             <p className="text-sm font-semibold truncate" style={{ color: C.text }}>{tutor.tutorName}</p>
                             <p className="text-xs truncate" style={{ color: C.textSecondary }}>{subjectsStr}</p>
-                            <p className="text-[11px] text-green-600 font-medium">৳{tutor.fee || 0}/hr · {tutor.totalLessons || 0} lessons</p>
+                            <p className="text-[11px] text-green-600 font-medium">৳{Number(tutor.fee || 0).toLocaleString("en-US")}/mo · {tutor.totalLessons || 0} lessons</p>
                           </div>
                           {selected && <CheckCircle size={18} className="text-blue-600 flex-shrink-0" />}
                         </div>
