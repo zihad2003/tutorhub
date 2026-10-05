@@ -1,34 +1,68 @@
 import { C } from "../constants/tokens";
 import { Badge, PrimaryButton, SecondaryButton } from "../components/ui";
-import { ADMIN_APPROVALS } from "../data/mockData";
 import { CheckCircle2, XCircle, MapPin, Mail, Phone, Award, Calendar, ExternalLink } from "lucide-react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
+
+async function reviewAccount(role, id, action) {
+  const response = await fetch(`/api/auth/${role}/${id}/${action}`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "x-actor-role": "admin" },
+  });
+  const data = await response.json().catch(() => ({}));
+  if (!response.ok) throw new Error(data.error || "Could not update this account.");
+  return data;
+}
 
 export function ApprovalQueues({ onNavigate, initialTab = "tutors" }) {
   const [activeTab, setActiveTab] = useState(initialTab);
-  const [tutorsList, setTutorsList] = useState(ADMIN_APPROVALS.tutors);
-  const [parentsList, setParentsList] = useState(ADMIN_APPROVALS.parents);
+  const [tutorsList, setTutorsList] = useState([]);
+  const [parentsList, setParentsList] = useState([]);
   const [selectedDoc, setSelectedDoc] = useState(null);
+  const [loadError, setLoadError] = useState("");
+  const [actionError, setActionError] = useState("");
+  const [busyId, setBusyId] = useState(null);
 
-  const handleApproveTutor = (id) => {
-    setTutorsList(prev => prev.filter(t => t.id !== id));
-    ADMIN_APPROVALS.tutors = ADMIN_APPROVALS.tutors.filter(t => t.id !== id);
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      try {
+        const [tutorResponse, parentResponse] = await Promise.all([
+          fetch("/api/auth/pending/tutors"),
+          fetch("/api/auth/pending/parents"),
+        ]);
+        if (!tutorResponse.ok || !parentResponse.ok) throw new Error("Could not load the approval queue.");
+        const tutors = await tutorResponse.json();
+        const parents = await parentResponse.json();
+        if (cancelled) return;
+        setTutorsList(Array.isArray(tutors) ? tutors : []);
+        setParentsList(Array.isArray(parents) ? parents : []);
+        setLoadError("");
+      } catch (error) {
+        if (!cancelled) setLoadError(error.message || "Could not load the approval queue.");
+      }
+    }
+    load();
+    return () => { cancelled = true; };
+  }, []);
+
+  const runReview = async (role, id, action, setter) => {
+    if (busyId) return;
+    setBusyId(`${role}-${id}`);
+    setActionError("");
+    try {
+      await reviewAccount(role, id, action);
+      setter((prev) => prev.filter((item) => item.id !== id));
+    } catch (error) {
+      setActionError(error.message);
+    } finally {
+      setBusyId(null);
+    }
   };
 
-  const handleRejectTutor = (id) => {
-    setTutorsList(prev => prev.filter(t => t.id !== id));
-    ADMIN_APPROVALS.tutors = ADMIN_APPROVALS.tutors.filter(t => t.id !== id);
-  };
-
-  const handleApproveParent = (id) => {
-    setParentsList(prev => prev.filter(p => p.id !== id));
-    ADMIN_APPROVALS.parents = ADMIN_APPROVALS.parents.filter(p => p.id !== id);
-  };
-
-  const handleRejectParent = (id) => {
-    setParentsList(prev => prev.filter(p => p.id !== id));
-    ADMIN_APPROVALS.parents = ADMIN_APPROVALS.parents.filter(p => p.id !== id);
-  };
+  const handleApproveTutor = (id) => runReview("tutors", id, "approve", setTutorsList);
+  const handleRejectTutor = (id) => runReview("tutors", id, "reject", setTutorsList);
+  const handleApproveParent = (id) => runReview("parents", id, "approve", setParentsList);
+  const handleRejectParent = (id) => runReview("parents", id, "reject", setParentsList);
 
   const pendingTutors = tutorsList.filter(t => t.status === "pending");
   const pendingParents = parentsList.filter(p => p.status === "pending");
@@ -67,6 +101,9 @@ export function ApprovalQueues({ onNavigate, initialTab = "tutors" }) {
             ))}
           </div>
 
+          {loadError && <p className="mt-4 text-sm" style={{ color: C.error }}>{loadError}</p>}
+          {actionError && <p className="mt-4 text-sm" style={{ color: C.error }}>{actionError}</p>}
+
           <div className="mt-6">
             {activeTab === "tutors" ? (
               pendingTutors.length === 0 ? (
@@ -85,11 +122,17 @@ export function ApprovalQueues({ onNavigate, initialTab = "tutors" }) {
                       style={{ borderColor: C.border }}
                     >
                       <div className="flex flex-col gap-4 sm:flex-row sm:items-start">
-                        <img
-                          src={tutor.img}
-                          alt={tutor.name}
-                          className="h-20 w-20 rounded-full object-cover"
-                        />
+                        {tutor.img ? (
+                          <img
+                            src={tutor.img}
+                            alt={tutor.name}
+                            className="h-20 w-20 rounded-full object-cover"
+                          />
+                        ) : (
+                          <div className="flex h-20 w-20 items-center justify-center rounded-full bg-blue-50 text-xl font-semibold text-blue-700">
+                            {(tutor.name || "?").slice(0, 1)}
+                          </div>
+                        )}
                         <div className="flex-1">
                           <div className="flex flex-wrap items-center gap-2">
                             <h3 className="text-lg font-semibold" style={{ color: C.text }}>
@@ -102,10 +145,10 @@ export function ApprovalQueues({ onNavigate, initialTab = "tutors" }) {
                           </p>
                           <div className="mt-2 flex flex-wrap gap-4 text-sm" style={{ color: C.textSecondary }}>
                             <span className="flex items-center gap-1">
-                              <MapPin size={14} /> {tutor.location}
+                              <MapPin size={14} /> {tutor.location || "Location not added"}
                             </span>
                             <span className="flex items-center gap-1">
-                              <Award size={14} /> {tutor.experience}
+                              <Award size={14} /> {tutor.experience || "New tutor"}
                             </span>
                             <span className="flex items-center gap-1">
                               <Calendar size={14} /> Applied {tutor.appliedDate}
@@ -113,11 +156,11 @@ export function ApprovalQueues({ onNavigate, initialTab = "tutors" }) {
                           </div>
                         </div>
                         <div className="flex gap-2">
-                          <SecondaryButton onClick={() => handleRejectTutor(tutor.id)}>
+                          <SecondaryButton onClick={() => handleRejectTutor(tutor.id)} disabled={busyId === `tutors-${tutor.id}`}>
                             <XCircle size={16} className="mr-1.5 inline" />
                             Reject
                           </SecondaryButton>
-                          <PrimaryButton onClick={() => handleApproveTutor(tutor.id)}>
+                          <PrimaryButton onClick={() => handleApproveTutor(tutor.id)} disabled={busyId === `tutors-${tutor.id}`}>
                             <CheckCircle2 size={16} className="mr-1.5 inline" />
                             Approve
                           </PrimaryButton>
@@ -129,7 +172,9 @@ export function ApprovalQueues({ onNavigate, initialTab = "tutors" }) {
                           Subjects
                         </p>
                         <div className="flex flex-wrap gap-2">
-                          {tutor.subjects.map((subject) => (
+                          {(tutor.subjects || []).length === 0 ? (
+                            <span className="text-sm" style={{ color: C.textSecondary }}>No subjects added yet</span>
+                          ) : tutor.subjects.map((subject) => (
                             <Badge key={subject} tone="neutral">{subject}</Badge>
                           ))}
                         </div>
@@ -140,7 +185,7 @@ export function ApprovalQueues({ onNavigate, initialTab = "tutors" }) {
                           Certificates & Documents
                         </p>
                         <div className="space-y-2">
-                          {tutor.certificates.map((cert, index) => (
+                          {(tutor.certificates || []).map((cert, index) => (
                             <div key={index} className="flex items-center gap-2">
                               <button
                                 type="button"
@@ -240,11 +285,11 @@ export function ApprovalQueues({ onNavigate, initialTab = "tutors" }) {
                           )}
                         </div>
                         <div className="flex gap-2">
-                          <SecondaryButton onClick={() => handleRejectParent(parent.id)}>
+                          <SecondaryButton onClick={() => handleRejectParent(parent.id)} disabled={busyId === `parents-${parent.id}`}>
                             <XCircle size={16} className="mr-1.5 inline" />
                             Reject
                           </SecondaryButton>
-                          <PrimaryButton onClick={() => handleApproveParent(parent.id)}>
+                          <PrimaryButton onClick={() => handleApproveParent(parent.id)} disabled={busyId === `parents-${parent.id}`}>
                             <CheckCircle2 size={16} className="mr-1.5 inline" />
                             Approve
                           </PrimaryButton>

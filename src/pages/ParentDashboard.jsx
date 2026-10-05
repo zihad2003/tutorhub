@@ -2,10 +2,95 @@ import { C } from "../constants/tokens";
 import { StatCard } from "../components/ui/StatCard";
 import { Table } from "../components/ui/Table";
 import { PrimaryButton, Badge } from "../components/ui";
-import { Users, Calendar, DollarSign, FileText, ChevronRight, Star } from "lucide-react";
+import { Users, Calendar, DollarSign, FileText, ChevronRight, Star, Clock, XCircle } from "lucide-react";
 import { LESSONS, PAYMENTS, APPLICATIONS, HIRED_TUTORS } from "../data/mockData";
 
-export function ParentDashboard({ onNavigate }) {
+function LockedParentDashboard({ account }) {
+  const rejected = account.status === "rejected";
+  return (
+    <div className="flex min-h-screen bg-white">
+      <div className="flex-1 p-4 sm:p-6 lg:ml-64">
+        <div className="mx-auto max-w-[1200px]">
+          <div className="mb-6">
+            <h1 className="text-2xl font-semibold" style={{ color: C.text }}>Dashboard</h1>
+            <p className="mt-1 text-sm" style={{ color: C.textSecondary }}>
+              Welcome, {account.name}. This dashboard belongs to your account.
+            </p>
+          </div>
+          <div
+            className="rounded-lg border p-6"
+            style={{ borderColor: rejected ? "#FECACA" : "#FDE68A", background: rejected ? "#FEF2F2" : "#FFFBEB" }}
+          >
+            <div className="flex items-start gap-3">
+              {rejected ? <XCircle size={22} color={C.error} /> : <Clock size={22} color={C.warning} />}
+              <div>
+                <p className="text-lg font-semibold" style={{ color: rejected ? C.error : "#92400E" }}>
+                  {rejected ? "Application rejected" : "Pending Approval"}
+                </p>
+                <p className="mt-1 text-sm" style={{ color: C.textSecondary }}>
+                  {rejected
+                    ? "An admin rejected this application. Requests, tutors, lessons, payments, and chat stay locked."
+                    : "An admin still needs to approve your account. You can wait here. Requests, tutors, lessons, payments, and chat stay locked until then."}
+                </p>
+                <p className="mt-3 text-sm font-semibold" style={{ color: C.text }}>{account.email}</p>
+              </div>
+            </div>
+          </div>
+          <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <StatCard label="Active Tutors" value="0" icon={Users} />
+            <StatCard label="Lessons This Month" value="0" icon={Calendar} />
+            <StatCard label="Pending Lessons" value="0" icon={FileText} />
+            <StatCard label="Pending Payments" value="0" icon={DollarSign} />
+          </div>
+          <div className="mt-8 rounded-lg border p-8 text-center" style={{ borderColor: C.border }}>
+            <p className="text-sm font-semibold" style={{ color: C.text }}>No family activity yet</p>
+            <p className="mt-1 text-sm" style={{ color: C.textSecondary }}>
+              Your tutors, lessons, and payments will appear here after an admin approves this account.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ApprovedParentDashboard({ account, onNavigate }) {
+  return (
+    <div className="flex min-h-screen bg-white">
+      <div className="flex-1 p-4 sm:p-6 lg:ml-64">
+        <div className="mx-auto max-w-[1200px]">
+          <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h1 className="text-2xl font-semibold" style={{ color: C.text }}>Dashboard</h1>
+              <p className="mt-1 text-sm" style={{ color: C.textSecondary }}>
+                Welcome, {account.name}. Your account is approved.
+              </p>
+            </div>
+            <PrimaryButton onClick={() => onNavigate("post-request")}>Post Request</PrimaryButton>
+          </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+            <StatCard label="Active Tutors" value="0" icon={Users} />
+            <StatCard label="Lessons This Month" value="0" icon={Calendar} />
+            <StatCard label="Pending Lessons" value="0" icon={FileText} />
+            <StatCard label="Pending Payments" value="0" icon={DollarSign} />
+          </div>
+          <div className="mt-8 rounded-lg border p-8 text-center" style={{ borderColor: C.border }}>
+            <p className="text-sm font-semibold" style={{ color: C.text }}>You can start hiring tutors</p>
+            <p className="mt-1 text-sm" style={{ color: C.textSecondary }}>
+              Post a request, review applications, and manage lessons from the menu.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function ParentDashboard({ onNavigate, account }) {
+  const isOwnAccount = account && !account.demo && account.role === "parent";
+  if (isOwnAccount && account.status !== "approved") return <LockedParentDashboard account={account} />;
+  if (isOwnAccount) return <ApprovedParentDashboard account={account} onNavigate={onNavigate} />;
+
   const activeTutorsCount = HIRED_TUTORS.filter(t => t.status === "active").length;
   const monthLessonsCount = LESSONS.filter(l => l.date && l.date.startsWith("2026-07")).length;
   const pendingLessons = LESSONS.filter(l => l.status === "pending").length;

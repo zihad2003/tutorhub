@@ -43,11 +43,14 @@ const ADMIN_LINKS = [
   { key: "admin-settings", label: "Settings", icon: Settings },
 ];
 
-export function Sidebar({ role, activePage, onNavigate, onLogout }) {
+export function Sidebar({ role, activePage, onNavigate, onLogout, account, locked = false }) {
   const [mobileOpen, setMobileOpen] = useState(false);
   const links = role === "tutor" ? TUTOR_LINKS : role === "admin" ? ADMIN_LINKS : PARENT_LINKS;
 
+  const dashboardKey = role === "tutor" ? "tutor-dashboard" : role === "admin" ? "admin-dashboard" : "parent-dashboard";
+
   const handleNav = (key) => {
+    if (locked && key !== dashboardKey && key !== "home") return;
     onNavigate(key);
     setMobileOpen(false);
   };
@@ -56,7 +59,7 @@ export function Sidebar({ role, activePage, onNavigate, onLogout }) {
     <>
       {/* Mobile Header Bar */}
       <div className="flex h-14 items-center justify-between border-b bg-white px-4 lg:hidden" style={{ borderColor: C.border }}>
-        <button onClick={() => handleNav(role === "tutor" ? "tutor-dashboard" : role === "admin" ? "admin-dashboard" : "parent-dashboard")} className="flex items-center gap-2">
+        <button onClick={() => handleNav(dashboardKey)} className="flex items-center gap-2">
           <div className="flex h-7 w-7 items-center justify-center rounded-lg" style={{ background: C.primary }}>
             <GraduationCap size={16} color="#fff" />
           </div>
@@ -97,12 +100,18 @@ export function Sidebar({ role, activePage, onNavigate, onLogout }) {
               {links.map((link) => {
                 const Icon = link.icon;
                 const isActive = activePage === link.key;
+                const disabled = locked && link.key !== dashboardKey;
                 return (
                   <li key={link.key}>
                     <button
+                      type="button"
                       onClick={() => handleNav(link.key)}
+                      disabled={disabled}
+                      title={disabled ? "Available after admin approval" : undefined}
                       className={`flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-semibold transition-all duration-150 ${
-                        isActive 
+                        disabled
+                          ? "cursor-not-allowed text-gray-300 border-l-4 border-transparent"
+                          : isActive 
                           ? "bg-blue-50 text-blue-600 border-l-4 border-blue-600" 
                           : "text-gray-600 hover:bg-blue-50/60 hover:text-blue-600 border-l-4 border-transparent"
                       }`}
@@ -118,6 +127,14 @@ export function Sidebar({ role, activePage, onNavigate, onLogout }) {
         </div>
 
         <div className="border-t p-4" style={{ borderColor: C.border }}>
+          {account?.name && (
+            <div className="mb-3 px-3">
+              <p className="truncate text-sm font-semibold" style={{ color: C.text }}>{account.name}</p>
+              <p className="truncate text-xs" style={{ color: locked ? C.warning : C.textSecondary }}>
+                {locked ? (account.status === "rejected" ? "Application rejected" : "Pending Approval") : account.email || account.role}
+              </p>
+            </div>
+          )}
           <button
             onClick={onLogout}
             className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-sm font-semibold text-red-600 transition-colors duration-150 hover:bg-red-50"

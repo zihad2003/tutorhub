@@ -5,12 +5,41 @@ import { PrimaryButton, Badge } from "../components/ui";
 import { Users, DollarSign, FileText, AlertCircle, ChevronRight } from "lucide-react";
 import { ADMIN_APPROVALS, PAYMENTS, HIRED_TUTORS } from "../data/mockData";
 import { TUTORS } from "../data/tutors";
+import { useEffect, useState } from "react";
 
 export function AdminDashboard({ onNavigate }) {
-  const totalTutors = TUTORS.length + ADMIN_APPROVALS.tutors.length;
-  const totalParents = HIRED_TUTORS.length + ADMIN_APPROVALS.parents.length + 10;
-  const pendingTutors = ADMIN_APPROVALS.tutors.filter(t => t.status === "pending").length;
-  const pendingParents = ADMIN_APPROVALS.parents.filter(p => p.status === "pending").length;
+  const [pendingTutorRows, setPendingTutorRows] = useState([]);
+  const [pendingParentRows, setPendingParentRows] = useState([]);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      try {
+        const [tutorResponse, parentResponse] = await Promise.all([
+          fetch("/api/auth/pending/tutors"),
+          fetch("/api/auth/pending/parents"),
+        ]);
+        if (!tutorResponse.ok || !parentResponse.ok) return;
+        const tutors = await tutorResponse.json();
+        const parents = await parentResponse.json();
+        if (cancelled) return;
+        setPendingTutorRows(Array.isArray(tutors) ? tutors : []);
+        setPendingParentRows(Array.isArray(parents) ? parents : []);
+      } catch {
+        if (!cancelled) {
+          setPendingTutorRows([]);
+          setPendingParentRows([]);
+        }
+      }
+    }
+    load();
+    return () => { cancelled = true; };
+  }, []);
+
+  const totalTutors = TUTORS.length + pendingTutorRows.length;
+  const totalParents = HIRED_TUTORS.length + ADMIN_APPROVALS.parents.length + pendingParentRows.length + 10;
+  const pendingTutors = pendingTutorRows.length;
+  const pendingParents = pendingParentRows.length;
   const totalPayments = PAYMENTS.filter(p => p.status === "paid").reduce((acc, p) => acc + p.totalAmount, 0);
 
   return (
@@ -71,23 +100,29 @@ export function AdminDashboard({ onNavigate }) {
                 </button>
               </div>
               <div className="mt-4">
-                {ADMIN_APPROVALS.tutors.filter(t => t.status === "pending").length === 0 ? (
+                {pendingTutorRows.length === 0 ? (
                   <p className="py-8 text-center text-sm" style={{ color: C.textSecondary }}>
                     No pending tutor approvals
                   </p>
                 ) : (
                   <div className="space-y-3">
-                    {ADMIN_APPROVALS.tutors.filter(t => t.status === "pending").slice(0, 3).map((tutor) => (
+                    {pendingTutorRows.slice(0, 3).map((tutor) => (
                       <div
                         key={tutor.id}
                         className="flex items-center justify-between rounded-lg border p-3"
                         style={{ borderColor: C.border }}
                       >
                         <div className="flex items-center gap-3">
-                          <img src={tutor.img} alt={tutor.name} className="h-10 w-10 rounded-full object-cover" />
+                          {tutor.img ? (
+                            <img src={tutor.img} alt={tutor.name} className="h-10 w-10 rounded-full object-cover" />
+                          ) : (
+                            <div className="flex h-10 w-10 items-center justify-center rounded-full bg-blue-50 text-sm font-semibold text-blue-700">
+                              {(tutor.name || "?").slice(0, 1)}
+                            </div>
+                          )}
                           <div>
                             <p className="text-sm font-semibold" style={{ color: C.text }}>{tutor.name}</p>
-                            <p className="text-xs" style={{ color: C.textSecondary }}>{tutor.subjects.join(", ")} · {tutor.experience}</p>
+                            <p className="text-xs" style={{ color: C.textSecondary }}>{tutor.email}</p>
                           </div>
                         </div>
                         <PrimaryButton size="sm" onClick={() => onNavigate("admin-tutor-approvals")}>Review</PrimaryButton>
@@ -110,13 +145,13 @@ export function AdminDashboard({ onNavigate }) {
                 </button>
               </div>
               <div className="mt-4">
-                {ADMIN_APPROVALS.parents.filter(p => p.status === "pending").length === 0 ? (
+                {pendingParentRows.length === 0 ? (
                   <p className="py-8 text-center text-sm" style={{ color: C.textSecondary }}>
                     No pending parent approvals
                   </p>
                 ) : (
                   <div className="space-y-3">
-                    {ADMIN_APPROVALS.parents.filter(p => p.status === "pending").slice(0, 3).map((parent) => (
+                    {pendingParentRows.slice(0, 3).map((parent) => (
                       <div
                         key={parent.id}
                         className="flex items-center justify-between rounded-lg border p-3"

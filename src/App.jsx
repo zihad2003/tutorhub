@@ -33,6 +33,41 @@ import { FAQ } from "./pages/FAQ";
 import { Contact } from "./pages/Contact";
 import { Careers } from "./pages/Careers";
 
+const SESSION_KEY = "tutorhub_session";
+const TUTOR_LOCKED_PAGES = [
+  "tutor-profile", "certificates", "availability", "requests", "tutor-applications", "tutor-lessons",
+  "earnings", "tutor-chat", "tutor-settings", "lesson-log",
+];
+const PARENT_LOCKED_PAGES = [
+  "post-request", "applications", "hired-tutors", "lessons", "lesson-confirm", "payments", "chat",
+  "reviews", "summary", "settings", "lesson-history", "rate-tutor", "review", "tutor-reviews", "summary-reviews",
+];
+
+function readStoredSession() {
+  try {
+    const raw = localStorage.getItem(SESSION_KEY);
+    if (!raw) return null;
+    const session = JSON.parse(raw);
+    if (!session || !session.role) return null;
+    return session;
+  } catch {
+    return null;
+  }
+}
+
+function demoSession(role) {
+  const names = { parent: "Demo Parent", tutor: "Demo Tutor", admin: "Demo Admin" };
+  return { role, name: names[role] || "Demo", status: "approved", demo: true };
+}
+
+function isOwnTutorLocked(session) {
+  return Boolean(session && session.role === "tutor" && !session.demo && session.status !== "approved");
+}
+
+function isOwnParentLocked(session) {
+  return Boolean(session && session.role === "parent" && !session.demo && session.status !== "approved");
+}
+
 export default function App() {
   const getInitialPage = () => {
     const path = window.location.pathname.replace(/^\/+/, '');
@@ -55,8 +90,9 @@ export default function App() {
   const [activeNav, setActiveNav] = useState(initialPath);
   const [selectedTutor, setSelectedTutor] = useState(null);
   const [authTab, setAuthTab] = useState(initialPath === "signup" || initialPath === "register" ? "signup" : "login");
-  const [userRole, setUserRole] = useState(() => localStorage.getItem("tutorhub_role") || null);
-  const [isAuthenticated, setIsAuthenticated] = useState(() => !!localStorage.getItem("tutorhub_role"));
+  const [session, setSession] = useState(readStoredSession);
+  const [userRole, setUserRole] = useState(() => readStoredSession()?.role || localStorage.getItem("tutorhub_role") || null);
+  const [isAuthenticated, setIsAuthenticated] = useState(() => !!readStoredSession() || !!localStorage.getItem("tutorhub_role"));
 
   useEffect(() => {
     const handlePopState = () => {
@@ -78,7 +114,17 @@ export default function App() {
     return () => window.removeEventListener('popstate', handlePopState);
   }, []);
 
-  const go = (p, section) => {
+  const go = (p, section, activeSession = session) => {
+    if (isOwnTutorLocked(activeSession) && TUTOR_LOCKED_PAGES.includes(p)) p = "tutor-dashboard";
+    if (isOwnParentLocked(activeSession) && PARENT_LOCKED_PAGES.includes(p)) p = "parent-dashboard";
+    if (activeSession && !activeSession.demo) {
+      const adminPage = p.startsWith("admin-") || ["categories", "reports", "users", "support", "tutor-approvals", "parent-approvals"].includes(p);
+      const tutorPage = p.startsWith("tutor-") || ["certificates", "availability", "requests", "earnings", "lesson-log"].includes(p);
+      const parentPage = p.startsWith("parent-") || ["post-request", "applications", "hired-tutors", "lessons", "payments", "chat", "reviews", "summary", "settings", "lesson-history", "lesson-confirm"].includes(p);
+      if (activeSession.role === "tutor" && (adminPage || parentPage)) p = "tutor-dashboard";
+      if (activeSession.role === "parent" && (adminPage || tutorPage)) p = "parent-dashboard";
+      if (activeSession.role === "admin" && (tutorPage || parentPage)) p = "admin-dashboard";
+    }
     let targetPage = p;
     if (p === "signup" || p === "register") {
       setAuthTab("signup");
@@ -113,18 +159,56 @@ export default function App() {
 
   const openTutor = (t) => { setSelectedTutor(t); go("profile"); };
   const openAuth = (tab) => { setAuthTab(tab); go(tab === "signup" ? "signup" : "login"); };
-  const handleLogin = (role) => {
-    setUserRole(role);
+  const saveSession = (next) => {
+    setSession(next);
+    setUserRole(next.role);
     setIsAuthenticated(true);
-    localStorage.setItem("tutorhub_role", role);
-    go(role === "parent" ? "parent-dashboard" : role === "tutor" ? "tutor-dashboard" : "admin-dashboard");
+    localStorage.setItem(SESSION_KEY, JSON.stringify(next));
+    localStorage.setItem("tutorhub_role", next.role);
+  };
+  const handleLogin = (account) => {
+    const next = typeof account === "string" ? demoSession(account) : { ...account, demo: false };
+    saveSession(next);
+    go(next.role === "parent" ? "parent-dashboard" : next.role === "tutor" ? "tutor-dashboard" : "admin-dashboard", undefined, next);
   };
   const handleLogout = () => {
+    setSession(null);
     setUserRole(null);
     setIsAuthenticated(false);
+    localStorage.removeItem(SESSION_KEY);
     localStorage.removeItem("tutorhub_role");
     go("home");
   };
+
+  useEffect(() => {
+    if (!session?.id || session.demo) return undefined;
+    let stopped = false;
+    const refresh = async () => {
+      try {
+        const response = await fetch(`/api/auth/me?role=${session.role}&id=${session.id}`);
+        if (!response.ok) return;
+        const data = await response.json();
+        if (stopped || !data?.status || data.status === session.status) return;
+        saveSession({ ...session, ...data, demo: false });
+      } catch {
+        // Keep the last known account if the API is briefly unavailable.
+      }
+    };
+    refresh();
+    const timer = session.status !== "approved" ? window.setInterval(refresh, 4000) : null;
+    const onFocus = () => refresh();
+    window.addEventListener("focus", onFocus);
+    return () => {
+      stopped = true;
+      if (timer) window.clearInterval(timer);
+      window.removeEventListener("focus", onFocus);
+    };
+  }, [session?.id, session?.role, session?.status]);
+
+  useEffect(() => {
+    if (isOwnTutorLocked(session) && TUTOR_LOCKED_PAGES.includes(page)) go("tutor-dashboard");
+    if (isOwnParentLocked(session) && PARENT_LOCKED_PAGES.includes(page)) go("parent-dashboard");
+  }, [page, session]);
 
   const isDashboardPage = [
     "parent-dashboard", "post-request", "applications", "hired-tutors", "lessons", "lesson-confirm", "payments", "chat", "reviews", "summary", "settings",
@@ -166,7 +250,9 @@ export default function App() {
           role={activeRole} 
           activePage={page} 
           onNavigate={go} 
-          onLogout={handleLogout} 
+          onLogout={handleLogout}
+          account={session}
+          locked={isOwnTutorLocked(session) || isOwnParentLocked(session)}
         />
       )}
 
@@ -197,29 +283,33 @@ export default function App() {
         {page === "careers" && <Careers />}
 
         {/* Parent & General Dashboard Pages */}
-        {page === "parent-dashboard" && <ParentDashboard onNavigate={go} />}
-        {page === "post-request" && <PostRequest onNavigate={go} mode="create" />}
-        {page === "applications" && <TutorApplications onNavigate={go} />}
-        {page === "hired-tutors" && <TutorList openTutor={openTutor} hiredOnly={true} />}
-        {page === "lessons" && <LessonHistory onNavigate={go} />}
-        {page === "lesson-log" && <LessonLog onNavigate={go} />}
-        {page === "lesson-confirm" && <LessonConfirm onNavigate={go} />}
-        {page === "payments" && <Payment onNavigate={go} />}
-        {page === "chat" && <Chat onNavigate={go} />}
-        {["reviews", "summary", "rate-tutor", "review", "tutor-reviews", "summary-reviews"].includes(page) && <MonthlySummary onNavigate={go} role={activeRole} />}
-        {page === "settings" && <Settings role={activeRole} onNavigate={go} />}
+        {(page === "parent-dashboard" || (isOwnParentLocked(session) && PARENT_LOCKED_PAGES.includes(page))) && (
+          <ParentDashboard onNavigate={go} account={session} />
+        )}
+        {page === "post-request" && !isOwnParentLocked(session) && <PostRequest onNavigate={go} mode="create" />}
+        {page === "applications" && !isOwnParentLocked(session) && <TutorApplications onNavigate={go} />}
+        {page === "hired-tutors" && !isOwnParentLocked(session) && <TutorList openTutor={openTutor} hiredOnly={true} />}
+        {page === "lessons" && !isOwnParentLocked(session) && <LessonHistory onNavigate={go} />}
+        {page === "lesson-log" && !isOwnTutorLocked(session) && <LessonLog onNavigate={go} />}
+        {page === "lesson-confirm" && !isOwnParentLocked(session) && <LessonConfirm onNavigate={go} />}
+        {page === "payments" && !isOwnParentLocked(session) && <Payment onNavigate={go} />}
+        {page === "chat" && !isOwnParentLocked(session) && <Chat onNavigate={go} />}
+        {["reviews", "summary", "rate-tutor", "review", "tutor-reviews", "summary-reviews"].includes(page) && !isOwnParentLocked(session) && <MonthlySummary onNavigate={go} role={activeRole} />}
+        {page === "settings" && !isOwnParentLocked(session) && <Settings role={activeRole} onNavigate={go} />}
         
         {/* Tutor Dashboard Pages */}
-        {page === "tutor-dashboard" && <TutorDashboard onNavigate={go} />}
-        {page === "tutor-profile" && <TutorProfile tutor={selectedTutor || TUTORS[0]} go={go} isDashboard={true} />}
-        {page === "certificates" && <Certificates onNavigate={go} />}
-        {page === "availability" && <Availability onNavigate={go} />}
-        {page === "requests" && <PostRequest onNavigate={go} mode="browse" />}
-        {page === "tutor-applications" && <TutorApplications onNavigate={go} role="tutor" />}
-        {page === "tutor-lessons" && <LessonLog onNavigate={go} role="tutor" />}
-        {page === "earnings" && <MonthlySummary onNavigate={go} role="tutor" />}
-        {page === "tutor-chat" && <Chat onNavigate={go} role="tutor" />}
-        {page === "tutor-settings" && <Settings role="tutor" onNavigate={go} />}
+        {(page === "tutor-dashboard" || (isOwnTutorLocked(session) && TUTOR_LOCKED_PAGES.includes(page))) && (
+          <TutorDashboard onNavigate={go} account={session} />
+        )}
+        {page === "tutor-profile" && !isOwnTutorLocked(session) && <TutorProfile tutor={selectedTutor || TUTORS[0]} go={go} isDashboard={true} />}
+        {page === "certificates" && !isOwnTutorLocked(session) && <Certificates onNavigate={go} />}
+        {page === "availability" && !isOwnTutorLocked(session) && <Availability onNavigate={go} />}
+        {page === "requests" && !isOwnTutorLocked(session) && <PostRequest onNavigate={go} mode="browse" />}
+        {page === "tutor-applications" && !isOwnTutorLocked(session) && <TutorApplications onNavigate={go} role="tutor" />}
+        {page === "tutor-lessons" && !isOwnTutorLocked(session) && <LessonLog onNavigate={go} role="tutor" />}
+        {page === "earnings" && !isOwnTutorLocked(session) && <MonthlySummary onNavigate={go} role="tutor" />}
+        {page === "tutor-chat" && !isOwnTutorLocked(session) && <Chat onNavigate={go} role="tutor" />}
+        {page === "tutor-settings" && !isOwnTutorLocked(session) && <Settings role="tutor" onNavigate={go} />}
 
         {/* Admin Dashboard Pages */}
         {page === "admin-dashboard" && <AdminDashboard onNavigate={go} />}

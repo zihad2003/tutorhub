@@ -2,12 +2,108 @@ import { C } from "../constants/tokens";
 import { StatCard } from "../components/ui/StatCard";
 import { Table } from "../components/ui/Table";
 import { PrimaryButton, SecondaryButton, Badge } from "../components/ui";
-import { Users, Calendar, DollarSign, ChevronRight, Plus, Send, CheckCircle2, X } from "lucide-react";
+import { Users, Calendar, DollarSign, ChevronRight, Plus, Send, CheckCircle2, X, Clock, XCircle } from "lucide-react";
 import { LESSONS, TUTOR_EARNINGS, REQUESTS, HIRED_TUTORS } from "../data/mockData";
 import { useState } from "react";
 import { Input } from "../components/ui";
 
-export function TutorDashboard({ onNavigate }) {
+function LockedTutorDashboard({ account }) {
+  const rejected = account.status === "rejected";
+  return (
+    <div className="flex min-h-screen bg-white">
+      <div className="flex-1 p-4 sm:p-6 lg:ml-64">
+        <div className="mx-auto max-w-[1200px]">
+          <div className="mb-6">
+            <h1 className="text-2xl font-semibold" style={{ color: C.text }}>Tutor Dashboard</h1>
+            <p className="mt-1 text-sm" style={{ color: C.textSecondary }}>
+              Welcome, {account.name}. This dashboard belongs to your account.
+            </p>
+          </div>
+
+          <div
+            className="rounded-lg border p-6"
+            style={{ borderColor: rejected ? "#FECACA" : "#FDE68A", background: rejected ? "#FEF2F2" : "#FFFBEB" }}
+          >
+            <div className="flex items-start gap-3">
+              {rejected ? <XCircle size={22} color={C.error} /> : <Clock size={22} color={C.warning} />}
+              <div>
+                <p className="text-lg font-semibold" style={{ color: rejected ? C.error : "#92400E" }}>
+                  {rejected ? "Application rejected" : "Pending Approval"}
+                </p>
+                <p className="mt-1 text-sm" style={{ color: C.textSecondary }}>
+                  {rejected
+                    ? "An admin rejected this application. Lessons, requests, earnings, chat, and profile tools stay locked."
+                    : "An admin still needs to approve your account. You can wait here. Lessons, requests, earnings, chat, and profile tools stay locked until then."}
+                </p>
+                <p className="mt-3 text-sm font-semibold" style={{ color: C.text }}>{account.email}</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="mt-6 grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <StatCard label="Active Students" value="0" icon={Users} />
+            <StatCard label="Lessons Taught This Month" value="0" icon={Calendar} />
+            <StatCard label="Pending Earnings" value="৳0" icon={DollarSign} />
+          </div>
+
+          <div className="mt-8 rounded-lg border p-8 text-center" style={{ borderColor: C.border }}>
+            <p className="text-sm font-semibold" style={{ color: C.text }}>No teaching activity yet</p>
+            <p className="mt-1 text-sm" style={{ color: C.textSecondary }}>
+              Your students, lessons, and earnings will appear here after an admin approves this account.
+            </p>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function ApprovedTutorDashboard({ account, onNavigate }) {
+  return (
+    <div className="flex min-h-screen bg-white">
+      <div className="flex-1 p-4 sm:p-6 lg:ml-64">
+        <div className="mx-auto max-w-[1200px]">
+          <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h1 className="text-2xl font-semibold" style={{ color: C.text }}>Tutor Dashboard</h1>
+              <p className="mt-1 text-sm" style={{ color: C.textSecondary }}>
+                Welcome, {account.name}. Your account is approved.
+              </p>
+            </div>
+            <div className="flex flex-wrap items-center gap-3">
+              <SecondaryButton onClick={() => onNavigate("tutor-profile")}>Edit Profile</SecondaryButton>
+              <PrimaryButton onClick={() => onNavigate("tutor-lessons")}>
+                <Plus size={16} className="mr-1.5 inline" /> Log Lesson
+              </PrimaryButton>
+            </div>
+          </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
+            <div onClick={() => onNavigate("tutor-applications")} className="cursor-pointer">
+              <StatCard label="Active Students" value="0" icon={Users} />
+            </div>
+            <div onClick={() => onNavigate("tutor-lessons")} className="cursor-pointer">
+              <StatCard label="Lessons Taught This Month" value="0" icon={Calendar} />
+            </div>
+            <div onClick={() => onNavigate("earnings")} className="cursor-pointer">
+              <StatCard label="Pending Earnings" value="৳0" icon={DollarSign} />
+            </div>
+          </div>
+          <div className="mt-8 rounded-lg border p-8 text-center" style={{ borderColor: C.border }}>
+            <p className="text-sm font-semibold" style={{ color: C.text }}>You are ready to teach</p>
+            <p className="mt-1 text-sm" style={{ color: C.textSecondary }}>
+              Browse requests, log lessons, and manage your own students from the menu.
+            </p>
+            <div className="mt-4 flex justify-center">
+              <PrimaryButton onClick={() => onNavigate("requests")}>Browse requests</PrimaryButton>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+export function TutorDashboard({ onNavigate, account }) {
   const [appliedIds, setAppliedIds] = useState([]);
 
   const activeStudents = HIRED_TUTORS.filter(t => t.status === "active").length;
@@ -40,6 +136,10 @@ export function TutorDashboard({ onNavigate }) {
     }
     setApplyModalOpen(false);
   };
+
+  const isOwnAccount = account && !account.demo && account.role === "tutor";
+  if (isOwnAccount && account.status !== "approved") return <LockedTutorDashboard account={account} />;
+  if (isOwnAccount) return <ApprovedTutorDashboard account={account} onNavigate={onNavigate} />;
 
   return (
     <div className="flex min-h-screen bg-white">
