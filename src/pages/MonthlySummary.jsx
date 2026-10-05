@@ -115,6 +115,11 @@ export function MonthlySummary({ onNavigate, role = "parent", account = null }) 
   const monthLessons = rawLessons.filter(l => l && l.date && String(l.date).startsWith("2026-07"));
 
   const monthTotal = monthLessons.reduce((acc, l) => acc + (l.fee || 0), 0);
+  const totalHours = monthLessons.reduce((sum, lesson) => {
+    const match = String(lesson.duration ?? "").match(/[\d.]+/);
+    const hours = match ? Number(match[0]) : 0;
+    return sum + (Number.isFinite(hours) ? hours : 0);
+  }, 0);
 
   const handleReviewSubmit = (e) => {
     e.preventDefault();
@@ -246,7 +251,7 @@ export function MonthlySummary({ onNavigate, role = "parent", account = null }) 
               <div className="text-center">
                 <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: C.textSecondary }}>Total Hours</p>
                 <p className="mt-1 text-xl font-bold sm:text-2xl" style={{ color: C.text }}>
-                  4.0 hrs
+                  {totalHours} hrs
                 </p>
               </div>
               <div className="text-center">

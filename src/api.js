@@ -54,7 +54,8 @@ export async function postToAPI(endpoint, data) {
       body: JSON.stringify(data),
     });
     if (!response.ok) {
-      throw new Error(`API error! status: ${response.status}`);
+      const data = await response.json().catch(() => ({}));
+      throw new Error(data.error || `API error! status: ${response.status}`);
     }
     return await response.json();
   } catch (error) {

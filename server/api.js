@@ -308,22 +308,31 @@ router.get('/tutor-profile/:id', async (req, res) => {
   }
 });
 
+function moneyAmount(value) {
+  const number = Number(String(value ?? '').replace(/[^\d.]/g, ''));
+  return Number.isFinite(number) ? number : 0;
+}
+
 router.get('/applications', async (req, res) => {
   try {
     const [rows] = await pool.query(
       `SELECT a.id, a.request_id AS requestId, a.tutor_id AS tutorId, r.parent_id AS parentId,
+              r.subject AS requestSubject, r.classLevel, r.budget, r.preferredDays, r.preferredTime,
               t.name AS tutorName, t.img AS tutorImg, t.experience, t.fee, t.rating,
-              a.coverLetter, a.cvUrl, a.certificateUrl, a.status, a.appliedDate
+              a.coverLetter, a.cvUrl, a.certificateUrl, a.status, a.appliedDate,
+              (SELECT GROUP_CONCAT(ts.subject_name ORDER BY ts.subject_name SEPARATOR ',')
+               FROM tutor_subjects ts WHERE ts.tutor_id = t.id) AS subjectList
        FROM applications a
        LEFT JOIN tutors t ON t.id = a.tutor_id
        LEFT JOIN requests r ON r.id = a.request_id
-       ORDER BY a.id`
+       ORDER BY a.id DESC`
     );
     res.json(rows.map((row) => ({
       ...row,
       fee: asNumber(row.fee),
+      budget: row.budget || '',
       rating: asNumber(row.rating),
-      subjects: [],
+      subjects: String(row.subjectList || row.requestSubject || '').split(',').map((item) => item.trim()).filter(Boolean),
       appliedDate: dateOnly(row.appliedDate),
     })));
   } catch (error) {
@@ -339,6 +348,13 @@ router.post('/applications', async (req, res) => {
     if (!requestId || !tutorId || !coverLetter) {
       return res.status(400).json({ error: 'A tutor account, request, and cover letter are required.' });
     }
+    const [existing] = await pool.query(
+      'SELECT id FROM applications WHERE request_id = ? AND tutor_id = ? LIMIT 1',
+      [requestId, tutorId]
+    );
+    if (existing[0]) {
+      return res.status(409).json({ error: 'You already applied to this request.' });
+    }
     const [result] = await pool.query(
       `INSERT INTO applications (request_id, tutor_id, coverLetter, status, appliedDate)
        VALUES (?, ?, ?, 'pending', CURDATE())`,
@@ -349,6 +365,44 @@ router.post('/applications', async (req, res) => {
       [requestId]
     );
     res.status(201).json({ id: result.insertId });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.post('/applications/:id/hire', async (req, res) => {
+  const id = Number(req.params.id);
+  const parentId = Number(req.body.parentId);
+  if (!Number.isInteger(id) || id <= 0) return res.status(400).json({ error: 'Choose an application.' });
+  try {
+    const [rows] = await pool.query(
+      `SELECT a.id, a.tutor_id, a.status, a.request_id, r.parent_id, r.subject, r.budget, t.fee
+       FROM applications a
+       JOIN requests r ON r.id = a.request_id
+       JOIN tutors t ON t.id = a.tutor_id
+       WHERE a.id = ? LIMIT 1`,
+      [id]
+    );
+    const application = rows[0];
+    if (!application) return res.status(404).json({ error: 'This application no longer exists.' });
+    if (parentId && Number(application.parent_id) !== parentId) {
+      return res.status(403).json({ error: 'Only the parent who posted this request can hire.' });
+    }
+    const fee = moneyAmount(application.budget) || asNumber(application.fee);
+    if (application.status !== 'hired') {
+      await pool.query(
+        `INSERT INTO hired_tutors (tutor_id, parent_id, subjects, fee, hireDate, totalLessons, status)
+         VALUES (?, ?, ?, ?, CURDATE(), 0, 'active')`,
+        [application.tutor_id, application.parent_id, application.subject || '', fee]
+      );
+      await pool.query("UPDATE applications SET status = 'hired' WHERE id = ?", [id]);
+      await pool.query(
+        "UPDATE applications SET status = 'rejected' WHERE request_id = ? AND id <> ? AND status = 'pending'",
+        [application.request_id, id]
+      );
+      await pool.query("UPDATE requests SET status = 'hired' WHERE id = ?", [application.request_id]);
+    }
+    res.json({ id, status: 'hired', tutorId: application.tutor_id, parentId: application.parent_id, fee });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
