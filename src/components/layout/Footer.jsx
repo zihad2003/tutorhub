@@ -19,22 +19,17 @@ export function Footer({ go, userRole }) {
             <ul className="space-y-2 text-sm">
               <li>
                 <button onClick={() => handleNav("tutors")} className="transition-colors hover:text-blue-600" style={{ color: C.textSecondary }}>
-                  Find tutors
+                  Tutors
                 </button>
               </li>
               <li>
-                <button onClick={() => handleNav("post-request")} className="transition-colors hover:text-blue-600" style={{ color: C.textSecondary }}>
-                  Post a request
+                <button onClick={() => handleNav("subjects")} className="transition-colors hover:text-blue-600" style={{ color: C.textSecondary }}>
+                  Subjects
                 </button>
               </li>
               <li>
-                <button onClick={() => handleNav("home")} className="transition-colors hover:text-blue-600" style={{ color: C.textSecondary }}>
+                <button onClick={() => go("home", "how")} className="transition-colors hover:text-blue-600" style={{ color: C.textSecondary }}>
                   How it works
-                </button>
-              </li>
-              <li>
-                <button onClick={() => handleNav("tutors")} className="transition-colors hover:text-blue-600" style={{ color: C.textSecondary }}>
-                  Pricing & Tutors
                 </button>
               </li>
             </ul>
@@ -72,17 +67,17 @@ export function Footer({ go, userRole }) {
             <h4 className="mb-3 text-sm font-semibold" style={{ color: C.text }}>Roles & Portals</h4>
             <ul className="space-y-2 text-sm">
               <li>
-                <button onClick={() => handleNav(userRole === "parent" ? "parent-dashboard" : "auth")} className="transition-colors hover:text-blue-600" style={{ color: C.textSecondary }}>
+                <button onClick={() => handleNav("login")} className="transition-colors hover:text-blue-600" style={{ color: C.textSecondary }}>
                   For Parents / Students
                 </button>
               </li>
               <li>
-                <button onClick={() => handleNav(userRole === "tutor" ? "tutor-dashboard" : "auth")} className="transition-colors hover:text-blue-600" style={{ color: C.textSecondary }}>
+                <button onClick={() => handleNav("login")} className="transition-colors hover:text-blue-600" style={{ color: C.textSecondary }}>
                   For Tutors
                 </button>
               </li>
               <li>
-                <button onClick={() => handleNav(userRole === "admin" ? "admin-dashboard" : "auth")} className="transition-colors hover:text-blue-600" style={{ color: C.textSecondary }}>
+                <button onClick={() => handleNav("login")} className="transition-colors hover:text-blue-600" style={{ color: C.textSecondary }}>
                   For Admins
                 </button>
               </li>
@@ -93,7 +88,7 @@ export function Footer({ go, userRole }) {
           <div>
             <h4 className="mb-3 text-sm font-semibold" style={{ color: C.text }}>Contact</h4>
             <p className="flex items-center gap-2 text-sm" style={{ color: C.textSecondary }}><Mail size={14} /> support@tutorhub.bd</p>
-            <p className="mt-2 flex items-center gap-2 text-sm" style={{ color: C.textSecondary }}><Phone size={14} /> +880 1XXX-XXXXXX</p>
+            <p className="mt-2 flex items-center gap-2 text-sm" style={{ color: C.textSecondary }}><Phone size={14} /> 01234567890</p>
           </div>
 
         </div>

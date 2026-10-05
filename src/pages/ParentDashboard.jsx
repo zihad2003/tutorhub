@@ -6,7 +6,7 @@ import { Users, Calendar, DollarSign, FileText, ChevronRight, Star, Clock, XCirc
 import { LESSONS, PAYMENTS, APPLICATIONS, HIRED_TUTORS } from "../data/mockData";
 import { rowsForAccount, currentMonthPrefix, useLiveList } from "../lib/records";
 
-function LockedParentDashboard({ account }) {
+function LockedParentDashboard({ account, onReapply }) {
   const rejected = account.status === "rejected";
   return (
     <div className="flex min-h-screen bg-white">
@@ -30,7 +30,7 @@ function LockedParentDashboard({ account }) {
                 </p>
                 <p className="mt-1 text-sm" style={{ color: C.textSecondary }}>
                   {rejected
-                    ? "An admin rejected this application. Requests, tutors, lessons, payments, and chat stay locked."
+                    ? "An admin rejected this application. You can submit it again."
                     : "An admin still needs to approve your account. You can wait here. Requests, tutors, lessons, payments, and chat stay locked until then."}
                 </p>
                 <p className="mt-3 text-sm font-semibold" style={{ color: C.text }}>{account.email}</p>
@@ -43,6 +43,11 @@ function LockedParentDashboard({ account }) {
             <StatCard label="Pending Lessons" value="0" icon={FileText} />
             <StatCard label="Pending Payments" value="0" icon={DollarSign} />
           </div>
+          {rejected && (
+            <div className="mt-6">
+              <PrimaryButton onClick={onReapply}>Reapply</PrimaryButton>
+            </div>
+          )}
           <div className="mt-8 rounded-lg border p-8 text-center" style={{ borderColor: C.border }}>
             <p className="text-sm font-semibold" style={{ color: C.text }}>No family activity yet</p>
             <p className="mt-1 text-sm" style={{ color: C.textSecondary }}>
@@ -55,18 +60,18 @@ function LockedParentDashboard({ account }) {
   );
 }
 
-export function ParentDashboard({ onNavigate, account }) {
+export function ParentDashboard({ onNavigate, account, onReapply }) {
   const [lessons] = useLiveList("/lessons", LESSONS);
   const [payments] = useLiveList("/payments", PAYMENTS);
   const [applications] = useLiveList("/applications", APPLICATIONS);
   const [hired] = useLiveList("/hired_tutors", HIRED_TUTORS);
 
   const isOwnAccount = account && !account.demo && account.role === "parent";
-  if (isOwnAccount && account.status !== "approved") return <LockedParentDashboard account={account} />;
+  if (isOwnAccount && account.status !== "approved") return <LockedParentDashboard account={account} onReapply={onReapply} />;
 
   const ownerId = isOwnAccount ? account.id : null;
   const myTutors = rowsForAccount(hired, ownerId, "parentId");
-  const myLessons = lessons;
+  const myLessons = rowsForAccount(lessons, ownerId, "parentId");
   const myPayments = rowsForAccount(payments, ownerId, "parentId");
   const monthPrefix = currentMonthPrefix();
   const activeTutorsCount = myTutors.filter((tutor) => tutor.status === "active").length;
@@ -74,7 +79,8 @@ export function ParentDashboard({ onNavigate, account }) {
   const pendingLessons = myLessons.filter((lesson) => lesson.status === "pending").length;
   const pendingPayments = myPayments.filter((payment) => payment.status === "pending").length;
   const recentLessons = myLessons.slice(0, 5);
-  const pendingApplications = applications.filter((app) => app.status === "pending");
+  const myApplications = rowsForAccount(applications, ownerId, "parentId");
+  const pendingApplications = myApplications.filter((app) => app.status === "pending");
 
   return (
     <div className="flex min-h-screen bg-white">

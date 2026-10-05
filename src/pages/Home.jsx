@@ -15,11 +15,15 @@ export function Home({ go, openTutor, openAuth }) {
   const [isDeleting, setIsDeleting] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const [dbTutors, setDbTutors] = useState([]);
+  const [popularSubjects, setPopularSubjects] = useState([]);
 
   useEffect(() => {
     fetchFromAPI('/tutors')
       .then(data => setDbTutors(data.length ? data : mockTutors))
       .catch(() => setDbTutors(mockTutors));
+    fetchFromAPI('/subjects')
+      .then((data) => setPopularSubjects(Array.isArray(data) ? data : []))
+      .catch(() => setPopularSubjects([]));
   }, []);
 
   useEffect(() => {
@@ -53,18 +57,9 @@ export function Home({ go, openTutor, openAuth }) {
     { icon: Shield, title: "Pay", text: "Confirm lessons and pay securely each month." },
   ];
 
-  const popularSubjects = [
-    { name: "Physics", count: "340+ Tutors", icon: "⚛️" },
-    { name: "Math", count: "420+ Tutors", icon: "📐" },
-    { name: "Chemistry", count: "280+ Tutors", icon: "🧪" },
-    { name: "English", count: "310+ Tutors", icon: "📚" },
-    { name: "Biology", count: "220+ Tutors", icon: "🧬" },
-    { name: "ICT", count: "190+ Tutors", icon: "💻" },
-  ];
-
   const handleSearch = (e) => {
     e?.preventDefault();
-    go("tutors");
+    go("tutors", { text: searchQuery.trim(), subject: "" });
   };
 
   return (
@@ -160,19 +155,19 @@ export function Home({ go, openTutor, openAuth }) {
               <h2 className="text-2xl font-semibold" style={{ color: C.text }}>Popular Subjects</h2>
               <p className="mt-1 text-sm" style={{ color: C.textSecondary }}>Browse tutors by subject category</p>
             </div>
-            <TextButton onClick={() => go("tutors")}>View all <ChevronRight size={14} className="inline" /></TextButton>
+            <TextButton onClick={() => go("subjects")}>View all <ChevronRight size={14} className="inline" /></TextButton>
           </div>
           <div className="mt-6 grid grid-cols-2 gap-4 sm:grid-cols-3 lg:grid-cols-6">
             {popularSubjects.map((sub) => (
               <button
                 key={sub.name}
-                onClick={() => go("tutors")}
+                onClick={() => go("tutors", { text: "", subject: sub.name })}
                 className="flex flex-col items-center justify-center rounded-lg border bg-white p-4 text-center transition-all duration-150 hover:-translate-y-0.5 hover:shadow-md"
                 style={{ borderColor: C.border }}
               >
                 <span className="text-2xl mb-2">{sub.icon}</span>
                 <span className="text-sm font-semibold" style={{ color: C.text }}>{sub.name}</span>
-                <span className="mt-0.5 text-xs" style={{ color: C.textSecondary }}>{sub.count}</span>
+                <span className="mt-0.5 text-xs" style={{ color: C.textSecondary }}>{sub.tutors || 0} Tutors</span>
               </button>
             ))}
           </div>

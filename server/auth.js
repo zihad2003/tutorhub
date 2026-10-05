@@ -13,6 +13,76 @@ const FILE_TYPES = {
   parent: ['pdf', 'png', 'jpg', 'jpeg', 'webp', 'gif'],
 };
 
+async function ensurePlatformTables() {
+  await pool.query(
+    `CREATE TABLE IF NOT EXISTS subjects (
+      id INT PRIMARY KEY AUTO_INCREMENT,
+      name VARCHAR(100) NOT NULL UNIQUE,
+      icon VARCHAR(16) DEFAULT '',
+      description VARCHAR(255) DEFAULT ''
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`
+  );
+  await pool.query(
+    `CREATE TABLE IF NOT EXISTS support_messages (
+      id INT PRIMARY KEY AUTO_INCREMENT,
+      name VARCHAR(120) NOT NULL,
+      email VARCHAR(255) NOT NULL,
+      message TEXT NOT NULL,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`
+  );
+  await pool.query(
+    `CREATE TABLE IF NOT EXISTS admins (
+      id INT PRIMARY KEY AUTO_INCREMENT,
+      name VARCHAR(120) NOT NULL,
+      email VARCHAR(255) NOT NULL UNIQUE,
+      password_hash VARCHAR(255) NOT NULL,
+      role VARCHAR(32) NOT NULL DEFAULT 'admin',
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`
+  );
+  const subjects = [
+    ['Physics', '⚛️', 'Science and board exam preparation'],
+    ['Math', '📐', 'General math and higher math'],
+    ['Chemistry', '🧪', 'Chemistry for school and college'],
+    ['English', '📚', 'English reading, writing, and grammar'],
+    ['Biology', '🧬', 'Biology for school and medical prep'],
+    ['ICT', '💻', 'ICT and computer studies'],
+    ['Bangla', '📝', 'Bangla language and literature'],
+  ];
+  for (const [name, icon, description] of subjects) {
+    await pool.query(
+      'INSERT IGNORE INTO subjects (name, icon, description) VALUES (?, ?, ?)',
+      [name, icon, description]
+    );
+  }
+  const tutorSubjects = [
+    ['Rafiq Ahmed', 'Physics'],
+    ['Rafiq Ahmed', 'Math'],
+    ['Farhana Islam', 'English'],
+    ['Farhana Islam', 'Bangla'],
+    ['Shakil Hasan', 'Chemistry'],
+    ['Shakil Hasan', 'Biology'],
+  ];
+  for (const [tutorName, subjectName] of tutorSubjects) {
+    await pool.query(
+      `INSERT IGNORE INTO tutor_subjects (tutor_id, subject_name)
+       SELECT id, ? FROM tutors WHERE name = ? LIMIT 1`,
+      [subjectName, tutorName]
+    );
+  }
+  const [existing] = await pool.query(
+    'SELECT id FROM admins WHERE email = ? LIMIT 1',
+    ['superadmin@tutorhub.bd']
+  );
+  if (!existing.length) {
+    await pool.query(
+      'INSERT INTO admins (name, email, password_hash, role) VALUES (?, ?, ?, ?)',
+      ['Super Admin', 'superadmin@tutorhub.bd', hashPassword('87654321a'), 'superadmin']
+    );
+  }
+}
+
 async function ensureAccountColumns() {
   const statements = [
     'ALTER TABLE tutors ADD COLUMN password_hash VARCHAR(255) NULL',
@@ -25,6 +95,7 @@ async function ensureAccountColumns() {
       if (error.code !== 'ER_DUP_FIELDNAME') throw error;
     }
   }
+  await ensurePlatformTables();
 }
 
 function hashPassword(password) {
@@ -55,7 +126,7 @@ function validateName(name) {
   return '';
 }
 
-function validateEmail(email) {
+function validateEmail(email, { requireGmail = false } = {}) {
   if (!email) return 'Email is required.';
   if (email.length > 254 || /\s/.test(email)) return 'Enter a valid email like name@gmail.com.';
   if (!/^[A-Za-z0-9](?:[A-Za-z0-9._%+-]*[A-Za-z0-9])?@[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?(?:\.[A-Za-z0-9](?:[A-Za-z0-9-]*[A-Za-z0-9])?)+$/.test(email)) {
@@ -63,6 +134,7 @@ function validateEmail(email) {
   }
   const tld = email.split('.').pop();
   if (!tld || !/^[A-Za-z]{2,}$/.test(tld)) return 'Enter a valid email like name@gmail.com.';
+  if (requireGmail && !email.endsWith('@gmail.com')) return 'Email must end with @gmail.com.';
   return '';
 }
 
@@ -145,8 +217,17 @@ async function findAccount(email) {
 }
 
 function requireAdmin(req, res) {
-  if (req.get('x-actor-role') !== 'admin') {
+  const role = req.get('x-actor-role');
+  if (role !== 'admin' && role !== 'superadmin') {
     res.status(403).json({ error: 'Only an admin can review accounts.' });
+    return false;
+  }
+  return true;
+}
+
+function requireSuperadmin(req, res) {
+  if (req.get('x-actor-role') !== 'superadmin') {
+    res.status(403).json({ error: 'Only the super admin can manage admins.' });
     return false;
   }
   return true;
@@ -161,7 +242,7 @@ router.post('/register', async (req, res) => {
     const fields = {};
     if (!role) fields.role = 'Choose whether you are a parent or a tutor.';
     const nameError = validateName(name);
-    const emailError = validateEmail(email);
+    const emailError = validateEmail(email, { requireGmail: true });
     const passwordError = role ? validatePassword(password, email, name) : 'Password is required.';
     if (nameError) fields.name = nameError;
     if (emailError) fields.email = emailError;
@@ -252,20 +333,40 @@ router.post('/login', async (req, res) => {
   try {
     const email = String(req.body?.email || '').trim().toLowerCase();
     const password = String(req.body?.password || '');
-    const emailError = validateEmail(email);
+    const gmailLogin = email.endsWith('@gmail.com');
+    const emailError = validateEmail(email, { requireGmail: false });
     if (emailError) return res.status(400).json({ error: emailError, fields: { email: emailError } });
+    if (!gmailLogin && !email.endsWith('@tutorhub.bd')) {
+      const message = 'Email must end with @gmail.com.';
+      return res.status(400).json({ error: message, fields: { email: message } });
+    }
     if (!password || !password.trim()) {
       return res.status(400).json({ error: 'Password is required.', fields: { password: 'Password is required.' } });
     }
 
-    const account = await findAccount(email);
-    if (!account || !verifyPassword(password, account.row.password_hash)) {
+    if (gmailLogin) {
+      const account = await findAccount(email);
+      if (account && verifyPassword(password, account.row.password_hash)) {
+        return res.json(accountPayload(account.row, account.role));
+      }
+    }
+    const [admins] = await pool.query(
+      'SELECT id, name, email, password_hash, role FROM admins WHERE LOWER(email) = ? LIMIT 1',
+      [email]
+    );
+    if (!admins[0] || !verifyPassword(password, admins[0].password_hash)) {
       return res.status(401).json({
         error: 'Incorrect email or password.',
         fields: { password: 'Incorrect email or password.' },
       });
     }
-    return res.json(accountPayload(account.row, account.role));
+    return res.json({
+      id: admins[0].id,
+      role: admins[0].role === 'superadmin' ? 'superadmin' : 'admin',
+      name: admins[0].name,
+      email: admins[0].email,
+      status: 'approved',
+    });
   } catch (error) {
     console.error(error);
     return res.status(500).json({ error: 'Could not log in. Please try again.' });
@@ -388,6 +489,45 @@ router.post('/parents/:id/reject', async (req, res) => {
   } catch (error) {
     console.error(error);
     return res.status(500).json({ error: 'Could not update this parent.' });
+  }
+});
+
+router.get('/admins', async (req, res) => {
+  if (!requireSuperadmin(req, res)) return;
+  try {
+    const [rows] = await pool.query(
+      "SELECT id, name, email, role, created_at FROM admins WHERE role = 'admin' ORDER BY id DESC"
+    );
+    res.json(rows);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Could not load admins.' });
+  }
+});
+
+router.post('/admins', async (req, res) => {
+  if (!requireSuperadmin(req, res)) return;
+  try {
+    const name = cleanName(req.body?.name) || 'Admin';
+    const email = String(req.body?.email || '').trim().toLowerCase();
+    const password = String(req.body?.password || '');
+    const emailError = validateEmail(email, { requireGmail: true });
+    const passwordError = validatePassword(password, email, name);
+    const fields = {};
+    if (emailError) fields.email = emailError;
+    if (passwordError) fields.password = passwordError;
+    if (Object.keys(fields).length) return res.status(400).json({ error: 'Check the highlighted fields.', fields });
+    const [result] = await pool.query(
+      "INSERT INTO admins (name, email, password_hash, role) VALUES (?, ?, ?, 'admin')",
+      [name, email, hashPassword(password)]
+    );
+    res.status(201).json({ id: result.insertId, name, email, role: 'admin' });
+  } catch (error) {
+    if (error.code === 'ER_DUP_ENTRY') {
+      return res.status(409).json({ error: 'An admin with this email already exists.', fields: { email: 'An admin with this email already exists.' } });
+    }
+    console.error(error);
+    res.status(500).json({ error: 'Could not create the admin.' });
   }
 });
 

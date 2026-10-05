@@ -42,7 +42,7 @@ function validateName(raw) {
   return "";
 }
 
-function validateEmail(raw) {
+function validateEmail(raw, { signup = false } = {}) {
   const email = raw.trim();
   if (!email) return "Email is required.";
   if (email.length > EMAIL_MAX) return "Email is too long.";
@@ -64,6 +64,11 @@ function validateEmail(raw) {
 
   if (!localOk || !domainOk || !/^[A-Za-z]{2,}$/.test(tld)) {
     return "Enter a valid email like name@gmail.com.";
+  }
+  const normalized = email.toLowerCase();
+  if (signup && !normalized.endsWith("@gmail.com")) return "Email must end with @gmail.com.";
+  if (!signup && !normalized.endsWith("@gmail.com") && !normalized.endsWith("@tutorhub.bd")) {
+    return "Email must end with @gmail.com.";
   }
   return "";
 }
@@ -147,7 +152,7 @@ export function Auth({ tab, setTab, onLogin }) {
     if (submitting) return;
 
     const nextErrors = {};
-    const emailError = validateEmail(email);
+    const emailError = validateEmail(email, { signup: tab === "signup" });
     const passwordError = validatePassword(password, { signup: tab === "signup", email, name });
     if (emailError) nextErrors.email = emailError;
     if (passwordError) nextErrors.password = passwordError;
@@ -286,7 +291,7 @@ export function Auth({ tab, setTab, onLogin }) {
               clearError("email");
             }}
             onBlur={() => {
-              const message = validateEmail(email);
+              const message = validateEmail(email, { signup: tab === "signup" });
               if (message && email.trim()) setErrors((prev) => ({ ...prev, email: message }));
             }}
           />

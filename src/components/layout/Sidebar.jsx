@@ -31,6 +31,10 @@ const TUTOR_LINKS = [
   { key: "tutor-settings", label: "Settings", icon: Settings },
 ];
 
+const SUPERADMIN_LINKS = [
+  { key: "superadmin-dashboard", label: "Manage Admins", icon: Shield },
+];
+
 const ADMIN_LINKS = [
   { key: "admin-dashboard", label: "Dashboard", icon: LayoutDashboard },
   { key: "admin-tutor-approvals", label: "Tutor Approvals", icon: CheckCircle },
@@ -45,9 +49,9 @@ const ADMIN_LINKS = [
 
 export function Sidebar({ role, activePage, onNavigate, onLogout, account, locked = false }) {
   const [mobileOpen, setMobileOpen] = useState(false);
-  const links = role === "tutor" ? TUTOR_LINKS : role === "admin" ? ADMIN_LINKS : PARENT_LINKS;
+  const links = role === "tutor" ? TUTOR_LINKS : role === "superadmin" ? SUPERADMIN_LINKS : role === "admin" ? ADMIN_LINKS : PARENT_LINKS;
 
-  const dashboardKey = role === "tutor" ? "tutor-dashboard" : role === "admin" ? "admin-dashboard" : "parent-dashboard";
+  const dashboardKey = role === "tutor" ? "tutor-dashboard" : role === "superadmin" ? "superadmin-dashboard" : role === "admin" ? "admin-dashboard" : "parent-dashboard";
 
   const handleNav = (key) => {
     if (locked && key !== dashboardKey && key !== "home") return;

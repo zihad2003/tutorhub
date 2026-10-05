@@ -27,12 +27,14 @@ import { Reports } from "./pages/Reports";
 import { Users } from "./pages/Users";
 import { LessonHistory } from "./pages/LessonHistory";
 import { authUrl } from "./api";
-import { TUTORS } from "./data/tutors";
 
 import { About } from "./pages/About";
 import { FAQ } from "./pages/FAQ";
 import { Contact } from "./pages/Contact";
 import { Careers } from "./pages/Careers";
+import { Subjects } from "./pages/Subjects";
+import { SuperAdmin } from "./pages/SuperAdmin";
+import { SupportInbox } from "./pages/SupportInbox";
 
 const SESSION_KEY = "tutorhub_session";
 const TUTOR_LOCKED_PAGES = [
@@ -46,6 +48,7 @@ const PARENT_LOCKED_PAGES = [
 
 function dashboardKind(p) {
   return {
+    superPage: p.startsWith("superadmin"),
     adminPage: p.startsWith("admin-") || ["categories", "reports", "users", "support", "tutor-approvals", "parent-approvals"].includes(p),
     tutorPage: p.startsWith("tutor-") || ["certificates", "availability", "requests", "earnings", "lesson-log"].includes(p),
     parentPage: p.startsWith("parent-") || ["post-request", "applications", "hired-tutors", "lessons", "payments", "chat", "reviews", "summary", "settings", "lesson-history", "lesson-confirm"].includes(p),
@@ -56,10 +59,11 @@ function roleGuardedPage(p, activeSession) {
   if (isOwnTutorLocked(activeSession) && TUTOR_LOCKED_PAGES.includes(p)) return "tutor-dashboard";
   if (isOwnParentLocked(activeSession) && PARENT_LOCKED_PAGES.includes(p)) return "parent-dashboard";
   if (activeSession && !activeSession.demo) {
-    const { adminPage, tutorPage, parentPage } = dashboardKind(p);
-    if (activeSession.role === "tutor" && (adminPage || parentPage)) return "tutor-dashboard";
-    if (activeSession.role === "parent" && (adminPage || tutorPage)) return "parent-dashboard";
-    if (activeSession.role === "admin" && (tutorPage || parentPage)) return "admin-dashboard";
+    const { adminPage, tutorPage, parentPage, superPage } = dashboardKind(p);
+    if (activeSession.role === "superadmin" && (adminPage || tutorPage || parentPage)) return "superadmin-dashboard";
+    if (activeSession.role === "tutor" && (adminPage || parentPage || superPage)) return "tutor-dashboard";
+    if (activeSession.role === "parent" && (adminPage || tutorPage || superPage)) return "parent-dashboard";
+    if (activeSession.role === "admin" && (tutorPage || parentPage || superPage)) return "admin-dashboard";
   }
   return p;
 }
@@ -94,10 +98,11 @@ export default function App() {
     const path = window.location.pathname.replace(/^\/+/, '');
     if (!path) return "home";
     const validPages = [
-      "home", "tutors", "profile", "auth", "login", "signup", "register", "about", "faq", "contact", "careers",
+      "home", "tutors", "subjects", "profile", "auth", "login", "signup", "register", "about", "faq", "contact", "careers",
       "parent-dashboard", "post-request", "applications", "hired-tutors", "lessons", "lesson-confirm", "payments", "chat", "reviews", "summary", "settings",
       "tutor-dashboard", "tutor-profile", "certificates", "availability", "requests", "tutor-applications", "tutor-lessons", "earnings", "tutor-chat", "tutor-settings",
       "admin-dashboard", "admin-tutor-approvals", "admin-parent-approvals", "admin-categories", "admin-reports", "admin-payments", "admin-users", "admin-support", "admin-settings",
+      "superadmin-dashboard",
       "tutor-approvals", "parent-approvals", "categories", "reports", "users", "support",
       "lesson-log", "bkash-callback", "lesson-history"
     ];
@@ -110,6 +115,7 @@ export default function App() {
   const [page, setPage] = useState(isAuthRoute ? "auth" : initialPath);
   const [activeNav, setActiveNav] = useState(initialPath);
   const [selectedTutor, setSelectedTutor] = useState(null);
+  const [browse, setBrowse] = useState({ text: "", subject: "" });
   const [authTab, setAuthTab] = useState(initialPath === "signup" || initialPath === "register" ? "signup" : "login");
   const [session, setSession] = useState(readStoredSession);
   const [userRole, setUserRole] = useState(() => readStoredSession()?.role || localStorage.getItem("tutorhub_role") || null);
@@ -136,6 +142,13 @@ export default function App() {
   }, []);
 
   const go = (p, section, activeSession = session) => {
+    let scrollTarget = section;
+    if (p === "tutors" && section && typeof section === "object") {
+      setBrowse(section);
+      scrollTarget = undefined;
+    } else if (p === "tutors") {
+      setBrowse({ text: "", subject: "" });
+    }
     p = roleGuardedPage(p, activeSession);
     let targetPage = p;
     if (p === "signup" || p === "register") {
@@ -153,10 +166,10 @@ export default function App() {
       window.history.pushState(null, "", url);
     }
 
-    if (section) {
-      setActiveNav(section);
+    if (typeof scrollTarget === "string" && scrollTarget) {
+      setActiveNav(scrollTarget);
       setTimeout(() => {
-        const el = document.getElementById(section);
+        const el = document.getElementById(scrollTarget);
         if (el) {
           el.scrollIntoView({ behavior: "smooth" });
         } else {
@@ -181,7 +194,14 @@ export default function App() {
   const handleLogin = (account) => {
     const next = typeof account === "string" ? demoSession(account) : { ...account, demo: false };
     saveSession(next);
-    go(next.role === "parent" ? "parent-dashboard" : next.role === "tutor" ? "tutor-dashboard" : "admin-dashboard", undefined, next);
+    const destination = next.role === "parent"
+      ? "parent-dashboard"
+      : next.role === "tutor"
+        ? "tutor-dashboard"
+        : next.role === "superadmin"
+          ? "superadmin-dashboard"
+          : "admin-dashboard";
+    go(destination, undefined, next);
   };
   const handleLogout = () => {
     setSession(null);
@@ -191,9 +211,18 @@ export default function App() {
     localStorage.removeItem("tutorhub_role");
     go("home");
   };
+  const startReapply = () => {
+    setSession(null);
+    setUserRole(null);
+    setIsAuthenticated(false);
+    localStorage.removeItem(SESSION_KEY);
+    localStorage.removeItem("tutorhub_role");
+    setAuthTab("signup");
+    go("signup");
+  };
 
   useEffect(() => {
-    if (!session?.id || session.demo) return undefined;
+    if (!session?.id || session.demo || session.role === "admin" || session.role === "superadmin") return undefined;
     let stopped = false;
     const refresh = async () => {
       try {
@@ -226,11 +255,13 @@ export default function App() {
     "parent-dashboard", "post-request", "applications", "hired-tutors", "lessons", "lesson-confirm", "payments", "chat", "reviews", "summary", "settings",
     "tutor-dashboard", "tutor-profile", "certificates", "availability", "requests", "tutor-applications", "tutor-lessons", "earnings", "tutor-chat", "tutor-settings",
     "admin-dashboard", "admin-tutor-approvals", "admin-parent-approvals", "admin-categories", "admin-reports", "admin-payments", "admin-users", "admin-support", "admin-settings",
+    "superadmin-dashboard",
     "tutor-approvals", "parent-approvals", "categories", "reports", "users", "support",
     "lesson-log", "lesson-history"
   ].includes(page);
 
   const getRoleFromPage = (p) => {
+    if (p.startsWith("superadmin")) return "superadmin";
     if (p.startsWith("admin-")) return "admin";
     if (p.startsWith("parent-")) return "parent";
     if (p.startsWith("tutor-")) return "tutor";
@@ -272,8 +303,9 @@ export default function App() {
       <main className="w-full">
         {/* Public Pages */}
         {page === "home" && <Home go={go} openTutor={openTutor} openAuth={openAuth} />}
-        {page === "tutors" && <TutorList openTutor={openTutor} />}
-        {page === "profile" && <TutorProfile tutor={selectedTutor || TUTORS[0]} go={go} />}
+        {page === "tutors" && <TutorList openTutor={openTutor} browse={browse} />}
+        {page === "subjects" && <Subjects go={go} />}
+        {page === "profile" && <TutorProfile tutor={selectedTutor} go={go} />}
         {page === "auth" && (
           <Auth 
             tab={authTab} 
@@ -296,10 +328,10 @@ export default function App() {
 
         {/* Parent & General Dashboard Pages */}
         {(page === "parent-dashboard" || (isOwnParentLocked(session) && PARENT_LOCKED_PAGES.includes(page))) && (
-          <ParentDashboard onNavigate={go} account={session} />
+          <ParentDashboard onNavigate={go} account={session} onReapply={startReapply} />
         )}
         {page === "post-request" && !isOwnParentLocked(session) && <PostRequest onNavigate={go} mode="create" account={session} />}
-        {page === "applications" && !isOwnParentLocked(session) && <TutorApplications onNavigate={go} />}
+        {page === "applications" && !isOwnParentLocked(session) && <TutorApplications onNavigate={go} account={session} />}
         {page === "hired-tutors" && !isOwnParentLocked(session) && <TutorList openTutor={openTutor} hiredOnly={true} />}
         {page === "lessons" && !isOwnParentLocked(session) && <LessonHistory onNavigate={go} />}
         {page === "lesson-log" && !isOwnTutorLocked(session) && <LessonLog onNavigate={go} account={session} />}
@@ -311,13 +343,13 @@ export default function App() {
         
         {/* Tutor Dashboard Pages */}
         {(page === "tutor-dashboard" || (isOwnTutorLocked(session) && TUTOR_LOCKED_PAGES.includes(page))) && (
-          <TutorDashboard onNavigate={go} account={session} />
+          <TutorDashboard onNavigate={go} account={session} onReapply={startReapply} />
         )}
-        {page === "tutor-profile" && !isOwnTutorLocked(session) && <TutorProfile tutor={selectedTutor || TUTORS[0]} go={go} isDashboard={true} />}
+        {page === "tutor-profile" && !isOwnTutorLocked(session) && <TutorProfile tutor={selectedTutor} go={go} isDashboard={true} account={session} />}
         {page === "certificates" && !isOwnTutorLocked(session) && <Certificates onNavigate={go} />}
         {page === "availability" && !isOwnTutorLocked(session) && <Availability onNavigate={go} />}
         {page === "requests" && !isOwnTutorLocked(session) && <PostRequest onNavigate={go} mode="browse" account={session} />}
-        {page === "tutor-applications" && !isOwnTutorLocked(session) && <TutorApplications onNavigate={go} role="tutor" />}
+        {page === "tutor-applications" && !isOwnTutorLocked(session) && <TutorApplications onNavigate={go} role="tutor" account={session} />}
         {page === "tutor-lessons" && !isOwnTutorLocked(session) && <LessonLog onNavigate={go} role="tutor" account={session} />}
         {page === "earnings" && !isOwnTutorLocked(session) && <MonthlySummary onNavigate={go} role="tutor" />}
         {page === "tutor-chat" && !isOwnTutorLocked(session) && <Chat onNavigate={go} role="tutor" />}
@@ -331,7 +363,8 @@ export default function App() {
         {(page === "admin-reports" || page === "reports") && <Reports onNavigate={go} />}
         {page === "admin-payments" && <Payment onNavigate={go} role="admin" />}
         {(page === "admin-users" || page === "users") && <Users onNavigate={go} />}
-        {(page === "admin-support" || page === "support") && <Chat onNavigate={go} role="admin" />}
+        {(page === "admin-support" || page === "support") && <SupportInbox />}
+        {page === "superadmin-dashboard" && <SuperAdmin />}
         {page === "admin-settings" && <Settings role="admin" onNavigate={go} />}
       </main>
 

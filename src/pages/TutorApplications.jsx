@@ -5,7 +5,7 @@ import { fetchFromAPI } from "../api";
 import { CheckCircle2, Clock, MessageCircle, FileText, Sparkles } from "lucide-react";
 import { useEffect, useState } from "react";
 
-export function TutorApplications({ onNavigate, role = "parent" }) {
+export function TutorApplications({ onNavigate, role = "parent", account = null }) {
   const isTutor = role === "tutor";
   const backLink = isTutor ? "tutor-dashboard" : "parent-dashboard";
   const [apps, setApps] = useState(APPLICATIONS);
@@ -18,8 +18,12 @@ export function TutorApplications({ onNavigate, role = "parent" }) {
     let cancelled = false;
     fetchFromAPI("/applications")
       .then((data) => {
-        if (cancelled || !Array.isArray(data) || data.length === 0) return;
-        setApps(data.map((app) => ({
+        if (cancelled || !Array.isArray(data)) return;
+        const own = account && !account.demo && account.id;
+        const key = role === "tutor" ? "tutorId" : "parentId";
+        const scoped = own ? data.filter((app) => Number(app[key]) === Number(account.id)) : data;
+        if (!own && scoped.length === 0) return;
+        setApps(scoped.map((app) => ({
           ...app,
           subjects: Array.isArray(app.subjects) ? app.subjects : [],
           rating: Number(app.rating) || 0,
