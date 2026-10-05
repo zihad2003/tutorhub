@@ -666,6 +666,7 @@ router.patch('/withdrawal_requests/:id', async (req, res) => {
       'UPDATE withdrawal_requests SET status = ?, processedDate = CURDATE() WHERE id = ?',
       [status, id]
     );
+    let settledPayments = [];
     if (status === 'approved') {
       let remaining = asNumber(rows[0].amount);
       const [earnings] = await pool.query(
@@ -683,12 +684,48 @@ router.patch('/withdrawal_requests/:id', async (req, res) => {
           remaining = 0;
         }
       }
+      settledPayments = await applyPayoutToPayments(rows[0].tutor_id, asNumber(rows[0].amount));
     }
-    res.json({ id, status });
+    res.json({ id, status, payments: settledPayments });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
 });
+
+async function applyPayoutToPayments(tutorId, amount) {
+  const touched = [];
+  let remaining = asNumber(amount);
+  const [rows] = await pool.query(
+    `SELECT p.*
+     FROM payments p
+     JOIN hired_tutors h ON h.parent_id = p.parent_id AND h.tutor_id = ? AND h.status = 'active'
+     WHERE p.status = 'pending'
+     ORDER BY p.id`,
+    [tutorId]
+  );
+  for (const payment of rows) {
+    if (remaining <= 0) break;
+    const value = asNumber(payment.totalAmount);
+    if (value <= remaining) {
+      await pool.query("UPDATE payments SET status = 'paid', paidDate = CURDATE() WHERE id = ?", [payment.id]);
+      remaining -= value;
+      const [updated] = await pool.query('SELECT * FROM payments WHERE id = ?', [payment.id]);
+      touched.push(shapePayment(updated[0]));
+    } else {
+      await pool.query('UPDATE payments SET totalAmount = ? WHERE id = ?', [value - remaining, payment.id]);
+      const [inserted] = await pool.query(
+        `INSERT INTO payments (parent_id, month, totalLessons, totalAmount, status, paidDate, dueDate)
+         VALUES (?, ?, ?, ?, 'paid', CURDATE(), CURDATE())`,
+        [payment.parent_id, payment.month, payment.totalLessons || 0, remaining]
+      );
+      const [pendingRow] = await pool.query('SELECT * FROM payments WHERE id = ?', [payment.id]);
+      const [paidRow] = await pool.query('SELECT * FROM payments WHERE id = ?', [inserted.insertId]);
+      touched.push(shapePayment(pendingRow[0]), shapePayment(paidRow[0]));
+      remaining = 0;
+    }
+  }
+  return touched;
+}
 
 async function backfillHireBilling() {
   const [rows] = await pool.query(
