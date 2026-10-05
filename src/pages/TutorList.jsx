@@ -152,6 +152,9 @@ export function TutorList({ openTutor, hiredOnly = false, browse = { text: "", s
 
   const ownHireList = hiredOnly && account && !account.demo;
   let list = hiredOnly && !ownHireList ? dbTutors.slice(0, 2) : dbTutors;
+  if (hiredOnly) {
+    list = dbTutors;
+  } else {
   const wantedSubject = String(browse.subject || "").trim().toLowerCase();
   const wantedText = String(browse.text || "").trim().toLowerCase();
   if (wantedSubject) {
@@ -186,6 +189,7 @@ export function TutorList({ openTutor, hiredOnly = false, browse = { text: "", s
   list = list.filter((t) => Number(t.fee) >= Number(minFee) && Number(t.fee) <= Number(maxFee));
   if (sort === "Rating: High to Low") list = [...list].sort((a, b) => Number(b.rating) - Number(a.rating));
   if (sort === "Rating: Low to High") list = [...list].sort((a, b) => Number(a.rating) - Number(b.rating));
+  }
 
   if (isLoading) return <div className="p-10 text-center">Loading tutors...</div>;
 
@@ -198,7 +202,7 @@ export function TutorList({ openTutor, hiredOnly = false, browse = { text: "", s
         {hiredOnly ? `${list.length} active tutors hired for your lessons` : `${list.length} tutors available in Dhaka`}
       </p>
 
-      {/* Filter bar */}
+      {!hiredOnly && (
       <div className="mt-6 flex flex-col gap-4 rounded-lg border p-4 sm:flex-row sm:items-center sm:justify-between" style={{ borderColor: C.border }}>
         <div className="flex flex-wrap items-center gap-3">
           <div className="relative">
@@ -241,12 +245,13 @@ export function TutorList({ openTutor, hiredOnly = false, browse = { text: "", s
           <ChevronDown size={14} className="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2" color={C.textSecondary} />
         </div>
       </div>
+      )}
 
       {/* Results */}
       {list.length === 0 ? (
         <div className="mt-10 rounded-lg border p-10 text-center" style={{ borderColor: C.border }}>
-          <p className="text-sm font-semibold" style={{ color: C.text }}>No tutors match these filters</p>
-          <p className="mt-1 text-sm" style={{ color: C.textSecondary }}>Try selecting a different subject or budget range.</p>
+          <p className="text-sm font-semibold" style={{ color: C.text }}>{hiredOnly ? "No tutors hired yet" : "No tutors match these filters"}</p>
+          <p className="mt-1 text-sm" style={{ color: C.textSecondary }}>{hiredOnly ? "Hire a tutor from Applications and they will appear here." : "Try selecting a different subject or budget range."}</p>
         </div>
       ) : (
         <div className="mt-8 grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">

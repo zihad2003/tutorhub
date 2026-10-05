@@ -339,7 +339,7 @@ export default function App() {
         {page === "payments" && !isOwnParentLocked(session) && <Payment onNavigate={go} account={session} />}
         {page === "chat" && !isOwnParentLocked(session) && <Chat onNavigate={go} account={session} />}
         {["reviews", "summary", "rate-tutor", "review", "tutor-reviews", "summary-reviews"].includes(page) && !isOwnParentLocked(session) && <MonthlySummary onNavigate={go} role={activeRole} account={session} />}
-        {page === "settings" && !isOwnParentLocked(session) && <Settings role={activeRole} onNavigate={go} />}
+        {page === "settings" && !isOwnParentLocked(session) && <Settings role={activeRole} onNavigate={go} account={session} onSaved={saveSession} />}
         
         {/* Tutor Dashboard Pages */}
         {(page === "tutor-dashboard" || (isOwnTutorLocked(session) && TUTOR_LOCKED_PAGES.includes(page))) && (
@@ -353,7 +353,7 @@ export default function App() {
         {page === "tutor-lessons" && !isOwnTutorLocked(session) && <LessonLog onNavigate={go} role="tutor" account={session} />}
         {page === "earnings" && !isOwnTutorLocked(session) && <MonthlySummary onNavigate={go} role="tutor" account={session} />}
         {page === "tutor-chat" && !isOwnTutorLocked(session) && <Chat onNavigate={go} role="tutor" account={session} />}
-        {page === "tutor-settings" && !isOwnTutorLocked(session) && <Settings role="tutor" onNavigate={go} />}
+        {page === "tutor-settings" && !isOwnTutorLocked(session) && <Settings role="tutor" onNavigate={go} account={session} onSaved={saveSession} />}
 
         {/* Admin Dashboard Pages */}
         {page === "admin-dashboard" && <AdminDashboard onNavigate={go} />}
