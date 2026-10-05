@@ -1,3 +1,4 @@
+import { authUrl } from "../api";
 import { Input } from "../components/ui/Input";
 import { PrimaryButton } from "../components/ui/PrimaryButton";
 import { C } from "../constants/tokens";
@@ -173,7 +174,7 @@ export function Auth({ tab, setTab, onLogin }) {
     setSubmitting(true);
     try {
       if (tab === "login") {
-        const response = await fetch("/api/auth/login", {
+        const response = await fetch(authUrl("/api/auth/login"), {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ email: normalizedEmail, password }),
@@ -190,7 +191,7 @@ export function Auth({ tab, setTab, onLogin }) {
       }
 
       const role = selectedRole === "Parent / Student" ? "parent" : "tutor";
-      const response = await fetch("/api/auth/register", {
+      const response = await fetch(authUrl("/api/auth/register"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -204,7 +205,12 @@ export function Auth({ tab, setTab, onLogin }) {
       const data = await response.json().catch(() => ({}));
       if (!response.ok) {
         if (data.fields) setErrors(data.fields);
-        setFormError(data.error || "Could not create the account. Please try again.");
+        const fallback = response.status === 413
+          ? "The file is too large. Please upload a file that is 5 MB or smaller."
+          : response.status === 404
+            ? "The account service is not running. Start the TutorHub API and try again."
+            : "Could not create the account. Please try again.";
+        setFormError(data.error || fallback);
         setSubmitting(false);
         return;
       }

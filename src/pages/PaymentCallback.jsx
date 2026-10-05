@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { authUrl } from "../api";
 import { CheckCircle2, XCircle } from "lucide-react";
 import { PrimaryButton } from "../components/ui";
 
@@ -24,7 +25,7 @@ export function PaymentCallback({ onNavigate }) {
     }
 
     // Execute the payment
-    fetch('/api/bkash/execute', {
+    fetch(authUrl('/api/bkash/execute'), {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',

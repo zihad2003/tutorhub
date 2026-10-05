@@ -26,6 +26,7 @@ import { Categories } from "./pages/Categories";
 import { Reports } from "./pages/Reports";
 import { Users } from "./pages/Users";
 import { LessonHistory } from "./pages/LessonHistory";
+import { authUrl } from "./api";
 import { TUTORS } from "./data/tutors";
 
 import { About } from "./pages/About";
@@ -185,7 +186,7 @@ export default function App() {
     let stopped = false;
     const refresh = async () => {
       try {
-        const response = await fetch(`/api/auth/me?role=${session.role}&id=${session.id}`);
+        const response = await fetch(authUrl(`/api/auth/me?role=${session.role}&id=${session.id}`));
         if (!response.ok) return;
         const data = await response.json();
         if (stopped || !data?.status || data.status === session.status) return;

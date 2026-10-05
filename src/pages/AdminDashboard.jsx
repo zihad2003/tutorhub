@@ -1,3 +1,4 @@
+import { authUrl } from "../api";
 import { C } from "../constants/tokens";
 import { StatCard } from "../components/ui/StatCard";
 import { Table } from "../components/ui/Table";
@@ -16,8 +17,8 @@ export function AdminDashboard({ onNavigate }) {
     async function load() {
       try {
         const [tutorResponse, parentResponse] = await Promise.all([
-          fetch("/api/auth/pending/tutors"),
-          fetch("/api/auth/pending/parents"),
+          fetch(authUrl("/api/auth/pending/tutors")),
+          fetch(authUrl("/api/auth/pending/parents")),
         ]);
         if (!tutorResponse.ok || !parentResponse.ok) return;
         const tutors = await tutorResponse.json();
