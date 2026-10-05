@@ -1,18 +1,64 @@
 import { C } from "../constants/tokens";
 import { Badge, PrimaryButton, SecondaryButton, Input } from "../components/ui";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Search, CheckCircle2, ShieldAlert, UserCheck } from "lucide-react";
 import { TUTORS } from "../data/tutors";
 import { ADMIN_APPROVALS } from "../data/mockData";
 
+function statusLabel(status) {
+  if (status === "approved" || status === "active") return "Approved";
+  if (status === "rejected") return "Rejected";
+  return "Pending Approval";
+}
+
 export function Users({ onNavigate }) {
   const [filterRole, setFilterRole] = useState("all");
   const [search, setSearch] = useState("");
+  const [dbUsers, setDbUsers] = useState(null);
 
-  const allUsers = [
-    ...TUTORS.map(t => ({ id: `tutor-${t.id}`, name: t.name, role: "Tutor", email: `${t.name.toLowerCase().replace(/\s+/g, '')}@tutorhub.com`, subjects: t.subjects.join(", "), status: "active", verified: t.verified })),
+  useEffect(() => {
+    let cancelled = false;
+    async function load() {
+      try {
+        const response = await fetch("/api/auth/directory");
+        if (!response.ok) return;
+        const data = await response.json();
+        if (cancelled) return;
+        const tutors = Array.isArray(data.tutors) ? data.tutors : [];
+        const parents = Array.isArray(data.parents) ? data.parents : [];
+        setDbUsers([
+          ...tutors.map((tutor) => ({
+            id: `tutor-${tutor.id}`,
+            name: tutor.name,
+            role: "Tutor",
+            email: tutor.email || "No email",
+            subjects: tutor.status === "pending" ? "Waiting for approval" : (tutor.experience || "Tutor"),
+            status: tutor.status || "approved",
+            verified: Boolean(tutor.verified),
+          })),
+          ...parents.map((parent) => ({
+            id: `parent-${parent.id}`,
+            name: parent.name,
+            role: "Parent",
+            email: parent.email || "No email",
+            subjects: parent.status === "pending" ? "Waiting for approval" : "Parent User",
+            status: parent.status || "approved",
+            verified: parent.status === "approved",
+          })),
+        ]);
+      } catch {
+        if (!cancelled) setDbUsers(null);
+      }
+    }
+    load();
+    return () => { cancelled = true; };
+  }, []);
+
+  const fallbackUsers = [
+    ...TUTORS.map(t => ({ id: `tutor-${t.id}`, name: t.name, role: "Tutor", email: `${t.name.toLowerCase().replace(/\s+/g, '')}@tutorhub.com`, subjects: t.subjects.join(", "), status: "approved", verified: t.verified })),
     ...ADMIN_APPROVALS.parents.map(p => ({ id: `parent-${p.id}`, name: p.name, role: "Parent", email: p.email, subjects: "Parent User", status: p.status, verified: true })),
   ];
+  const allUsers = dbUsers && dbUsers.length ? dbUsers : fallbackUsers;
 
   const filteredUsers = allUsers.filter(u => {
     const matchesRole = filterRole === "all" || u.role.toLowerCase() === filterRole.toLowerCase();
@@ -88,8 +134,8 @@ export function Users({ onNavigate }) {
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <Badge tone={user.status === "active" ? "success" : "warning"}>
-                    {user.status === "active" ? "Active" : "Pending"}
+                  <Badge tone={user.status === "approved" || user.status === "active" ? "success" : user.status === "rejected" ? "danger" : "warning"}>
+                    {statusLabel(user.status)}
                   </Badge>
                   <SecondaryButton size="sm">Manage User</SecondaryButton>
                 </div>
