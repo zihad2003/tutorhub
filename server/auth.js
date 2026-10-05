@@ -239,7 +239,12 @@ router.post('/register', async (req, res) => {
       });
     }
     console.error(error);
-    return res.status(500).json({ error: 'Could not create the account. Please try again.' });
+    const message = error.code === 'ECONNREFUSED' || error.code === 'PROTOCOL_CONNECTION_LOST'
+      ? 'The database is not running. Start MySQL and try again.'
+      : error.code === 'ER_BAD_FIELD_ERROR'
+        ? 'The account table is missing a column. Restart the TutorHub API and try again.'
+        : 'Could not create the account. Please try again.';
+    return res.status(500).json({ error: message });
   }
 });
 

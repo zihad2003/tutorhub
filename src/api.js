@@ -1,4 +1,25 @@
-const API_BASE_URL = 'http://localhost:5001/api/data';
+const TUNNEL_API_ORIGIN = 'https://obviously-saving-weights-garage.trycloudflare.com';
+
+function resolveApiOrigin() {
+  if (import.meta.env.VITE_API_ORIGIN) return import.meta.env.VITE_API_ORIGIN;
+  if (typeof window !== 'undefined' && window.location.hostname.endsWith('.pages.dev')) {
+    return TUNNEL_API_ORIGIN;
+  }
+  return 'http://127.0.0.1:5001';
+}
+
+export const API_ORIGIN = resolveApiOrigin();
+const API_BASE_URL = `${API_ORIGIN}/api/data`;
+
+export function authUrl(path) {
+  return `${API_ORIGIN}${path}`;
+}
+
+export function fileUrl(path) {
+  if (!path) return '';
+  if (/^https?:\/\//.test(path)) return path;
+  return `${API_ORIGIN}${path.startsWith('/') ? path : `/${path}`}`;
+}
 
 export async function fetchFromAPI(endpoint) {
   try {

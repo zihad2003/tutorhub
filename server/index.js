@@ -22,6 +22,20 @@ app.get('/', (req, res) => {
   res.send('TutorHub Backend API');
 });
 
+app.use((err, req, res, next) => {
+  if (res.headersSent) return next(err);
+  if (err.type === 'entity.too.large' || err.status === 413) {
+    return res.status(413).json({
+      error: 'The file is too large. Please upload a file that is 5 MB or smaller.',
+      fields: { file: 'The file is too large. Please upload a file that is 5 MB or smaller.' },
+    });
+  }
+  console.error(err);
+  return res.status(err.status || 500).json({
+    error: 'The server could not complete that request. Please try again.',
+  });
+});
+
 ensureAccountColumns()
   .then(() => {
     app.listen(PORT, () => {

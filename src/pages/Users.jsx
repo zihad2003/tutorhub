@@ -1,3 +1,4 @@
+import { authUrl } from "../api";
 import { C } from "../constants/tokens";
 import { Badge, PrimaryButton, SecondaryButton, Input } from "../components/ui";
 import { useEffect, useState } from "react";
@@ -20,7 +21,7 @@ export function Users({ onNavigate }) {
     let cancelled = false;
     async function load() {
       try {
-        const response = await fetch("/api/auth/directory");
+        const response = await fetch(authUrl("/api/auth/directory"));
         if (!response.ok) return;
         const data = await response.json();
         if (cancelled) return;

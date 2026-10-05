@@ -1,3 +1,4 @@
+import { API_ORIGIN } from "../api";
 import { C } from "../constants/tokens";
 import { Badge, PrimaryButton, SecondaryButton, Input } from "../components/ui";
 import { useState, useEffect } from "react";
@@ -63,7 +64,7 @@ export function Categories({ onNavigate }) {
   });
 
   useEffect(() => {
-    fetch('http://localhost:5001/api/data/categories')
+    fetch(`${API_ORIGIN}/api/data/categories`)
       .then(res => res.json())
       .then(data => {
         if (data.length > 0) {

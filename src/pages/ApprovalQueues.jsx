@@ -1,10 +1,11 @@
+import { authUrl, fileUrl } from "../api";
 import { C } from "../constants/tokens";
 import { Badge, PrimaryButton, SecondaryButton } from "../components/ui";
 import { CheckCircle2, XCircle, MapPin, Mail, Phone, Award, Calendar, ExternalLink } from "lucide-react";
 import { useEffect, useState } from "react";
 
 async function reviewAccount(role, id, action) {
-  const response = await fetch(`/api/auth/${role}/${id}/${action}`, {
+  const response = await fetch(authUrl(`/api/auth/${role}/${id}/${action}`), {
     method: "POST",
     headers: { "Content-Type": "application/json", "x-actor-role": "admin" },
   });
@@ -27,8 +28,8 @@ export function ApprovalQueues({ onNavigate, initialTab = "tutors" }) {
     async function load() {
       try {
         const [tutorResponse, parentResponse] = await Promise.all([
-          fetch("/api/auth/pending/tutors"),
-          fetch("/api/auth/pending/parents"),
+          fetch(authUrl("/api/auth/pending/tutors")),
+          fetch(authUrl("/api/auth/pending/parents")),
         ]);
         if (!tutorResponse.ok || !parentResponse.ok) throw new Error("Could not load the approval queue.");
         const tutors = await tutorResponse.json();
@@ -212,14 +213,14 @@ export function ApprovalQueues({ onNavigate, initialTab = "tutors" }) {
                             <div className="flex items-center gap-2">
                               <button
                                 type="button"
-                                onClick={() => setSelectedDoc({ title: `${tutor.name} - CV`, url: tutor.cvUrl })}
+                                onClick={() => setSelectedDoc({ title: `${tutor.name} - CV`, url: fileUrl(tutor.cvUrl) })}
                                 className="flex-1 flex items-center gap-2 rounded-lg border p-3 text-left transition-colors hover:bg-gray-50"
                                 style={{ borderColor: C.border, background: C.surface }}
                               >
                                 <span className="text-sm font-semibold" style={{ color: C.primary }}>View CV</span>
                               </button>
                               <a
-                                href={tutor.cvUrl}
+                                href={fileUrl(tutor.cvUrl)}
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="flex h-[50px] w-[50px] shrink-0 items-center justify-center rounded-lg border transition-colors hover:bg-gray-50"
@@ -277,7 +278,7 @@ export function ApprovalQueues({ onNavigate, initialTab = "tutors" }) {
                           {parent.studentIdUrl && (
                             <div className="mt-4 rounded-xl overflow-hidden border border-gray-200 w-full max-w-[680px] shadow-sm">
                               <iframe 
-                                src={parent.studentIdUrl} 
+                                src={fileUrl(parent.studentIdUrl)} 
                                 className="w-full h-[310px] border-0 bg-white block" 
                                 title={`${parent.name} Student ID`} 
                               />
