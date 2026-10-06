@@ -16,8 +16,8 @@ export function Payment({ onNavigate, role = "parent", account = null }) {
   const backLink = isAdmin ? "admin-dashboard" : "parent-dashboard";
 
   const own = account && !account.demo && account.id && role !== "admin";
-  const [paymentRows, setPaymentRows] = useLiveList("/payments", own ? [] : PAYMENTS);
-  const [withdrawalRows, setWithdrawals] = useLiveList("/withdrawal_requests", own ? [] : WITHDRAWAL_REQUESTS);
+  const [paymentRows, setPaymentRows] = useLiveList("/payments", isAdmin || own ? [] : PAYMENTS);
+  const [withdrawalRows, setWithdrawals] = useLiveList("/withdrawal_requests", isAdmin || own ? [] : WITHDRAWAL_REQUESTS);
   const payments = own ? paymentRows.filter((payment) => Number(payment.parentId) === Number(account.id)) : paymentRows;
   const withdrawals = own ? [] : withdrawalRows;
   const pendingPayment = payments.find((payment) => payment.status === "pending");
@@ -104,11 +104,10 @@ export function Payment({ onNavigate, role = "parent", account = null }) {
               <div className="mt-4">
                 <Table
                   columns={[
-                    { key: "id", label: "Txn ID", render: (id) => `#TXN-${100 + id}` },
+                    { key: "parentName", label: "Parent" },
+                    { key: "tutorName", label: "Tutor" },
                     { key: "month", label: "Billing Period" },
-                    { key: "totalLessons", label: "Lessons", render: (l) => `${l} Sessions` },
-                    { key: "totalAmount", label: "Gross Fee", render: (amt) => `৳${amt}` },
-                    { key: "totalAmount", label: "Platform Cut (10%)", render: (amt) => `৳${Math.round(amt * 0.1)}` },
+                    { key: "totalAmount", label: "Amount", render: (amt) => `৳${Number(amt || 0).toLocaleString("en-US")}` },
                     { key: "status", label: "Status", render: (status) => (
                       <Badge tone={status === "paid" ? "success" : "warning"}>{status}</Badge>
                     )},
@@ -271,24 +270,20 @@ export function Payment({ onNavigate, role = "parent", account = null }) {
 
               <div className="space-y-4">
                 <div className="flex justify-between text-sm">
-                  <span style={{ color: C.textSecondary }}>Total Lessons</span>
+                  <span style={{ color: C.textSecondary }}>Tutor</span>
                   <span className="font-semibold" style={{ color: C.text }}>
-                    {pendingPayment.totalLessons}
+                    {pendingPayment.tutorName || "Tutor"}
                   </span>
                 </div>
                 <div className="flex justify-between text-sm">
-                  <span style={{ color: C.textSecondary }}>Subtotal</span>
+                  <span style={{ color: C.textSecondary }}>Amount due</span>
                   <span className="font-semibold" style={{ color: C.text }}>
-                    ৳{pendingPayment.totalAmount}
+                    ৳{Number(pendingPayment.totalAmount || 0).toLocaleString("en-US")}
                   </span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span style={{ color: C.textSecondary }}>Platform Fee</span>
-                  <span className="font-semibold" style={{ color: C.text }}>৳250</span>
                 </div>
                 <div className="my-4 h-px" style={{ background: C.border }} />
                 <div className="flex justify-between">
-                  <span className="text-base font-semibold" style={{ color: C.text }}>Total (Customizable)</span>
+                  <span className="text-base font-semibold" style={{ color: C.text }}>Amount to pay</span>
                   <div className="flex items-center text-xl font-semibold" style={{ color: C.text }}>
                     ৳ <input 
                       type="number" 
@@ -382,7 +377,28 @@ export function Payment({ onNavigate, role = "parent", account = null }) {
         <PaymentGateway
           method={selectedMethod}
           amount={customAmount}
-          onComplete={() => {
+          onComplete={async () => {
+            if (own && pendingPayment) {
+              try {
+                const paid = await patchToAPI(`/payments/${pendingPayment.id}`, {
+                  parentId: account.id,
+                  status: "paid",
+                  totalAmount: customAmount || pendingPayment.totalAmount,
+                });
+                const incoming = Array.isArray(paid.payments) ? paid.payments : [paid];
+                setPaymentRows((rows) => {
+                  const next = rows.map((row) => incoming.find((item) => item.id === row.id) || row);
+                  for (const item of incoming) {
+                    if (!next.some((row) => row.id === item.id)) next.unshift(item);
+                  }
+                  return next;
+                });
+              } catch (error) {
+                setShowGateway(false);
+                window.alert(error.message || "The payment could not be saved.");
+                return;
+              }
+            }
             setShowGateway(false);
             onNavigate("summary");
           }}

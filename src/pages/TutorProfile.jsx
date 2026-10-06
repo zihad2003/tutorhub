@@ -5,7 +5,7 @@ import { Badge } from "../components/ui/Badge";
 import { Stars } from "../components/ui/Stars";
 import { PrimaryButton } from "../components/ui/PrimaryButton";
 import { SecondaryButton } from "../components/ui/SecondaryButton";
-import { fetchFromAPI } from "../api";
+import { fetchFromAPI, fileUrl } from "../api";
 
 function subjectList(value) {
   if (Array.isArray(value)) return value.filter(Boolean);
@@ -107,12 +107,20 @@ export function TutorProfile({ tutor, go, isDashboard = false, account = null })
             <div className="mt-3 space-y-2">
               {certificates.length === 0 ? (
                 <p className="text-sm" style={{ color: C.textSecondary }}>No certificates listed yet.</p>
-              ) : certificates.map((c) => (
-                <div key={c} className="flex items-center gap-2 rounded-lg border p-3" style={{ borderColor: C.border }}>
-                  <Award size={16} color={C.accent} />
-                  <span className="text-sm" style={{ color: C.text }}>{c}</span>
-                </div>
-              ))}
+              ) : certificates.map((c, index) => {
+                const title = typeof c === "string" ? c : (c.title || c.name || "Certificate");
+                const url = typeof c === "string" ? "" : (c.url?.startsWith("/api/") ? fileUrl(c.url) : c.url);
+                return (
+                  <div key={`${title}-${index}`} className="flex items-center gap-2 rounded-lg border p-3" style={{ borderColor: C.border }}>
+                    <Award size={16} color={C.accent} />
+                    {url ? (
+                      <a href={url} target="_blank" rel="noopener noreferrer" className="text-sm font-semibold" style={{ color: C.primary }}>{title}</a>
+                    ) : (
+                      <span className="text-sm" style={{ color: C.text }}>{title}</span>
+                    )}
+                  </div>
+                );
+              })}
             </div>
           </div>
 

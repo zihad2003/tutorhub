@@ -1,4 +1,4 @@
-const TUNNEL_API_ORIGIN = 'https://fee-fascinating-zope-beast.trycloudflare.com';
+const TUNNEL_API_ORIGIN = 'https://secretary-usb-instrument-alarm.trycloudflare.com';
 
 function resolveApiOrigin() {
   if (import.meta.env.VITE_API_ORIGIN) return import.meta.env.VITE_API_ORIGIN;
@@ -39,6 +39,19 @@ export async function patchToAPI(endpoint, data) {
     method: "PATCH",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(data),
+  });
+  if (!response.ok) {
+    const body = await response.json().catch(() => ({}));
+    throw new Error(body.error || `API error! status: ${response.status}`);
+  }
+  return response.json();
+}
+
+export async function deleteFromAPI(endpoint, data) {
+  const response = await fetch(`${API_BASE_URL}${endpoint}`, {
+    method: "DELETE",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data || {}),
   });
   if (!response.ok) {
     const body = await response.json().catch(() => ({}));
