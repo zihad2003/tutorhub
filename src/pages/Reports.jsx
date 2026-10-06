@@ -4,7 +4,6 @@ import { StatCard } from "../components/ui/StatCard";
 import { Table } from "../components/ui/Table";
 import { Badge } from "../components/ui/Badge";
 import { TrendingUp, Users, DollarSign, BookOpen } from "lucide-react";
-import { PAYMENTS } from "../data/mockData";
 import { fetchFromAPI } from "../api";
 
 export function Reports({ onNavigate }) {
@@ -12,17 +11,17 @@ export function Reports({ onNavigate }) {
   const [singleMonth, setSingleMonth] = useState("All");
   const [startMonth, setStartMonth] = useState("All");
   const [endMonth, setEndMonth] = useState("All");
-  const [payments, setPayments] = useState(PAYMENTS);
+  const [payments, setPayments] = useState([]);
   const [payouts, setPayouts] = useState([]);
-  const [summary, setSummary] = useState(null);
+  const [realLessons, setRealLessons] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
     Promise.all([
       fetchFromAPI("/payments").catch(() => null),
       fetchFromAPI("/withdrawal_requests").catch(() => null),
-      fetchFromAPI("/summary").catch(() => null),
-    ]).then(([paymentRows, withdrawalRows, summaryData]) => {
+      fetchFromAPI("/lessons").catch(() => null),
+    ]).then(([paymentRows, withdrawalRows, lessonRows]) => {
       if (cancelled) return;
       if (Array.isArray(paymentRows)) {
         setPayments(paymentRows.map((row) => ({
@@ -33,7 +32,9 @@ export function Reports({ onNavigate }) {
       if (Array.isArray(withdrawalRows)) {
         setPayouts(withdrawalRows.filter((row) => row.status === "approved"));
       }
-      if (summaryData && typeof summaryData.activeUsers === "number") setSummary(summaryData);
+      if (Array.isArray(lessonRows)) {
+        setRealLessons(lessonRows.filter((row) => row.parentId && ["confirmed", "completed"].includes(row.status)).length);
+      }
     });
     return () => { cancelled = true; };
   }, []);
@@ -60,9 +61,11 @@ export function Reports({ onNavigate }) {
     }
   });
 
-  const totalRevenue = filteredPayments.filter(p => p.status === "paid").reduce((acc, p) => acc + (Number(p.totalAmount) || 0), 0);
+  const paidTotal = filteredPayments.filter(p => p.status === "paid").reduce((acc, p) => acc + (Number(p.totalAmount) || 0), 0);
+  const pendingTotal = filteredPayments.filter(p => p.status === "pending").reduce((acc, p) => acc + (Number(p.totalAmount) || 0), 0);
   const tutorPayouts = payouts.reduce((sum, row) => sum + (Number(row.amount) || 0), 0);
-  const platformBalance = totalRevenue - tutorPayouts;
+  const platformBalance = paidTotal - tutorPayouts;
+  const ledgerAccounts = new Set(payments.flatMap((row) => [row.parentName, row.tutorName].filter(Boolean))).size;
   const uniqueMonths = ["All", ...new Set(payments.map(p => p.month).filter(Boolean))];
 
   return (
@@ -84,8 +87,13 @@ export function Reports({ onNavigate }) {
 
           <div className="mt-8 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <StatCard
-              label="Gross Revenue"
-              value={`৳${totalRevenue}`}
+              label="Parent Payments Received"
+              value={`৳${paidTotal}`}
+              icon={DollarSign}
+            />
+            <StatCard
+              label="Awaiting Parent Payment"
+              value={`৳${pendingTotal}`}
               icon={DollarSign}
             />
             <StatCard
@@ -100,12 +108,12 @@ export function Reports({ onNavigate }) {
             />
             <StatCard
               label="Completed Lessons"
-              value={String(summary ? summary.completedLessons : 0)}
+              value={String(realLessons)}
               icon={BookOpen}
             />
             <StatCard
               label="Active Users"
-              value={String(summary ? summary.activeUsers : 0)}
+              value={String(ledgerAccounts)}
               icon={Users}
             />
           </div>
@@ -171,11 +179,11 @@ export function Reports({ onNavigate }) {
             <div className="mt-4">
               <Table
                 columns={[
-                  { key: "id", label: "Transaction ID", render: (id) => `#TXN-${id}` },
+                  { key: "parentName", label: "Parent" },
+                  { key: "tutorName", label: "Tutor" },
                   { key: "month", label: "Billing Month" },
-                  { key: "totalLessons", label: "Lessons Taught" },
-                  { key: "totalAmount", label: "Gross Volume", render: (val) => `৳${val}` },
-                  { key: "status", label: "Payout Status", render: (status) => (
+                  { key: "totalAmount", label: "Amount", render: (val) => `৳${Number(val || 0).toLocaleString("en-US")}` },
+                  { key: "status", label: "Status", render: (status) => (
                     <Badge tone={status === "paid" ? "success" : "warning"}>{status}</Badge>
                   )},
                 ]}

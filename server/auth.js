@@ -32,6 +32,18 @@ async function ensurePlatformTables() {
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`
   );
   await pool.query(
+    `CREATE TABLE IF NOT EXISTS tutor_certificates (
+      id INT PRIMARY KEY AUTO_INCREMENT,
+      tutor_id INT NOT NULL,
+      title VARCHAR(255) NOT NULL,
+      file_url VARCHAR(500) NOT NULL,
+      status VARCHAR(50) DEFAULT 'pending',
+      uploaded_date DATE,
+      created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (tutor_id) REFERENCES tutors(id) ON DELETE CASCADE
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4`
+  );
+  await pool.query(
     `CREATE TABLE IF NOT EXISTS admins (
       id INT PRIMARY KEY AUTO_INCREMENT,
       name VARCHAR(120) NOT NULL,

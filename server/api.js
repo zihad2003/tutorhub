@@ -1,6 +1,12 @@
 const express = require('express');
+const crypto = require('crypto');
+const fs = require('fs');
+const path = require('path');
 const router = express.Router();
 const pool = require('./db');
+const UPLOAD_DIR = path.join(__dirname, 'uploads');
+const MAX_FILE_BYTES = 5 * 1024 * 1024;
+const CERTIFICATE_TYPES = ['pdf', 'png', 'jpg', 'jpeg'];
 
 function asNumber(value) {
   if (value === null || value === undefined || value === '') return value;
@@ -44,7 +50,20 @@ router.get('/tutors', async (req, res) => {
   }
 });
 
+function lessonHours(value) {
+  const match = String(value ?? '').match(/[\d.]+/);
+  const hours = match ? Number(match[0]) : 0;
+  if (!Number.isFinite(hours) || hours <= 0) return 1;
+  return Math.round(hours * 10) / 10;
+}
+
+function durationLabel(hours) {
+  return hours === 1 ? '1 hour' : `${hours} hours`;
+}
+
 function shapeLesson(row) {
+  const hours = lessonHours(row.duration);
+  const studentName = row.parentName || row.studentName || '';
   return {
     ...row,
     tutorId: row.tutor_id,
@@ -52,8 +71,11 @@ function shapeLesson(row) {
     hiredTutorId: row.hired_tutor_id,
     tutorName: row.tutorName || 'Tutor',
     parentName: row.parentName || '',
+    studentName,
     date: dateOnly(row.date),
     fee: asNumber(row.fee),
+    hours,
+    duration: row.duration || durationLabel(hours),
   };
 }
 
@@ -69,6 +91,8 @@ function shapePayment(row) {
   return {
     ...row,
     parentId: row.parent_id,
+    parentName: row.parentName || '',
+    tutorName: row.tutorName || '',
     totalAmount: asNumber(row.totalAmount),
     paidDate: dateOnly(row.paidDate),
     dueDate: dateOnly(row.dueDate),
@@ -141,6 +165,7 @@ router.post('/lessons', async (req, res) => {
       fee = asNumber(hireRows[0].fee);
       hiredTutorId = hireRows[0].id;
     }
+    const hours = lessonHours(req.body.duration);
     const [result] = await pool.query(
       `INSERT INTO lessons (hired_tutor_id, tutor_id, parent_id, subject, topic, date, classLevel, duration, homework, notes, status, fee)
        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'pending', ?)`,
@@ -152,7 +177,7 @@ router.post('/lessons', async (req, res) => {
         topic,
         date,
         req.body.classLevel || null,
-        req.body.duration || null,
+        durationLabel(hours),
         req.body.homework || null,
         req.body.notes || null,
         fee,
@@ -161,7 +186,16 @@ router.post('/lessons', async (req, res) => {
     if (hiredTutorId) {
       await pool.query('UPDATE hired_tutors SET totalLessons = totalLessons + 1 WHERE id = ?', [hiredTutorId]);
     }
-    res.status(201).json({ id: result.insertId });
+    const [created] = await pool.query(
+      `SELECT l.*, t.name AS joinedTutorName, p.name AS parentName
+       FROM lessons l
+       LEFT JOIN tutors t ON t.id = l.tutor_id
+       LEFT JOIN parents p ON p.id = l.parent_id
+       WHERE l.id = ? LIMIT 1`,
+      [result.insertId]
+    );
+    const row = created[0] || { id: result.insertId, duration: durationLabel(hours) };
+    res.status(201).json(shapeLesson({ ...row, tutorName: row.joinedTutorName || row.tutorName }));
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -247,12 +281,13 @@ router.get('/summary', async (req, res) => {
     );
     const [[lessons]] = await pool.query(
       `SELECT COUNT(*) AS total,
-              SUM(status IN ('confirmed', 'completed')) AS completed
+              SUM(parent_id IS NOT NULL AND status IN ('confirmed', 'completed')) AS completed
        FROM lessons`
     );
     const [[payments]] = await pool.query(
       `SELECT COALESCE(SUM(CASE WHEN status = 'paid' THEN totalAmount ELSE 0 END), 0) AS paid
-       FROM payments`
+       FROM payments
+       WHERE parent_id IS NOT NULL`
     );
     res.json({
       tutors: Number(tutors.total) || 0,
@@ -323,15 +358,142 @@ router.get('/tutor-profile/:id', async (req, res) => {
       'SELECT subject_name FROM tutor_subjects WHERE tutor_id = ?',
       [req.params.id]
     );
+    const [certificateRows] = await pool.query(
+      `SELECT id, title, file_url, status FROM tutor_certificates
+       WHERE tutor_id = ? AND status <> 'rejected'
+       ORDER BY id DESC`,
+      [req.params.id]
+    );
     res.json({
       ...rows[0],
       fee: asNumber(rows[0].fee),
       rating: asNumber(rows[0].rating),
       maxStudents: rows[0].max_students,
       subjects: subjectRows.map((row) => row.subject_name),
-      certificates: [],
+      certificates: certificateRows.map((row) => ({
+        id: row.id,
+        name: row.title,
+        title: row.title,
+        url: row.file_url,
+        status: row.status,
+      })),
       revs: [],
     });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+function saveCertificateFile(file) {
+  if (!file || typeof file !== 'object') return { error: 'Choose a PDF, PNG, or JPG file.' };
+  const extension = String(file.name || '').toLowerCase().split('.').pop();
+  if (!CERTIFICATE_TYPES.includes(extension)) {
+    return { error: 'Certificate must be a PDF, PNG, or JPG file.' };
+  }
+  const base64 = String(file.base64 || '');
+  if (!base64) return { error: 'The selected file is empty.' };
+  const buffer = Buffer.from(base64, 'base64');
+  if (!buffer.length) return { error: 'The selected file is empty.' };
+  if (buffer.length > MAX_FILE_BYTES) return { error: 'File must be 5 MB or smaller.' };
+  fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+  const filename = `${Date.now()}-${crypto.randomBytes(6).toString('hex')}.${extension}`;
+  fs.writeFileSync(path.join(UPLOAD_DIR, filename), buffer);
+  return { url: `/api/uploads/${filename}` };
+}
+
+function shapeCertificate(row) {
+  return {
+    id: row.id,
+    tutorId: row.tutor_id,
+    tutorName: row.tutorName || '',
+    title: row.title,
+    url: row.file_url,
+    status: row.status || 'pending',
+    date: dateOnly(row.uploaded_date),
+  };
+}
+
+router.get('/certificates', async (req, res) => {
+  try {
+    const [rows] = await pool.query(
+      `SELECT c.*, t.name AS tutorName
+       FROM tutor_certificates c
+       JOIN tutors t ON t.id = c.tutor_id
+       ORDER BY c.id DESC`
+    );
+    res.json(rows.map(shapeCertificate));
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.post('/certificates', async (req, res) => {
+  const tutorId = Number(req.body.tutorId);
+  const title = String(req.body.title || '').trim();
+  if (!Number.isInteger(tutorId) || tutorId <= 0 || title.length < 2) {
+    return res.status(400).json({ error: 'Enter the certificate title.' });
+  }
+  const saved = saveCertificateFile(req.body.file);
+  if (saved.error) return res.status(400).json({ error: saved.error });
+  try {
+    const [tutors] = await pool.query('SELECT id FROM tutors WHERE id = ? LIMIT 1', [tutorId]);
+    if (!tutors[0]) return res.status(404).json({ error: 'Tutor account not found.' });
+    const [result] = await pool.query(
+      `INSERT INTO tutor_certificates (tutor_id, title, file_url, status, uploaded_date)
+       VALUES (?, ?, ?, 'pending', CURDATE())`,
+      [tutorId, title.slice(0, 255), saved.url]
+    );
+    const [rows] = await pool.query(
+      `SELECT c.*, t.name AS tutorName
+       FROM tutor_certificates c
+       JOIN tutors t ON t.id = c.tutor_id
+       WHERE c.id = ? LIMIT 1`,
+      [result.insertId]
+    );
+    res.status(201).json(shapeCertificate(rows[0]));
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.patch('/certificates/:id', async (req, res) => {
+  const id = Number(req.params.id);
+  const status = req.body.status === 'verified' || req.body.status === 'rejected' ? req.body.status : '';
+  if (!Number.isInteger(id) || id <= 0 || !status) {
+    return res.status(400).json({ error: 'Choose a certificate to review.' });
+  }
+  try {
+    const [result] = await pool.query(
+      'UPDATE tutor_certificates SET status = ? WHERE id = ?',
+      [status, id]
+    );
+    if (!result.affectedRows) return res.status(404).json({ error: 'Certificate not found.' });
+    const [rows] = await pool.query(
+      `SELECT c.*, t.name AS tutorName
+       FROM tutor_certificates c
+       JOIN tutors t ON t.id = c.tutor_id
+       WHERE c.id = ? LIMIT 1`,
+      [id]
+    );
+    res.json(shapeCertificate(rows[0]));
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.delete('/certificates/:id', async (req, res) => {
+  const id = Number(req.params.id);
+  const tutorId = Number(req.body.tutorId);
+  if (!Number.isInteger(id) || id <= 0 || !Number.isInteger(tutorId) || tutorId <= 0) {
+    return res.status(400).json({ error: 'Choose your certificate.' });
+  }
+  try {
+    const [result] = await pool.query(
+      'DELETE FROM tutor_certificates WHERE id = ? AND tutor_id = ?',
+      [id, tutorId]
+    );
+    if (!result.affectedRows) return res.status(404).json({ error: 'Certificate not found.' });
+    res.json({ id, deleted: true });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -452,6 +614,14 @@ router.post('/applications', async (req, res) => {
     if (!requestId || !tutorId || !coverLetter) {
       return res.status(400).json({ error: 'A tutor account, request, and cover letter are required.' });
     }
+    const [requestRows] = await pool.query(
+      'SELECT id, status FROM requests WHERE id = ? LIMIT 1',
+      [requestId]
+    );
+    if (!requestRows[0]) return res.status(404).json({ error: 'This request was not found.' });
+    if (requestRows[0].status !== 'open') {
+      return res.status(409).json({ error: 'This request is already closed.' });
+    }
     const [existing] = await pool.query(
       'SELECT id FROM applications WHERE request_id = ? AND tutor_id = ? LIMIT 1',
       [requestId, tutorId]
@@ -507,6 +677,7 @@ router.post('/applications/:id/hire', async (req, res) => {
       );
       await pool.query("UPDATE requests SET status = 'hired' WHERE id = ?", [application.request_id]);
     }
+    await ensureHireChats();
     res.json({ id, status: 'hired', tutorId: application.tutor_id, parentId: application.parent_id, fee });
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -515,8 +686,73 @@ router.post('/applications/:id/hire', async (req, res) => {
 
 router.get('/payments', async (req, res) => {
   try {
-    const [rows] = await pool.query('SELECT * FROM payments ORDER BY id DESC');
+    const [rows] = await pool.query(
+      `SELECT p.*, pa.name AS parentName,
+              (SELECT GROUP_CONCAT(DISTINCT t.name ORDER BY t.name SEPARATOR ', ')
+               FROM hired_tutors h
+               JOIN tutors t ON t.id = h.tutor_id
+               WHERE h.parent_id = p.parent_id) AS tutorName
+       FROM payments p
+       JOIN parents pa ON pa.id = p.parent_id
+       ORDER BY p.id DESC`
+    );
     res.json(rows.map(shapePayment));
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.patch('/payments/:id', async (req, res) => {
+  const id = Number(req.params.id);
+  const parentId = Number(req.body.parentId);
+  const amount = moneyAmount(req.body.totalAmount);
+  if (!Number.isInteger(id) || id <= 0 || !Number.isInteger(parentId) || parentId <= 0) {
+    return res.status(400).json({ error: 'Choose your payment.' });
+  }
+  if (req.body.status !== 'paid') return res.status(400).json({ error: 'This payment cannot be updated.' });
+  try {
+    const [rows] = await pool.query(
+      'SELECT * FROM payments WHERE id = ? AND parent_id = ? LIMIT 1',
+      [id, parentId]
+    );
+    if (!rows[0]) return res.status(404).json({ error: 'Payment not found.' });
+    if (rows[0].status === 'paid') return res.status(409).json({ error: 'This payment is already paid.' });
+    const due = asNumber(rows[0].totalAmount);
+    const paidAmount = amount > 0 ? Math.min(amount, due) : due;
+    if (paidAmount >= due) {
+      await pool.query(
+        "UPDATE payments SET status = 'paid', paidDate = CURDATE(), totalAmount = ? WHERE id = ?",
+        [due, id]
+      );
+    } else {
+      await pool.query('UPDATE payments SET totalAmount = ? WHERE id = ?', [due - paidAmount, id]);
+      await pool.query(
+        `INSERT INTO payments (parent_id, month, totalLessons, totalAmount, status, paidDate, dueDate)
+         VALUES (?, ?, ?, ?, 'paid', CURDATE(), CURDATE())`,
+        [rows[0].parent_id, rows[0].month, rows[0].totalLessons || 0, paidAmount]
+      );
+    }
+    const [updated] = await pool.query(
+      `SELECT p.*, pa.name AS parentName,
+              (SELECT GROUP_CONCAT(DISTINCT t.name ORDER BY t.name SEPARATOR ', ')
+               FROM hired_tutors h
+               JOIN tutors t ON t.id = h.tutor_id
+               WHERE h.parent_id = p.parent_id) AS tutorName
+       FROM payments p
+       JOIN parents pa ON pa.id = p.parent_id
+       WHERE p.parent_id = ? AND p.month = ?
+       ORDER BY p.id DESC`,
+      [parentId, rows[0].month]
+    );
+    const seen = new Set();
+    const payments = [];
+    for (const row of updated) {
+      if (seen.has(row.id)) continue;
+      seen.add(row.id);
+      payments.push(shapePayment(row));
+    }
+    const paidRow = payments.find((row) => row.status === 'paid') || payments[0];
+    res.json({ ...paidRow, payments });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -546,33 +782,105 @@ router.get('/tutor_earnings', async (req, res) => {
   }
 });
 
+async function ensureHireChats() {
+  await pool.query(
+    `INSERT INTO chats (tutor_id, parent_id, lastMessage, lastMessageTime, unread)
+     SELECT DISTINCT h.tutor_id, h.parent_id, '', '', 0
+     FROM hired_tutors h
+     WHERE h.status = 'active'
+       AND NOT EXISTS (
+         SELECT 1 FROM chats c
+         WHERE c.tutor_id = h.tutor_id AND c.parent_id = h.parent_id
+       )`
+  );
+}
+
+function messageStamp(date = new Date()) {
+  return date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' });
+}
+
+async function loadChats() {
+  await ensureHireChats();
+  const [rows] = await pool.query(
+    `SELECT c.*, t.name AS tutorName, t.img AS tutorImg, p.name AS parentName,
+            (SELECT h.subjects FROM hired_tutors h
+             WHERE h.tutor_id = c.tutor_id AND h.parent_id = c.parent_id AND h.status = 'active'
+             ORDER BY h.id DESC LIMIT 1) AS subject
+     FROM chats c
+     JOIN tutors t ON t.id = c.tutor_id
+     JOIN parents p ON p.id = c.parent_id
+     WHERE EXISTS (
+       SELECT 1 FROM hired_tutors h
+       WHERE h.tutor_id = c.tutor_id AND h.parent_id = c.parent_id AND h.status = 'active'
+     )
+     ORDER BY c.updated_at DESC, c.id DESC`
+  );
+  const [messages] = await pool.query('SELECT * FROM messages ORDER BY id');
+  const byChat = {};
+  for (const message of messages) {
+    if (!byChat[message.chat_id]) byChat[message.chat_id] = [];
+    byChat[message.chat_id].push({
+      id: message.id,
+      sender: message.sender,
+      text: message.text,
+      time: message.time || '',
+    });
+  }
+  return rows.map((row) => ({
+    ...row,
+    tutorId: row.tutor_id,
+    parentId: row.parent_id,
+    subject: row.subject || '',
+    name: row.parentName || row.tutorName || 'Conversation',
+    messages: byChat[row.id] || [],
+  }));
+}
+
 router.get('/chats', async (req, res) => {
   try {
-    const [rows] = await pool.query(
-      `SELECT c.*, t.name AS tutorName, t.img AS tutorImg, p.name AS parentName
-       FROM chats c
-       LEFT JOIN tutors t ON t.id = c.tutor_id
-       LEFT JOIN parents p ON p.id = c.parent_id
-       ORDER BY c.id DESC`
-    );
-    const [messages] = await pool.query('SELECT * FROM messages ORDER BY id');
-    const byChat = {};
-    for (const message of messages) {
-      if (!byChat[message.chat_id]) byChat[message.chat_id] = [];
-      byChat[message.chat_id].push({
-        id: message.id,
-        sender: message.sender,
-        text: message.text,
-        time: message.time || '',
-      });
+    res.json(await loadChats());
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+router.post('/chats/:id/messages', async (req, res) => {
+  const id = Number(req.params.id);
+  const text = String(req.body.text || '').trim();
+  const sender = req.body.sender === 'tutor' || req.body.sender === 'parent' ? req.body.sender : '';
+  const tutorId = Number(req.body.tutorId);
+  const parentId = Number(req.body.parentId);
+  if (!Number.isInteger(id) || id <= 0 || !sender || !text) {
+    return res.status(400).json({ error: 'Write a message first.' });
+  }
+  try {
+    const [rows] = await pool.query('SELECT * FROM chats WHERE id = ? LIMIT 1', [id]);
+    const chat = rows[0];
+    if (!chat) return res.status(404).json({ error: 'This conversation was not found.' });
+    if (sender === 'tutor' && Number(chat.tutor_id) !== tutorId) {
+      return res.status(403).json({ error: 'You can only message your own students.' });
     }
-    res.json(rows.map((row) => ({
-      ...row,
-      tutorId: row.tutor_id,
-      parentId: row.parent_id,
-      name: row.parentName || row.tutorName || 'Conversation',
-      messages: byChat[row.id] || [],
-    })));
+    if (sender === 'parent' && Number(chat.parent_id) !== parentId) {
+      return res.status(403).json({ error: 'You can only message your hired tutors.' });
+    }
+    const [hires] = await pool.query(
+      `SELECT id FROM hired_tutors
+       WHERE tutor_id = ? AND parent_id = ? AND status = 'active' LIMIT 1`,
+      [chat.tutor_id, chat.parent_id]
+    );
+    if (!hires[0]) return res.status(403).json({ error: 'This hire is no longer active.' });
+    const stamp = messageStamp();
+    await pool.query(
+      'INSERT INTO messages (chat_id, sender, text, time) VALUES (?, ?, ?, ?)',
+      [id, sender, text.slice(0, 2000), stamp]
+    );
+    await pool.query(
+      'UPDATE chats SET lastMessage = ?, lastMessageTime = ? WHERE id = ?',
+      [text.slice(0, 500), stamp, id]
+    );
+    const chats = await loadChats();
+    const saved = chats.find((item) => item.id === id);
+    res.status(201).json(saved || { id });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

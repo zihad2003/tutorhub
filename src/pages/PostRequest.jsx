@@ -1,6 +1,6 @@
 import { C } from "../constants/tokens";
 import { Input, PrimaryButton, SecondaryButton, Badge } from "../components/ui";
-import { MapPin, Calendar, DollarSign, Send, CheckCircle2, ChevronDown, Clock, Sparkles, Upload, X } from "lucide-react";
+import { MapPin, Calendar, DollarSign, Send, CheckCircle2, ChevronDown, Clock, Sparkles, X } from "lucide-react";
 import { REQUESTS } from "../data/mockData";
 import { fetchFromAPI, postToAPI } from "../api";
 import { useLiveList } from "../lib/records";
@@ -14,9 +14,9 @@ export function PostRequest({ onNavigate, mode = "create", account }) {
   const [requestRows, setRequests] = useLiveList("/requests", own ? [] : REQUESTS);
   const [dbSubjects, setDbSubjects] = useState([]);
   const requests = !own
-    ? requestRows
+    ? requestRows.filter((row) => !row.status || row.status === "open")
     : mode === "browse"
-      ? requestRows.filter((row) => row.parentId)
+      ? requestRows.filter((row) => row.parentId && row.status === "open")
       : requestRows.filter((row) => Number(row.parentId) === Number(account.id));
   const [saveError, setSaveError] = useState("");
   
@@ -30,8 +30,6 @@ export function PostRequest({ onNavigate, mode = "create", account }) {
   const [selectedDay, setSelectedDay] = useState("Weekdays");
   const [description, setDescription] = useState("");
   const [submitted, setSubmitted] = useState(false);
-  const [uploadedImage, setUploadedImage] = useState(null);
-  const [imagePreview, setImagePreview] = useState(null);
 
   // Apply Modal State
   const [applyModalOpen, setApplyModalOpen] = useState(false);
@@ -97,23 +95,6 @@ export function PostRequest({ onNavigate, mode = "create", account }) {
     }
   };
 
-  const handleImageUpload = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      setUploadedImage(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleRemoveImage = () => {
-    setUploadedImage(null);
-    setImagePreview(null);
-  };
-
   const handleSubmitRequest = async (e) => {
     e.preventDefault();
     const newReq = {
@@ -177,6 +158,13 @@ export function PostRequest({ onNavigate, mode = "create", account }) {
                     </tr>
                   </thead>
                   <tbody>
+                    {requests.length === 0 && (
+                      <tr>
+                        <td colSpan={8} className="px-4 py-8 text-center text-sm" style={{ color: C.textSecondary }}>
+                          No open tuition requests.
+                        </td>
+                      </tr>
+                    )}
                     {requests.map((req) => {
                       const isApplied = appliedIds.includes(req.id);
                       return (
@@ -193,7 +181,9 @@ export function PostRequest({ onNavigate, mode = "create", account }) {
                             </Badge>
                           </td>
                           <td className="px-4 py-3 text-center">
-                            {isApplied ? (
+                            {req.status !== "open" ? (
+                              <span className="text-xs font-semibold" style={{ color: C.textSecondary }}>Closed</span>
+                            ) : isApplied ? (
                               <span className="flex items-center justify-center gap-1 rounded-lg border border-green-200 bg-green-50 px-3 py-1 text-xs font-semibold text-green-700">
                                 <CheckCircle2 size={14} /> Applied
                               </span>
@@ -400,38 +390,6 @@ export function PostRequest({ onNavigate, mode = "create", account }) {
                   className="w-full rounded-lg border px-3.5 py-2.5 text-sm outline-none transition-shadow duration-150 focus:ring-2"
                   style={{ borderColor: C.border, color: C.text }}
                 />
-              </div>
-
-              <div>
-                <label className="mb-1.5 block text-sm font-semibold" style={{ color: C.text }}>
-                  Attach Image (Optional)
-                </label>
-                {imagePreview ? (
-                  <div className="relative rounded-lg border overflow-hidden" style={{ borderColor: C.border }}>
-                    <img src={imagePreview} alt="Preview" className="w-full h-48 object-cover" />
-                    <button
-                      type="button"
-                      onClick={handleRemoveImage}
-                      className="absolute top-2 right-2 rounded-full bg-white/90 p-2 shadow-sm hover:bg-white transition-colors"
-                    >
-                      <X size={16} color={C.text} />
-                    </button>
-                  </div>
-                ) : (
-                  <div className="flex items-center justify-center rounded-lg border-2 border-dashed p-8 transition-colors hover:border-blue-400" style={{ borderColor: C.border }}>
-                    <label className="flex cursor-pointer flex-col items-center">
-                      <Upload size={32} color={C.textSecondary} className="mb-2" />
-                      <span className="text-sm font-semibold" style={{ color: C.text }}>Click to upload image</span>
-                      <span className="text-xs" style={{ color: C.textSecondary }}>PNG, JPG up to 5MB</span>
-                      <input
-                        type="file"
-                        accept="image/*"
-                        onChange={handleImageUpload}
-                        className="hidden"
-                      />
-                    </label>
-                  </div>
-                )}
               </div>
 
               <div className="flex gap-3">

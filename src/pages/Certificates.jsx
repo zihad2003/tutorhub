@@ -1,10 +1,26 @@
 import { C } from "../constants/tokens";
 import { PrimaryButton, SecondaryButton, Badge } from "../components/ui";
-import { Award, Upload, CheckCircle2, Trash2, Plus, ExternalLink, XCircle } from "lucide-react";
-import { useState } from "react";
+import { Award, Upload, CheckCircle2, Trash2, Plus, XCircle } from "lucide-react";
+import { useEffect, useState } from "react";
+import { deleteFromAPI, fetchFromAPI, fileUrl, postToAPI } from "../api";
+
+const FILE_MAX_BYTES = 5 * 1024 * 1024;
+const FILE_TYPES = ["pdf", "png", "jpg", "jpeg"];
+
+function readFile(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      const base64 = String(reader.result || "").split(",")[1] || "";
+      resolve({ name: file.name, type: file.type, base64 });
+    };
+    reader.onerror = () => reject(new Error("Could not read the selected file."));
+    reader.readAsDataURL(file);
+  });
+}
 
 export function Certificates({ onNavigate, account = null }) {
-  const own = account && !account.demo;
+  const own = account && !account.demo && account.id;
   const [certs, setCerts] = useState(own ? [] : [
     { id: 1, title: "BSc in Mathematics, University of Dhaka", status: "verified", date: "2024-05-15", url: "/certificate-karim.html" },
     { id: 3, title: "HSC Academic Excellence Certificate", status: "pending", date: "2026-07-01", url: "/certificate-karim.html" },
@@ -13,26 +29,92 @@ export function Certificates({ onNavigate, account = null }) {
   const [newCertTitle, setNewCertTitle] = useState("");
   const [showAddForm, setShowAddForm] = useState(false);
   const [selectedDoc, setSelectedDoc] = useState(null);
+  const [selectedFile, setSelectedFile] = useState(null);
+  const [formError, setFormError] = useState("");
+  const [saving, setSaving] = useState(false);
 
-  const handleAddCert = (e) => {
+  useEffect(() => {
+    if (!own) return undefined;
+    let cancelled = false;
+    fetchFromAPI("/certificates")
+      .then((rows) => {
+        if (cancelled || !Array.isArray(rows)) return;
+        setCerts(rows.filter((row) => Number(row.tutorId) === Number(account.id) && row.status !== "rejected"));
+      })
+      .catch(() => {
+        if (!cancelled) setCerts([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [own, account?.id]);
+
+  const handleFile = (file) => {
+    setFormError("");
+    if (!file) {
+      setSelectedFile(null);
+      return;
+    }
+    const extension = file.name.split(".").pop().toLowerCase();
+    if (!FILE_TYPES.includes(extension)) {
+      setSelectedFile(null);
+      setFormError("Choose a PDF, PNG, or JPG file.");
+      return;
+    }
+    if (file.size > FILE_MAX_BYTES) {
+      setSelectedFile(null);
+      setFormError("File must be 5 MB or smaller.");
+      return;
+    }
+    setSelectedFile(file);
+  };
+
+  const handleAddCert = async (e) => {
     e.preventDefault();
-    if (newCertTitle.trim()) {
+    if (!newCertTitle.trim()) return;
+    if (own && !selectedFile) {
+      setFormError("Choose the certificate file.");
+      return;
+    }
+    setFormError("");
+    if (!own) {
       setCerts([
+        { id: Date.now(), title: newCertTitle.trim(), status: "pending", date: new Date().toISOString().split("T")[0] },
         ...certs,
-        {
-          id: Date.now(),
-          title: newCertTitle.trim(),
-          status: "pending",
-          date: new Date().toISOString().split("T")[0],
-        },
       ]);
       setNewCertTitle("");
       setShowAddForm(false);
+      return;
+    }
+    setSaving(true);
+    try {
+      const file = await readFile(selectedFile);
+      const saved = await postToAPI("/certificates", {
+        tutorId: account.id,
+        title: newCertTitle.trim(),
+        file,
+      });
+      setCerts((rows) => [saved, ...rows]);
+      setNewCertTitle("");
+      setSelectedFile(null);
+      setShowAddForm(false);
+    } catch (error) {
+      setFormError(error.message || "The certificate could not be saved.");
+    } finally {
+      setSaving(false);
     }
   };
 
-  const handleDelete = (id) => {
-    setCerts(certs.filter(c => c.id !== id));
+  const handleDelete = async (id) => {
+    if (own) {
+      try {
+        await deleteFromAPI(`/certificates/${id}`, { tutorId: account.id });
+      } catch (error) {
+        setFormError(error.message || "The certificate could not be removed.");
+        return;
+      }
+    }
+    setCerts((rows) => rows.filter((cert) => cert.id !== id));
   };
 
   return (
@@ -78,21 +160,35 @@ export function Certificates({ onNavigate, account = null }) {
                   />
                 </div>
 
-                <div className="rounded-lg border-2 border-dashed p-6 text-center" style={{ borderColor: C.border }}>
+                <label className="block cursor-pointer rounded-lg border-2 border-dashed p-6 text-center" style={{ borderColor: C.border }}>
                   <Upload size={24} className="mx-auto text-gray-400" />
-                  <p className="mt-2 text-sm font-semibold" style={{ color: C.text }}>Click to upload document (PDF, PNG, JPG)</p>
+                  <p className="mt-2 text-sm font-semibold" style={{ color: C.text }}>
+                    {selectedFile ? selectedFile.name : "Click to upload document (PDF, PNG, JPG)"}
+                  </p>
                   <p className="mt-1 text-xs" style={{ color: C.textSecondary }}>Max file size: 5MB</p>
-                </div>
+                  <input
+                    type="file"
+                    accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg"
+                    className="hidden"
+                    onChange={(e) => handleFile(e.target.files?.[0])}
+                  />
+                </label>
+                {formError && <p className="text-sm font-semibold text-red-600">{formError}</p>}
 
                 <div className="flex justify-end gap-2">
                   <SecondaryButton type="button" onClick={() => setShowAddForm(false)}>Cancel</SecondaryButton>
-                  <PrimaryButton type="submit">Submit for Review</PrimaryButton>
+                  <PrimaryButton type="submit" disabled={saving}>{saving ? "Saving..." : "Submit for Review"}</PrimaryButton>
                 </div>
               </div>
             </form>
           )}
 
           <div className="space-y-4">
+            {certs.length === 0 && (
+              <p className="rounded-lg border p-4 text-sm" style={{ borderColor: C.border, color: C.textSecondary }}>
+                No certificates uploaded yet.
+              </p>
+            )}
             {certs.map((cert) => (
               <div
                 key={cert.id}
@@ -120,7 +216,7 @@ export function Certificates({ onNavigate, account = null }) {
 
                 <div className="flex items-center gap-2">
                   <button
-                    onClick={() => setSelectedDoc({ title: cert.title, url: cert.url })}
+                    onClick={() => setSelectedDoc({ title: cert.title, url: cert.url?.startsWith("/api/") ? fileUrl(cert.url) : cert.url })}
                     className="rounded p-2 text-gray-500 hover:bg-gray-100 transition-colors flex items-center gap-1 text-xs font-semibold"
                     title="View Certificate"
                   >

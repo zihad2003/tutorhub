@@ -3,7 +3,6 @@ import { Input } from "../components/ui/Input";
 import { PrimaryButton } from "../components/ui/PrimaryButton";
 import { C } from "../constants/tokens";
 import { useRef, useState } from "react";
-import { UserCheck, Shield, GraduationCap } from "lucide-react";
 
 const NAME_MAX = 60;
 const EMAIL_MAX = 254;
@@ -392,41 +391,6 @@ export function Auth({ tab, setTab, onLogin }) {
             {tab === "login" ? "Log in" : submitting ? "Creating account..." : "Create account"}
           </PrimaryButton>
         </form>
-
-        <div className="mt-8 border-t pt-6" style={{ borderColor: C.border }}>
-          <p className="mb-3 text-center text-xs font-semibold uppercase tracking-wider" style={{ color: C.textSecondary }}>
-            Quick Demo Login
-          </p>
-          <div className="grid grid-cols-3 gap-2">
-            <button
-              type="button"
-              onClick={() => onLogin("parent")}
-              className="flex flex-col items-center justify-center rounded-lg border p-2 text-xs font-semibold transition-colors hover:bg-gray-50"
-              style={{ borderColor: C.border, color: C.text }}
-            >
-              <UserCheck size={16} className="mb-1 text-blue-600" />
-              Parent
-            </button>
-            <button
-              type="button"
-              onClick={() => onLogin("tutor")}
-              className="flex flex-col items-center justify-center rounded-lg border p-2 text-xs font-semibold transition-colors hover:bg-gray-50"
-              style={{ borderColor: C.border, color: C.text }}
-            >
-              <GraduationCap size={16} className="mb-1 text-emerald-600" />
-              Tutor
-            </button>
-            <button
-              type="button"
-              onClick={() => onLogin("admin")}
-              className="flex flex-col items-center justify-center rounded-lg border p-2 text-xs font-semibold transition-colors hover:bg-gray-50"
-              style={{ borderColor: C.border, color: C.text }}
-            >
-              <Shield size={16} className="mb-1 text-purple-600" />
-              Admin
-            </button>
-          </div>
-        </div>
 
         <p className="mt-5 text-center text-sm" style={{ color: C.textSecondary }}>
           {tab === "login" ? "New to TutorHub?" : "Already have an account?"}{" "}

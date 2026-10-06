@@ -1,9 +1,24 @@
 import { C } from "../constants/tokens";
 import { PrimaryButton, Input } from "../components/ui";
 import { CHATS } from "../data/mockData";
-import { useLiveList } from "../lib/records";
-import { Send, MoreVertical, ArrowLeft } from "lucide-react";
+import { fetchFromAPI, fileUrl, postToAPI } from "../api";
+import { Send, ArrowLeft } from "lucide-react";
 import { useEffect, useState } from "react";
+
+function initials(name) {
+  return String(name || "?").trim().split(/\s+/).slice(0, 2).map((part) => part[0]).join("").toUpperCase();
+}
+
+function Avatar({ name, src, size = "h-12 w-12" }) {
+  if (!src) {
+    return (
+      <div className={`flex ${size} items-center justify-center rounded-full bg-blue-100 text-sm font-semibold text-blue-700`}>
+        {initials(name)}
+      </div>
+    );
+  }
+  return <img src={fileUrl(src)} alt={name} className={`${size} rounded-full object-cover`} />;
+}
 
 const ADMIN_SUPPORT_CHATS = [
   {
@@ -49,42 +64,83 @@ export function Chat({ onNavigate, role = "parent", account = null }) {
   const isAdmin = role === "admin";
   const isTutor = role === "tutor";
   const own = account && !account.demo && account.id;
-  const [dbChats] = useLiveList("/chats", own || isAdmin ? [] : CHATS);
   const ownerKey = isTutor ? "tutorId" : "parentId";
-  const activeChats = isAdmin
-    ? ADMIN_SUPPORT_CHATS
-    : own
-      ? dbChats.filter((chat) => Number(chat[ownerKey]) === Number(account.id))
-      : dbChats;
+  const [ownChats, setOwnChats] = useState([]);
+  const activeChats = isAdmin ? ADMIN_SUPPORT_CHATS : own ? ownChats : CHATS;
   const [selectedChat, setSelectedChat] = useState(null);
   const [message, setMessage] = useState("");
+  const [sendError, setSendError] = useState("");
+  const [query, setQuery] = useState("");
   const [showMobileChat, setShowMobileChat] = useState(false);
 
+  const displayName = (chat) => (isTutor ? chat.parentName : chat.tutorName) || chat.name || "Conversation";
+  const displayImage = (chat) => (isTutor ? "" : chat.tutorImg || chat.img || "");
+
   useEffect(() => {
-    if (!selectedChat && activeChats[0]) setSelectedChat(activeChats[0]);
-  }, [activeChats, selectedChat]);
+    if (!own || isAdmin) return undefined;
+    let cancelled = false;
+    async function load() {
+      try {
+        const rows = await fetchFromAPI("/chats");
+        if (cancelled || !Array.isArray(rows)) return;
+        const mine = rows.filter((chat) => Number(chat[ownerKey]) === Number(account.id));
+        setOwnChats(mine);
+        setSelectedChat((current) => {
+          if (!current) return mine[0] || null;
+          return mine.find((chat) => chat.id === current.id) || current;
+        });
+      } catch {
+        if (!cancelled) setOwnChats([]);
+      }
+    }
+    load();
+    const timer = setInterval(load, 4000);
+    return () => {
+      cancelled = true;
+      clearInterval(timer);
+    };
+  }, [own, isAdmin, account?.id, ownerKey]);
+
+  const visibleChats = activeChats.filter((chat) => {
+    const name = displayName(chat).toLowerCase();
+    return name.includes(query.trim().toLowerCase());
+  });
 
   const handleSelectChat = (chat) => {
     setSelectedChat(chat);
     setShowMobileChat(true);
+    setSendError("");
   };
 
-  const handleSend = (e) => {
+  const handleSend = async (e) => {
     e.preventDefault();
-    if (!selectedChat || !message.trim()) return;
-    setSelectedChat(prev => ({
-      ...prev,
-      messages: [
-        ...(prev.messages || []),
-        {
-          id: Date.now(),
-          sender: isAdmin ? "admin" : isTutor ? "tutor" : "parent",
-          text: message,
-          time: "Just now"
-        }
-      ]
-    }));
-    setMessage("");
+    const text = message.trim();
+    if (!selectedChat || !text) return;
+    if (!own || isAdmin) {
+      setSelectedChat((prev) => ({
+        ...prev,
+        messages: [
+          ...(prev.messages || []),
+          { id: Date.now(), sender: isAdmin ? "admin" : isTutor ? "tutor" : "parent", text, time: "Just now" },
+        ],
+      }));
+      setMessage("");
+      return;
+    }
+    setSendError("");
+    try {
+      const saved = await postToAPI(`/chats/${selectedChat.id}/messages`, {
+        text,
+        sender: isTutor ? "tutor" : "parent",
+        tutorId: isTutor ? account.id : selectedChat.tutorId,
+        parentId: isTutor ? selectedChat.parentId : account.id,
+      });
+      setOwnChats((current) => current.map((chat) => (chat.id === saved.id ? saved : chat)));
+      setSelectedChat(saved);
+      setMessage("");
+    } catch (error) {
+      setSendError(error.message || "The message could not be sent.");
+    }
   };
 
   return (
@@ -106,14 +162,22 @@ export function Chat({ onNavigate, role = "parent", account = null }) {
               style={{ borderColor: C.border }}
             >
               <div className="p-4">
-                <Input placeholder={isAdmin ? "Search support tickets..." : "Search conversations..."} />
+                <Input
+                  placeholder={isAdmin ? "Search support tickets..." : "Search conversations..."}
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                />
               </div>
               <div className="space-y-1 overflow-y-auto max-h-[calc(100vh-140px)]">
-                {activeChats.length === 0 ? (
+                {visibleChats.length === 0 ? (
                   <p className="px-4 py-8 text-center text-sm" style={{ color: C.textSecondary }}>
-                    No conversations yet.
+                    {own && isTutor
+                      ? "No students yet. A conversation opens after a parent hires you."
+                      : own
+                        ? "No tutors hired yet. Hire a tutor to start a conversation."
+                        : "No conversations yet."}
                   </p>
-                ) : activeChats.map((chat) => (
+                ) : visibleChats.map((chat) => (
                   <button
                     key={chat.id}
                     onClick={() => handleSelectChat(chat)}
@@ -121,29 +185,18 @@ export function Chat({ onNavigate, role = "parent", account = null }) {
                       selectedChat?.id === chat.id ? "bg-blue-50" : "hover:bg-gray-50"
                     }`}
                   >
-                    <div className="relative">
-                      <img
-                        src={chat.tutorImg || chat.img}
-                        alt={chat.tutorName || chat.name}
-                        className="h-12 w-12 rounded-full object-cover"
-                      />
-                      {chat.unread > 0 && (
-                        <span className="absolute -right-1 -top-1 flex h-5 w-5 items-center justify-center rounded-full bg-blue-600 text-xs font-semibold text-white">
-                          {chat.unread}
-                        </span>
-                      )}
-                    </div>
-                    <div className="flex-1">
-                      <div className="flex items-center justify-between">
-                        <p className="text-sm font-semibold" style={{ color: C.text }}>
-                          {chat.tutorName || chat.name}
+                    <Avatar name={displayName(chat)} src={displayImage(chat)} />
+                    <div className="min-w-0 flex-1">
+                      <div className="flex items-center justify-between gap-2">
+                        <p className="truncate text-sm font-semibold" style={{ color: C.text }}>
+                          {displayName(chat)}
                         </p>
-                        <span className="text-xs" style={{ color: C.textSecondary }}>
+                        <span className="shrink-0 text-xs" style={{ color: C.textSecondary }}>
                           {chat.lastMessageTime}
                         </span>
                       </div>
                       <p className="mt-1 truncate text-xs" style={{ color: C.textSecondary }}>
-                        {chat.lastMessage}
+                        {chat.lastMessage || chat.subject || "Start the conversation"}
                       </p>
                     </div>
                   </button>
@@ -167,27 +220,25 @@ export function Chat({ onNavigate, role = "parent", account = null }) {
                       >
                         <ArrowLeft size={20} />
                       </button>
-                      <img
-                        src={selectedChat.tutorImg || selectedChat.img}
-                        alt={selectedChat.tutorName || selectedChat.name}
-                        className="h-10 w-10 rounded-full object-cover"
-                      />
+                      <Avatar name={displayName(selectedChat)} src={displayImage(selectedChat)} size="h-10 w-10" />
                       <div>
                         <p className="text-sm font-semibold" style={{ color: C.text }}>
-                          {selectedChat.tutorName || selectedChat.name}
+                          {displayName(selectedChat)}
                         </p>
                         <p className="text-xs" style={{ color: C.textSecondary }}>
-                          {isAdmin ? "User Ticket Active" : "Online"}
+                          {isAdmin ? "User Ticket Active" : selectedChat.subject || "Hired"}
                         </p>
                       </div>
                     </div>
-                    <button className="rounded p-2 transition-colors duration-150 hover:bg-gray-100">
-                      <MoreVertical size={18} color={C.textSecondary} />
-                    </button>
                   </div>
 
                   <div className="flex-1 overflow-y-auto p-4 sm:p-6">
                     <div className="space-y-4">
+                      {(selectedChat.messages || []).length === 0 && (
+                        <p className="text-center text-sm" style={{ color: C.textSecondary }}>
+                          Send a message to start this conversation.
+                        </p>
+                      )}
                       {(selectedChat.messages || []).map((msg) => {
                         const isSelf = isAdmin ? msg.sender === "admin" : isTutor ? msg.sender === "tutor" : msg.sender === "parent";
                         return (
@@ -224,6 +275,7 @@ export function Chat({ onNavigate, role = "parent", account = null }) {
                   </div>
 
                   <form onSubmit={handleSend} className="border-t px-4 py-3 sm:px-6 sm:py-4" style={{ borderColor: C.border }}>
+                    {sendError && <p className="mb-2 text-sm text-red-600">{sendError}</p>}
                     <div className="flex gap-3">
                       <input
                         type="text"

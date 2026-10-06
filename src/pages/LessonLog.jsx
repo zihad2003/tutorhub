@@ -17,6 +17,8 @@ export function LessonLog({ onNavigate, role = "parent", account }) {
   const [studentsReady, setStudentsReady] = useState(!ownTutor);
   const [submitted, setSubmitted] = useState(false);
   const [saveError, setSaveError] = useState("");
+  const [duration, setDuration] = useState("1");
+  const [lessonHistory, setLessonHistory] = useState([]);
 
   useEffect(() => {
     if (!isTutor) return undefined;
@@ -57,6 +59,22 @@ export function LessonLog({ onNavigate, role = "parent", account }) {
     };
   }, [isTutor, ownTutor, account?.id]);
 
+  useEffect(() => {
+    if (!ownTutor) return undefined;
+    let cancelled = false;
+    fetchFromAPI("/lessons")
+      .then((rows) => {
+        if (cancelled || !Array.isArray(rows)) return;
+        setLessonHistory(rows.filter((row) => Number(row.tutorId) === Number(account.id)));
+      })
+      .catch(() => {
+        if (!cancelled) setLessonHistory([]);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [ownTutor, account?.id]);
+
   const backLink = isTutor ? "tutor-dashboard" : "lessons";
 
   const handleSubmit = async (e) => {
@@ -69,7 +87,7 @@ export function LessonLog({ onNavigate, role = "parent", account }) {
     }
     setSaveError("");
     try {
-      await postToAPI("/lessons", {
+      const saved = await postToAPI("/lessons", {
         tutorId: account?.role === "tutor" ? account.id : selectedTutor?.tutorId,
         parentId: student?.parentId || null,
         hiredTutorId: student?.hiredId || null,
@@ -77,15 +95,16 @@ export function LessonLog({ onNavigate, role = "parent", account }) {
         topic: form.get("topic"),
         date: form.get("date"),
         classLevel: student?.subject || student?.classLevel || null,
-        duration: form.get("duration") || null,
+        duration: isTutor ? duration : (form.get("duration") || "1"),
         homework: form.get("homework") || null,
         notes: form.get("notes") || null,
         fee: student?.fee || selectedTutor?.fee || null,
       });
+      if (saved && saved.id) {
+        setLessonHistory((rows) => [saved, ...rows.filter((row) => row.id !== saved.id)]);
+      }
       setSubmitted(true);
-      setTimeout(() => {
-        onNavigate(backLink);
-      }, 1500);
+      setTimeout(() => setSubmitted(false), 2500);
     } catch {
       setSaveError("The lesson could not be saved. Please try again.");
     }
@@ -94,7 +113,7 @@ export function LessonLog({ onNavigate, role = "parent", account }) {
   return (
     <div className="flex min-h-screen bg-white">
       <div className="flex-1 p-4 sm:p-6 lg:ml-64">
-        <div className="mx-auto max-w-2xl">
+        <div className={`mx-auto ${isTutor ? "max-w-4xl" : "max-w-2xl"}`}>
           <button
             onClick={() => onNavigate(backLink)}
             className="mb-6 text-sm font-semibold"
@@ -118,7 +137,48 @@ export function LessonLog({ onNavigate, role = "parent", account }) {
 
           {submitted && (
             <div className="mt-4 rounded-lg border border-green-200 bg-green-50 p-4 text-sm font-semibold text-green-700">
-              Lesson logged successfully! Redirecting...
+              Lesson saved. It is now in your lesson history.
+            </div>
+          )}
+
+          {isTutor && (
+            <div className="mt-8">
+              <h2 className="text-lg font-semibold" style={{ color: C.text }}>Lesson history</h2>
+              <p className="mt-1 text-sm" style={{ color: C.textSecondary }}>
+                Lessons you have logged for your hired students.
+              </p>
+              {lessonHistory.length === 0 ? (
+                <p className="mt-4 rounded-lg border p-4 text-sm" style={{ borderColor: C.border, color: C.textSecondary }}>
+                  No lessons logged yet.
+                </p>
+              ) : (
+                <div className="mt-4 overflow-x-auto rounded-lg border" style={{ borderColor: C.border }}>
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr className="border-b bg-gray-50" style={{ borderColor: C.border }}>
+                        <th className="px-4 py-3 text-left font-semibold">Date</th>
+                        <th className="px-4 py-3 text-left font-semibold">Student</th>
+                        <th className="px-4 py-3 text-left font-semibold">Subject</th>
+                        <th className="px-4 py-3 text-left font-semibold">Topic</th>
+                        <th className="px-4 py-3 text-left font-semibold">Hours</th>
+                        <th className="px-4 py-3 text-left font-semibold">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {lessonHistory.map((lesson) => (
+                        <tr key={lesson.id} className="border-b" style={{ borderColor: C.border }}>
+                          <td className="px-4 py-3">{lesson.date}</td>
+                          <td className="px-4 py-3">{lesson.parentName || lesson.studentName || "Student"}</td>
+                          <td className="px-4 py-3">{lesson.subject}</td>
+                          <td className="px-4 py-3">{lesson.topic}</td>
+                          <td className="px-4 py-3">{lesson.hours || 1}</td>
+                          <td className="px-4 py-3 capitalize">{lesson.status}</td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              )}
             </div>
           )}
 
@@ -199,7 +259,19 @@ export function LessonLog({ onNavigate, role = "parent", account }) {
             </div>
 
             {isTutor ? (
-              <Input name="date" label="Date" type="date" required />
+              <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
+                <Input name="date" label="Date" type="date" required />
+                <Input
+                  name="duration"
+                  label="Duration (hours)"
+                  type="number"
+                  min="0.5"
+                  step="0.5"
+                  value={duration}
+                  onChange={(e) => setDuration(e.target.value)}
+                  required
+                />
+              </div>
             ) : (
               <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
                 <Input name="date" label="Date" type="date" required />

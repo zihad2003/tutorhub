@@ -9,6 +9,7 @@ import {
 import { useState } from "react";
 import { postToAPI } from "../api";
 import { currentMonthPrefix, useLiveList } from "../lib/records";
+import { downloadStatementPdf } from "../lib/statementPdf";
 
 const DEFAULT_REVIEWS = [
   {
@@ -154,10 +155,13 @@ export function MonthlySummary({ onNavigate, role = "parent", account = null }) 
     .reduce((sum, row) => sum + (Number(row.totalEarnings) || 0), 0);
   const monthTotal = isTutor ? (earningTotal || hiredTuition || lessonTotal) : (hiredTuition || lessonTotal);
   const totalHours = monthLessons.reduce((sum, lesson) => {
+    const stored = Number(lesson.hours);
+    if (Number.isFinite(stored) && stored > 0) return sum + stored;
     const match = String(lesson.duration ?? "").match(/[\d.]+/);
-    const hours = match ? Number(match[0]) : 0;
-    return sum + (Number.isFinite(hours) ? hours : 0);
+    const hours = match ? Number(match[0]) : 1;
+    return sum + (Number.isFinite(hours) && hours > 0 ? hours : 1);
   }, 0);
+  const hoursLabel = Number.isInteger(totalHours) ? String(totalHours) : String(Math.round(totalHours * 10) / 10);
 
   const handleReviewSubmit = (e) => {
     e.preventDefault();
@@ -213,7 +217,30 @@ export function MonthlySummary({ onNavigate, role = "parent", account = null }) 
   };
 
   const handleDownloadPDF = () => {
-    window.print();
+    const money = (value) => `Tk ${Number(value || 0).toLocaleString("en-US")}`;
+    const lines = [
+      "TutorHub monthly statement",
+      `${statementMonth} · ${isTutor ? "Tutor earnings statement" : "Parent tuition statement"}`,
+      account?.name || (isTutor ? "Tutor" : "Parent"),
+      "",
+      `Total lessons: ${monthLessons.length}`,
+      `Total hours: ${hoursLabel}`,
+      `${isTutor ? "Net earnings" : "Total tuition fee"}: ${money(monthTotal)}`,
+      "",
+      "Date    Name    Subject    Topic    Duration    Amount",
+      ...monthLessons.map((lesson) => [
+        lesson.date || "",
+        isTutor ? (lesson.parentName || lesson.studentName || "Student") : (lesson.tutorName || "Tutor"),
+        lesson.subject || "",
+        lesson.topic || "",
+        lesson.duration || `${lesson.hours || 1} hour`,
+        money(lesson.fee),
+      ].join("    ")),
+      "",
+      `Total billing amount: ${money(monthTotal)}`,
+    ];
+    const filename = `TutorHub-${statementMonth.replace(/\s+/g, "-")}.pdf`;
+    downloadStatementPdf(filename, lines);
   };
 
   const avgRating = reviewsList.length > 0 
@@ -289,7 +316,7 @@ export function MonthlySummary({ onNavigate, role = "parent", account = null }) 
               <div className="text-center">
                 <p className="text-xs font-semibold uppercase tracking-wider" style={{ color: C.textSecondary }}>Total Hours</p>
                 <p className="mt-1 text-xl font-bold sm:text-2xl" style={{ color: C.text }}>
-                  {totalHours} hrs
+                  {hoursLabel} hrs
                 </p>
               </div>
               <div className="text-center">
@@ -322,10 +349,10 @@ export function MonthlySummary({ onNavigate, role = "parent", account = null }) 
                     {monthLessons.map((lesson) => (
                       <tr key={lesson.id || Math.random()} className="border-b hover:bg-gray-50/50" style={{ borderColor: C.border }}>
                         <td className="px-4 py-3 font-medium" style={{ color: C.text }}>{lesson.date || "2026-07-20"}</td>
-                        <td className="px-4 py-3" style={{ color: C.text }}>{isTutor ? (lesson.studentName || "Student") : (lesson.tutorName || "Tutor")}</td>
+                        <td className="px-4 py-3" style={{ color: C.text }}>{isTutor ? (lesson.parentName || lesson.studentName || "Student") : (lesson.tutorName || "Tutor")}</td>
                         <td className="px-4 py-3 font-medium" style={{ color: C.text }}>{lesson.subject || "Subject"}</td>
                         <td className="px-4 py-3 text-gray-600" style={{ color: C.textSecondary }}>{lesson.topic || "General"}</td>
-                        <td className="px-4 py-3" style={{ color: C.textSecondary }}>{lesson.duration || "1 hour"}</td>
+                        <td className="px-4 py-3" style={{ color: C.textSecondary }}>{lesson.duration || `${lesson.hours || 1} hour`}</td>
                         <td className="px-4 py-3 text-right font-bold" style={{ color: C.text }}>
                           ৳{lesson.fee || 0}
                         </td>
@@ -333,7 +360,7 @@ export function MonthlySummary({ onNavigate, role = "parent", account = null }) 
                           <button
                             onClick={() => {
                               if (typeof onNavigate === 'function') {
-                                onNavigate("lessons");
+                                onNavigate(isTutor ? "tutor-lessons" : "lessons");
                               }
                             }}
                             className="rounded-md border px-3 py-1 text-xs font-semibold transition-colors hover:bg-gray-50"

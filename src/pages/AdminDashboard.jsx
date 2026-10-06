@@ -1,8 +1,8 @@
-import { authUrl, fetchFromAPI } from "../api";
+import { authUrl, fetchFromAPI, fileUrl, patchToAPI } from "../api";
 import { C } from "../constants/tokens";
 import { StatCard } from "../components/ui/StatCard";
 import { Table } from "../components/ui/Table";
-import { PrimaryButton, Badge } from "../components/ui";
+import { PrimaryButton, SecondaryButton, Badge } from "../components/ui";
 import { Users, DollarSign, AlertCircle, ChevronRight } from "lucide-react";
 import { useEffect, useState } from "react";
 
@@ -12,20 +12,23 @@ export function AdminDashboard({ onNavigate }) {
   const [summary, setSummary] = useState(null);
   const [recentPayments, setRecentPayments] = useState([]);
   const [withdrawals, setWithdrawals] = useState([]);
+  const [certificates, setCertificates] = useState([]);
 
   useEffect(() => {
     let cancelled = false;
     async function load() {
       try {
-        const [tutorResponse, parentResponse, summaryData, paymentRows, withdrawalRows] = await Promise.all([
+        const [tutorResponse, parentResponse, summaryData, paymentRows, withdrawalRows, certificateRows] = await Promise.all([
           fetch(authUrl("/api/auth/pending/tutors")),
           fetch(authUrl("/api/auth/pending/parents")),
           fetchFromAPI("/summary").catch(() => null),
           fetchFromAPI("/payments").catch(() => []),
           fetchFromAPI("/withdrawal_requests").catch(() => []),
+          fetchFromAPI("/certificates").catch(() => []),
         ]);
         if (!cancelled) {
           setWithdrawals(Array.isArray(withdrawalRows) ? withdrawalRows.filter((row) => row.status === "pending") : []);
+          setCertificates(Array.isArray(certificateRows) ? certificateRows.filter((row) => row.status === "pending") : []);
         }
         if (!tutorResponse.ok || !parentResponse.ok) return;
         const tutors = await tutorResponse.json();
@@ -56,6 +59,15 @@ export function AdminDashboard({ onNavigate }) {
   const totalTutors = summary ? summary.tutors : pendingTutorRows.length;
   const totalParents = summary ? summary.parents : pendingParentRows.length;
   const totalPayments = summary ? summary.paidRevenue : 0;
+
+  const reviewCertificate = async (id, status) => {
+    try {
+      const saved = await patchToAPI(`/certificates/${id}`, { status });
+      setCertificates((rows) => rows.filter((row) => row.id !== saved.id));
+    } catch {
+      setCertificates((rows) => rows);
+    }
+  };
 
   return (
     <div className="flex min-h-screen bg-white">
@@ -218,6 +230,30 @@ export function AdminDashboard({ onNavigate }) {
           </div>
 
           <div className="mt-8 rounded-lg border p-6" style={{ borderColor: C.border }}>
+            <h2 className="text-lg font-semibold" style={{ color: C.text }}>Certificate reviews</h2>
+            <p className="mt-1 text-sm" style={{ color: C.textSecondary }}>Documents tutors submitted for review.</p>
+            {certificates.length === 0 ? (
+              <p className="mt-4 text-sm" style={{ color: C.textSecondary }}>No certificates waiting for review.</p>
+            ) : (
+              <div className="mt-4 space-y-3">
+                {certificates.map((cert) => (
+                  <div key={cert.id} className="flex flex-col gap-3 rounded-lg border p-4 sm:flex-row sm:items-center sm:justify-between" style={{ borderColor: C.border }}>
+                    <div>
+                      <p className="text-sm font-semibold" style={{ color: C.text }}>{cert.title}</p>
+                      <p className="mt-1 text-xs" style={{ color: C.textSecondary }}>{cert.tutorName} · {cert.date}</p>
+                    </div>
+                    <div className="flex gap-2">
+                      <a href={fileUrl(cert.url)} target="_blank" rel="noopener noreferrer" className="rounded-lg border px-3 py-2 text-sm font-semibold" style={{ borderColor: C.border, color: C.primary }}>View</a>
+                      <SecondaryButton onClick={() => reviewCertificate(cert.id, "rejected")}>Reject</SecondaryButton>
+                      <PrimaryButton onClick={() => reviewCertificate(cert.id, "verified")}>Verify</PrimaryButton>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div className="mt-8 rounded-lg border p-6" style={{ borderColor: C.border }}>
             <div className="flex items-center justify-between">
               <h2 className="text-lg font-semibold" style={{ color: C.text }}>Recent Payments</h2>
               <button
@@ -231,9 +267,10 @@ export function AdminDashboard({ onNavigate }) {
             <div className="mt-4">
               <Table
                 columns={[
+                  { key: "parentName", label: "Parent" },
+                  { key: "tutorName", label: "Tutor" },
                   { key: "month", label: "Month" },
-                  { key: "totalLessons", label: "Lessons" },
-                  { key: "totalAmount", label: "Amount", render: (amount) => `৳${amount}` },
+                  { key: "totalAmount", label: "Amount", render: (amount) => `৳${Number(amount || 0).toLocaleString("en-US")}` },
                   { key: "status", label: "Status", render: (status) => (
                     <Badge tone={status === "paid" ? "success" : "warning"}>{status}</Badge>
                   )},
